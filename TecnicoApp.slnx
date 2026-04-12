@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TecnicoApp.API/TecnicoApp.API.csproj" />
+    <Project Path="src/TecnicoApp.Application/TecnicoApp.Application.csproj" />
+    <Project Path="src/TecnicoApp.Domain/TecnicoApp.Domain.csproj" />
+    <Project Path="src/TecnicoApp.Infrastructure/TecnicoApp.Infrastructure.csproj" />
+  </Folder>
+</Solution>
