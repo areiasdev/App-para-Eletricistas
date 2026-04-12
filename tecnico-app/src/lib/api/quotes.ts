@@ -52,5 +52,15 @@ export const quotesApi = {
   updateStatus: (id: string, status: QuoteStatus) =>
     api.patch(`/quotes/${id}/status`, { status }),
 
+  downloadPdf: async (id: string, number: string) => {
+    const response = await api.get(`/quotes/${id}/pdf`, { responseType: 'blob' })
+    const url = URL.createObjectURL(response.data)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `orcamento-${number}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
+  },
+
   delete: (id: string) => api.delete(`/quotes/${id}`),
 }

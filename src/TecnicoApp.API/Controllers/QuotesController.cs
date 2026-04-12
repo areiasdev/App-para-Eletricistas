@@ -8,6 +8,7 @@ using TecnicoApp.Application.Features.Quotes.Commands.DeleteQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.UpdateQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.UpdateQuoteStatus;
 using TecnicoApp.Application.Features.Quotes.DTOs;
+using TecnicoApp.Application.Features.Quotes.Queries.GenerateQuotePdf;
 using TecnicoApp.Application.Features.Quotes.Queries.GetQuoteById;
 using TecnicoApp.Application.Features.Quotes.Queries.GetQuotes;
 using TecnicoApp.Domain.Enums;
@@ -84,6 +85,24 @@ public class QuotesController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new UpdateQuoteStatusCommand(id, request.Status), ct);
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
+    }
+
+    [HttpGet("{id:guid}/pdf")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadPdf(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GenerateQuotePdfQuery(id), ct);
+        if (!result.IsSuccess)
+            return result.Status switch
+            {
+                Ardalis.Result.ResultStatus.NotFound => NotFound(),
+                Ardalis.Result.ResultStatus.Forbidden => Forbid(),
+                _ => BadRequest()
+            };
+
+        var filename = $"orcamento-{result.Value.Number}.pdf";
+        return File(result.Value.Bytes, "application/pdf", filename);
     }
 
     [HttpDelete("{id:guid}")]

@@ -1,11 +1,12 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useQuote, useUpdateQuoteStatus, useDeleteQuote } from '@/hooks/useQuotes'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { formatDate, formatCurrency } from '@/lib/utils/formatters'
+import { quotesApi } from '@/lib/api/quotes'
 import type { QuoteStatus } from '@/types'
 
 const nextStatuses: Partial<Record<QuoteStatus, { status: QuoteStatus; label: string; cls: string }[]>> = {
@@ -24,9 +25,20 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   const { data: quote, isLoading } = useQuote(id)
   const updateStatus = useUpdateQuoteStatus()
   const deleteQuote = useDeleteQuote()
+  const [pdfLoading, setPdfLoading] = useState(false)
 
   const handleStatusChange = (status: QuoteStatus) => {
     updateStatus.mutate({ id, status })
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!quote) return
+    setPdfLoading(true)
+    try {
+      await quotesApi.downloadPdf(id, quote.number)
+    } finally {
+      setPdfLoading(false)
+    }
   }
 
   const handleDelete = () => {
@@ -75,6 +87,16 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
           <p className="text-sm text-gray-500 mt-1">Cliente: {quote.clientName}</p>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
+          <button
+            onClick={handleDownloadPdf}
+            disabled={pdfLoading}
+            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-60 inline-flex items-center gap-2"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0">
+              <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {pdfLoading ? 'A gerar...' : 'PDF'}
+          </button>
           {quote.status === 'Draft' && (
             <>
               <Link

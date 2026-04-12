@@ -100,9 +100,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "TécnicoApp API v1"));
 }
 
-app.UseHttpsRedirection();
-app.UseSerilogRequestLogging();
 app.UseCors("TecnicoAppCors");
+app.UseSerilogRequestLogging();
+
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
