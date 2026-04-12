@@ -2,10 +2,10 @@ import { Sidebar } from '@/components/shared/Sidebar'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen" style={{ backgroundColor: 'var(--color-canvas)' }}>
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 max-w-7xl mx-auto">{children}</div>
+      <main className="flex-1 overflow-y-auto relative">
+        <div className="p-8 max-w-5xl mx-auto animate-fade-up">{children}</div>
       </main>
     </div>
   )
