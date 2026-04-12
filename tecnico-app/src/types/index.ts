@@ -77,4 +77,7 @@ export interface PaginatedResult<T> {
   totalCount: number
   page: number
   pageSize: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
 }
