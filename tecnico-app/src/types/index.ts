@@ -46,7 +46,8 @@ export interface Quote {
   validUntil?: string
   signedAt?: string
   pdfUrl?: string
-  client: Pick<Client, 'id' | 'name'>
+  clientId: string
+  clientName: string
   lines: QuoteLine[]
   createdAt: string
 }
@@ -57,6 +58,7 @@ export interface QuoteLine {
   quantity: number
   unitPrice: number
   vatRate: number
+  lineTotal: number
 }
 
 export interface Equipment {
