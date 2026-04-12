@@ -52,6 +52,9 @@ export const quotesApi = {
   updateStatus: (id: string, status: QuoteStatus) =>
     api.patch(`/quotes/${id}/status`, { status }),
 
+  sign: (id: string, signatureDataUrl: string) =>
+    api.post(`/quotes/${id}/sign`, { signatureDataUrl }),
+
   downloadPdf: async (id: string, number: string) => {
     const response = await api.get(`/quotes/${id}/pdf`, { responseType: 'blob' })
     const url = URL.createObjectURL(response.data)

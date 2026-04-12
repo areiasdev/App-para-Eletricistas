@@ -50,6 +50,15 @@ export function useUpdateQuoteStatus() {
   })
 }
 
+export function useSignQuote() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, signatureDataUrl }: { id: string; signatureDataUrl: string }) =>
+      quotesApi.sign(id, signatureDataUrl),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QUOTES_KEY] }),
+  })
+}
+
 export function useDeleteQuote() {
   const qc = useQueryClient()
   return useMutation({

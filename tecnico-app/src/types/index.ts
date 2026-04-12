@@ -68,6 +68,7 @@ export interface Quote {
   notes?: string
   validUntil?: string
   signedAt?: string
+  signatureUrl?: string
   pdfUrl?: string
   clientId: string
   clientName: string

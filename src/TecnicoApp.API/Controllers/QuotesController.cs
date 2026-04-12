@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using TecnicoApp.Application.Common.DTOs;
 using TecnicoApp.Application.Features.Quotes.Commands.CreateQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.DeleteQuote;
+using TecnicoApp.Application.Features.Quotes.Commands.SignQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.UpdateQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.UpdateQuoteStatus;
 using TecnicoApp.Application.Features.Quotes.DTOs;
@@ -87,6 +88,19 @@ public class QuotesController(IMediator mediator) : ControllerBase
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 
+    [HttpPost("{id:guid}/sign")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Sign(
+        Guid id,
+        [FromBody] SignQuoteRequest request,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(new SignQuoteCommand(id, request.SignatureDataUrl), ct);
+        return result.IsSuccess ? NoContent() : result.ToActionResult(this);
+    }
+
     [HttpGet("{id:guid}/pdf")]
     [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -124,3 +138,4 @@ public record UpdateQuoteRequest(
 );
 
 public record UpdateQuoteStatusRequest(QuoteStatus Status);
+public record SignQuoteRequest(string SignatureDataUrl);
