@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Infrastructure.Jobs;
 using TecnicoApp.Infrastructure.Persistence;
 using TecnicoApp.Infrastructure.Services;
 
@@ -20,6 +21,8 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IPdfService, QuotePdfService>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddScoped<MaintenanceAlertJob>();
         services.AddHttpContextAccessor();
 
         return services;

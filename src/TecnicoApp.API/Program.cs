@@ -1,5 +1,8 @@
 using System.Text;
 using Ardalis.Result.AspNetCore;
+using Hangfire;
+using Hangfire.PostgreSql;
+using TecnicoApp.Infrastructure.Jobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -86,6 +89,15 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()
               .AllowCredentials()));
 
+// ── Hangfire ──────────────────────────────────────────────────────────────────
+var hangfireConnStr = builder.Configuration.GetConnectionString("DefaultConnection")!;
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(hangfireConnStr));
+builder.Services.AddHangfireServer();
+
 // ── Health checks ─────────────────────────────────────────────────────────────
 builder.Services.AddHealthChecks();
 
@@ -110,6 +122,21 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
+
+// Hangfire dashboard (dev only — add auth in production)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = [new Hangfire.Dashboard.LocalRequestsOnlyAuthorizationFilter()]
+    });
+}
+
+// Register recurring job — runs daily at 08:00
+RecurringJob.AddOrUpdate<MaintenanceAlertJob>(
+    "maintenance-alerts",
+    job => job.RunAsync(),
+    "0 8 * * *");
 
 app.Run();
 
