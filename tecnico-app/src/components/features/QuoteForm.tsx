@@ -3,7 +3,6 @@
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils/formatters'
 import { useClients } from '@/hooks/useClients'
 
@@ -58,160 +57,279 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
   const total = subTotal + vatTotal - (Number(discount) || 0)
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Cliente + meta */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Dados do orçamento</h2>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Cliente *" error={errors.clientId?.message}>
-            <select {...register('clientId')} className={inputCls(!!errors.clientId)}>
+      {/* ── Section 1: Dados gerais ── */}
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+        <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
+            Dados gerais
+          </h2>
+        </div>
+
+        <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField label="Cliente *" error={errors.clientId?.message}>
+            <select
+              {...register('clientId')}
+              style={{
+                borderColor: errors.clientId ? '#fca5a5' : 'var(--color-line-strong)',
+                color: 'var(--color-ink)',
+              }}
+              className="form-input"
+            >
               <option value="">Selecionar cliente...</option>
               {clientsData?.items.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-          </Field>
+          </FormField>
 
-          <Field label="Válido até" error={errors.validUntil?.message}>
-            <input type="date" {...register('validUntil')} className={inputCls(false)} />
-          </Field>
+          <FormField label="Válido até" error={errors.validUntil?.message}>
+            <input
+              type="date"
+              {...register('validUntil')}
+              className="form-input"
+              style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
+            />
+          </FormField>
+
+          <FormField label="Desconto (€)" error={errors.discount?.message}>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              {...register('discount', { valueAsNumber: true })}
+              className="form-input"
+              style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
+            />
+          </FormField>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Desconto (€)" error={errors.discount?.message}>
-            <input type="number" step="0.01" min="0" {...register('discount', { valueAsNumber: true })} className={inputCls(!!errors.discount)} />
-          </Field>
+        <div className="px-5 pb-5">
+          <FormField label="Notas internas" error={errors.notes?.message}>
+            <textarea
+              {...register('notes')}
+              rows={2}
+              placeholder="Observações, condições, etc."
+              className="form-input resize-none"
+              style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
+            />
+          </FormField>
         </div>
+      </section>
 
-        <Field label="Notas" error={errors.notes?.message}>
-          <textarea {...register('notes')} rows={2} className={inputCls(false) + ' resize-none'} />
-        </Field>
-      </div>
-
-      {/* Lines */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Linhas</h2>
+      {/* ── Section 2: Linhas ── */}
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+        <div className="px-5 py-3.5 border-b flex items-center justify-between" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
+            Itens / Serviços
+          </h2>
           <button
             type="button"
             onClick={() => append({ description: '', quantity: 1, unitPrice: 0, vatRate: 23 })}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="text-xs font-semibold flex items-center gap-1 transition-colors duration-150"
+            style={{ color: 'var(--color-brand-600)' }}
           >
-            + Adicionar linha
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+            Adicionar linha
           </button>
         </div>
 
+        {/* Table header */}
+        <div
+          className="hidden sm:grid px-5 py-2 text-xs font-semibold uppercase tracking-wide"
+          style={{
+            gridTemplateColumns: '1fr 80px 100px 80px 90px 32px',
+            gap: '8px',
+            color: 'var(--color-subtle)',
+            borderBottom: '1px solid var(--color-line)',
+          }}
+        >
+          <span>Descrição</span>
+          <span>Qtd.</span>
+          <span>Preço unit.</span>
+          <span>IVA</span>
+          <span className="text-right">Total</span>
+          <span />
+        </div>
+
         {errors.lines?.root && (
-          <p className="text-xs text-red-600">{errors.lines.root.message}</p>
+          <p className="px-5 py-2 text-xs" style={{ color: '#dc2626' }}>{errors.lines.root.message}</p>
         )}
 
-        <div className="space-y-3">
-          {fields.map((field, index) => (
-            <div key={field.id} className="grid grid-cols-12 gap-2 items-start">
-              <div className="col-span-5">
-                <input
-                  {...register(`lines.${index}.description`)}
-                  placeholder="Descrição"
-                  className={inputCls(!!errors.lines?.[index]?.description)}
-                />
-                {errors.lines?.[index]?.description && (
-                  <p className="mt-0.5 text-xs text-red-600">{errors.lines[index]!.description!.message}</p>
-                )}
-              </div>
-              <div className="col-span-2">
-                <input
-                  type="number"
-                  step="0.01"
-                  {...register(`lines.${index}.quantity`, { valueAsNumber: true })}
-                  placeholder="Qtd"
-                  className={inputCls(!!errors.lines?.[index]?.quantity)}
-                />
-              </div>
-              <div className="col-span-2">
-                <input
-                  type="number"
-                  step="0.01"
-                  {...register(`lines.${index}.unitPrice`, { valueAsNumber: true })}
-                  placeholder="Preço"
-                  className={inputCls(!!errors.lines?.[index]?.unitPrice)}
-                />
-              </div>
-              <div className="col-span-2">
-                <select
-                  {...register(`lines.${index}.vatRate`, { valueAsNumber: true })}
-                  className={inputCls(false)}
-                >
-                  <option value={0}>0%</option>
-                  <option value={6}>6%</option>
-                  <option value={13}>13%</option>
-                  <option value={23}>23%</option>
-                </select>
-              </div>
-              <div className="col-span-1 flex items-center justify-center pt-2">
-                {fields.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => remove(index)}
-                    className="text-red-400 hover:text-red-600 text-lg leading-none"
-                    title="Remover linha"
+        <div className="divide-y" style={{ borderColor: 'var(--color-line)' }}>
+          {fields.map((field, index) => {
+            const qty = Number(lines?.[index]?.quantity) || 0
+            const price = Number(lines?.[index]?.unitPrice) || 0
+            const vat = Number(lines?.[index]?.vatRate) || 0
+            const lineTotal = qty * price * (1 + vat / 100)
+
+            return (
+              <div key={field.id} className="px-5 py-3 space-y-2 sm:space-y-0 sm:grid sm:items-center" style={{ gridTemplateColumns: '1fr 80px 100px 80px 90px 32px', gap: '8px' }}>
+                {/* Description */}
+                <div>
+                  <label className="text-xs font-medium sm:hidden mb-1 block" style={{ color: 'var(--color-muted)' }}>Descrição</label>
+                  <input
+                    {...register(`lines.${index}.description`)}
+                    placeholder="Ex: Instalação de tomada"
+                    className="form-input"
+                    style={{
+                      borderColor: errors.lines?.[index]?.description ? '#fca5a5' : 'var(--color-line-strong)',
+                      color: 'var(--color-ink)',
+                    }}
+                  />
+                  {errors.lines?.[index]?.description && (
+                    <p className="mt-0.5 text-xs" style={{ color: '#dc2626' }}>{errors.lines[index]!.description!.message}</p>
+                  )}
+                </div>
+
+                {/* Qty */}
+                <div>
+                  <label className="text-xs font-medium sm:hidden mb-1 block" style={{ color: 'var(--color-muted)' }}>Qtd.</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    {...register(`lines.${index}.quantity`, { valueAsNumber: true })}
+                    className="form-input text-right"
+                    style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
+                  />
+                </div>
+
+                {/* Unit price */}
+                <div>
+                  <label className="text-xs font-medium sm:hidden mb-1 block" style={{ color: 'var(--color-muted)' }}>Preço unit.</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    {...register(`lines.${index}.unitPrice`, { valueAsNumber: true })}
+                    className="form-input text-right"
+                    style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
+                  />
+                </div>
+
+                {/* VAT */}
+                <div>
+                  <label className="text-xs font-medium sm:hidden mb-1 block" style={{ color: 'var(--color-muted)' }}>IVA</label>
+                  <select
+                    {...register(`lines.${index}.vatRate`, { valueAsNumber: true })}
+                    className="form-input"
+                    style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
                   >
-                    ×
-                  </button>
-                )}
+                    <option value={0}>0%</option>
+                    <option value={6}>6%</option>
+                    <option value={13}>13%</option>
+                    <option value={23}>23%</option>
+                  </select>
+                </div>
+
+                {/* Line total */}
+                <div className="text-right text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
+                  <label className="text-xs font-medium sm:hidden mb-1 block text-left" style={{ color: 'var(--color-muted)' }}>Total</label>
+                  {formatCurrency(lineTotal)}
+                </div>
+
+                {/* Remove */}
+                <div className="flex justify-end sm:justify-center">
+                  {fields.length > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      className="w-7 h-7 rounded-md flex items-center justify-center transition-colors duration-150"
+                      style={{ color: 'var(--color-muted)' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.color = '#dc2626' }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--color-muted)' }}
+                      title="Remover linha"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                  ) : <div className="w-7" />}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Totals */}
-        <div className="border-t border-gray-100 pt-4 space-y-1 text-sm">
-          <div className="flex justify-between text-gray-500">
+        <div
+          className="px-5 py-4 space-y-2 border-t"
+          style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}
+        >
+          <div className="flex justify-end gap-12 text-sm" style={{ color: 'var(--color-muted)' }}>
             <span>Subtotal</span>
-            <span>{formatCurrency(subTotal)}</span>
+            <span className="w-24 text-right">{formatCurrency(subTotal)}</span>
           </div>
-          <div className="flex justify-between text-gray-500">
+          <div className="flex justify-end gap-12 text-sm" style={{ color: 'var(--color-muted)' }}>
             <span>IVA</span>
-            <span>{formatCurrency(vatTotal)}</span>
+            <span className="w-24 text-right">{formatCurrency(vatTotal)}</span>
           </div>
           {(Number(discount) > 0) && (
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-end gap-12 text-sm" style={{ color: 'var(--color-muted)' }}>
               <span>Desconto</span>
-              <span>-{formatCurrency(Number(discount))}</span>
+              <span className="w-24 text-right">-{formatCurrency(Number(discount))}</span>
             </div>
           )}
-          <div className="flex justify-between font-semibold text-gray-900 text-base pt-1 border-t border-gray-200">
+          <div
+            className="flex justify-end gap-12 text-base font-bold pt-2 border-t"
+            style={{ color: 'var(--color-ink)', borderColor: 'var(--color-line)' }}
+          >
             <span>Total</span>
-            <span>{formatCurrency(total)}</span>
+            <span className="w-24 text-right" style={{ color: 'var(--color-brand-600)' }}>{formatCurrency(total)}</span>
           </div>
         </div>
+      </section>
+
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110 active:scale-[0.99]"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+        >
+          {isLoading ? 'A guardar...' : submitLabel}
+        </button>
       </div>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full sm:w-auto rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60 transition-colors"
-      >
-        {isLoading ? 'A guardar...' : submitLabel}
-      </button>
+      <style>{`
+        .form-input {
+          width: 100%;
+          border-radius: 0.5rem;
+          border: 1.5px solid var(--color-line-strong);
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          background-color: white;
+          color: var(--color-ink);
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+          font-family: var(--font-outfit), system-ui, sans-serif;
+        }
+        .form-input:focus {
+          border-color: var(--color-brand-500);
+          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+        }
+        .form-input::placeholder {
+          color: var(--color-subtle);
+        }
+      `}</style>
     </form>
   )
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
+        {label}
+      </label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
     </div>
   )
 }
-
-const inputCls = (hasError: boolean) =>
-  cn(
-    'w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
-    hasError
-      ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
-      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-  )

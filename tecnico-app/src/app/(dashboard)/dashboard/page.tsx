@@ -19,23 +19,24 @@ function StatCard({
 }) {
   const inner = (
     <div
-      className="rounded-xl border p-5 transition-all duration-150 hover:shadow-sm group"
+      className="rounded-xl border p-5 transition-all duration-150 hover:shadow-sm group h-full flex flex-col justify-between"
       style={{
         backgroundColor: accent ? 'var(--color-brand-500)' : 'white',
         borderColor: accent ? 'var(--color-brand-600)' : 'var(--color-line)',
+        minHeight: '6rem',
       }}
     >
       <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent ? 'rgba(23,23,26,0.65)' : 'var(--color-muted)' }}>
         {label}
       </p>
-      <p className="text-3xl font-bold mt-1.5 leading-none" style={{ color: accent ? 'var(--color-sidebar)' : 'var(--color-ink)' }}>
-        {value}
-      </p>
-      {sub && (
-        <p className="text-xs mt-2" style={{ color: accent ? 'rgba(23,23,26,0.55)' : 'var(--color-subtle)' }}>
-          {sub}
+      <div>
+        <p className="text-3xl font-bold mt-1.5 leading-none" style={{ color: accent ? 'var(--color-sidebar)' : 'var(--color-ink)' }}>
+          {value}
         </p>
-      )}
+        <p className="text-xs mt-2 min-h-[1rem]" style={{ color: accent ? 'rgba(23,23,26,0.55)' : 'var(--color-subtle)' }}>
+          {sub ?? ''}
+        </p>
+      </div>
     </div>
   )
 

@@ -3,7 +3,6 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { cn } from '@/lib/utils'
 import { useClients } from '@/hooks/useClients'
 
 const equipmentSchema = z.object({
@@ -46,80 +45,159 @@ export function EquipmentForm({
   })
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-          Dados do equipamento
-        </h2>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
-        {!lockClient && (
-          <Field label="Cliente *" error={errors.clientId?.message}>
-            <select {...register('clientId')} className={inputCls(!!errors.clientId)}>
-              <option value="">Selecionar cliente...</option>
-              {clientsData?.items.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </Field>
-        )}
-
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Tipo *" error={errors.type?.message}>
-            <input {...register('type')} placeholder="Ex: Ar condicionado" className={inputCls(!!errors.type)} />
-          </Field>
-          <Field label="Marca" error={errors.brand?.message}>
-            <input {...register('brand')} placeholder="Ex: Daikin" className={inputCls(!!errors.brand)} />
-          </Field>
+      {/* ── Identificação ── */}
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+        <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
+            Identificação
+          </h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Modelo" error={errors.model?.message}>
-            <input {...register('model')} className={inputCls(!!errors.model)} />
-          </Field>
-          <Field label="Número de série" error={errors.serialNumber?.message}>
-            <input {...register('serialNumber')} className={inputCls(!!errors.serialNumber)} />
-          </Field>
+        <div className="p-5 space-y-4">
+          {!lockClient && (
+            <FormField label="Cliente *" error={errors.clientId?.message}>
+              <select
+                {...register('clientId')}
+                className="form-input"
+                style={{ borderColor: errors.clientId ? '#fca5a5' : 'var(--color-line-strong)' }}
+              >
+                <option value="">Selecionar cliente...</option>
+                {clientsData?.items.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </FormField>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Tipo *" error={errors.type?.message}>
+              <input
+                {...register('type')}
+                placeholder="Ex: Ar condicionado, Quadro elétrico"
+                className="form-input"
+                style={{ borderColor: errors.type ? '#fca5a5' : 'var(--color-line-strong)' }}
+              />
+            </FormField>
+            <FormField label="Marca" error={errors.brand?.message}>
+              <input
+                {...register('brand')}
+                placeholder="Ex: Daikin, Schneider"
+                className="form-input"
+                style={{ borderColor: 'var(--color-line-strong)' }}
+              />
+            </FormField>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Modelo" error={errors.model?.message}>
+              <input
+                {...register('model')}
+                placeholder="Ex: FTX35K"
+                className="form-input"
+                style={{ borderColor: 'var(--color-line-strong)' }}
+              />
+            </FormField>
+            <FormField label="Número de série" error={errors.serialNumber?.message}>
+              <input
+                {...register('serialNumber')}
+                placeholder="Ex: SN-12345678"
+                className="form-input"
+                style={{ borderColor: 'var(--color-line-strong)' }}
+              />
+            </FormField>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Manutenção ── */}
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+        <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
+            Manutenção
+          </h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Data de instalação" error={errors.installedAt?.message}>
-            <input type="date" {...register('installedAt')} className={inputCls(false)} />
-          </Field>
-          <Field label="Próxima manutenção" error={errors.nextMaintenance?.message}>
-            <input type="date" {...register('nextMaintenance')} className={inputCls(false)} />
-          </Field>
-        </div>
+        <div className="p-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Data de instalação" error={errors.installedAt?.message}>
+              <input
+                type="date"
+                {...register('installedAt')}
+                className="form-input"
+                style={{ borderColor: 'var(--color-line-strong)' }}
+              />
+            </FormField>
+            <FormField label="Próxima manutenção" error={errors.nextMaintenance?.message}>
+              <input
+                type="date"
+                {...register('nextMaintenance')}
+                className="form-input"
+                style={{ borderColor: 'var(--color-line-strong)' }}
+              />
+              <p className="text-xs mt-1" style={{ color: 'var(--color-subtle)' }}>
+                Receberás um alerta 7 dias antes.
+              </p>
+            </FormField>
+          </div>
 
-        <Field label="Notas" error={errors.notes?.message}>
-          <textarea {...register('notes')} rows={3} className={inputCls(false) + ' resize-none'} />
-        </Field>
+          <FormField label="Notas" error={errors.notes?.message}>
+            <textarea
+              {...register('notes')}
+              rows={3}
+              placeholder="Observações, histórico de avarias, etc."
+              className="form-input resize-none"
+              style={{ borderColor: 'var(--color-line-strong)' }}
+            />
+          </FormField>
+        </div>
+      </section>
+
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110 active:scale-[0.99]"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+        >
+          {isLoading ? 'A guardar...' : submitLabel}
+        </button>
       </div>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full sm:w-auto rounded-md bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60 transition-colors"
-      >
-        {isLoading ? 'A guardar...' : submitLabel}
-      </button>
+      <style>{`
+        .form-input {
+          width: 100%;
+          border-radius: 0.5rem;
+          border: 1.5px solid var(--color-line-strong);
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          background-color: white;
+          color: var(--color-ink);
+          outline: none;
+          transition: border-color 0.15s, box-shadow 0.15s;
+          font-family: var(--font-outfit), system-ui, sans-serif;
+        }
+        .form-input:focus {
+          border-color: var(--color-brand-500);
+          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+        }
+        .form-input::placeholder {
+          color: var(--color-subtle);
+        }
+      `}</style>
     </form>
   )
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
+        {label}
+      </label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
     </div>
   )
 }
-
-const inputCls = (hasError: boolean) =>
-  cn(
-    'w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-1',
-    hasError
-      ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
-      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
-  )

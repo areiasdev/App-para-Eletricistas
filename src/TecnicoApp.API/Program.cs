@@ -11,6 +11,9 @@ using TecnicoApp.API.Middleware;
 using TecnicoApp.Application;
 using TecnicoApp.Infrastructure;
 
+// Fix: Npgsql requires DateTimeKind.Utc — legacy mode accepts Unspecified from JSON binding
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Serilog ───────────────────────────────────────────────────────────────────

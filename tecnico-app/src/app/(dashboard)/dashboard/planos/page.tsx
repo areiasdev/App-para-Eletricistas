@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { billingApi } from '@/lib/api/billing'
+import { getErrorMessage } from '@/lib/api/client'
 
 const plans = [
   {
@@ -58,12 +59,13 @@ const plans = [
   },
 ]
 
-export default function PlanosPage() {
+function PlanosPageInner() {
   const searchParams = useSearchParams()
   const successParam = searchParams.get('success')
   const [loadingPlan, setLoadingPlan] = useState<'Pro' | 'Team' | null>(null)
   const [portalLoading, setPortalLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(successParam === 'true')
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   const { data: billing, isLoading } = useQuery({
     queryKey: ['billing-me'],
@@ -79,19 +81,23 @@ export default function PlanosPage() {
 
   const handleSubscribe = async (planId: 'Pro' | 'Team') => {
     setLoadingPlan(planId)
+    setCheckoutError(null)
     try {
       await billingApi.createCheckout(planId)
-    } catch {
+    } catch (err) {
       setLoadingPlan(null)
+      setCheckoutError(getErrorMessage(err))
     }
   }
 
   const handlePortal = async () => {
     setPortalLoading(true)
+    setCheckoutError(null)
     try {
       await billingApi.createPortal()
-    } catch {
+    } catch (err) {
       setPortalLoading(false)
+      setCheckoutError(getErrorMessage(err))
     }
   }
 
@@ -111,6 +117,21 @@ export default function PlanosPage() {
           )}
         </p>
       </div>
+
+      {/* Error banner */}
+      {checkoutError && (
+        <div
+          className="rounded-xl px-5 py-4 flex items-center gap-3"
+          style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6" stroke="#dc2626" strokeWidth="1.5"/>
+            <path d="M7 4v3M7 9.5v.5" stroke="#dc2626" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <p className="text-sm font-medium" style={{ color: '#dc2626' }}>{checkoutError}</p>
+          <button onClick={() => setCheckoutError(null)} className="ml-auto text-xs" style={{ color: '#dc2626' }}>✕</button>
+        </div>
+      )}
 
       {/* Success banner */}
       {showSuccess && (
@@ -268,5 +289,13 @@ export default function PlanosPage() {
         Preços em EUR, IVA incluído. Pode cancelar a qualquer momento pelo painel de faturação Stripe.
       </p>
     </div>
+  )
+}
+
+export default function PlanosPage() {
+  return (
+    <Suspense>
+      <PlanosPageInner />
+    </Suspense>
   )
 }
