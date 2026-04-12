@@ -6,6 +6,16 @@ using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Dashboard;
 
+public record UpcomingMaintenanceDto(
+    Guid EquipmentId,
+    string Type,
+    string? Brand,
+    string? Model,
+    string ClientName,
+    DateTime NextMaintenance,
+    int DaysUntil
+);
+
 public record DashboardStatsDto(
     int TotalClients,
     int TotalQuotes,
@@ -14,7 +24,11 @@ public record DashboardStatsDto(
     int AcceptedQuotes,
     decimal TotalRevenue,        // Invoiced quotes
     decimal PendingRevenue,      // Accepted quotes not yet invoiced
-    IReadOnlyList<RecentQuoteDto> RecentQuotes
+    int TotalInterventions,
+    int ScheduledInterventions,
+    int InProgressInterventions,
+    IReadOnlyList<RecentQuoteDto> RecentQuotes,
+    IReadOnlyList<UpcomingMaintenanceDto> UpcomingMaintenance
 );
 
 public record RecentQuoteDto(
@@ -61,6 +75,36 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
                 q.Id, q.Number, q.Status, q.Client.Name, q.Total, q.CreatedAt))
             .ToList();
 
+        // Interventions
+        var interventions = await db.Interventions
+            .AsNoTracking()
+            .Where(i => i.UserId == userId)
+            .ToListAsync(cancellationToken);
+
+        // Upcoming maintenance (next 30 days)
+        var today = DateTime.UtcNow.Date;
+        var limit = today.AddDays(30);
+
+        var upcomingMaintenance = await db.Equipment
+            .AsNoTracking()
+            .Include(e => e.Client)
+            .Where(e =>
+                e.Client.UserId == userId &&
+                e.NextMaintenance.HasValue &&
+                e.NextMaintenance.Value >= today &&
+                e.NextMaintenance.Value <= limit)
+            .OrderBy(e => e.NextMaintenance)
+            .Take(5)
+            .Select(e => new UpcomingMaintenanceDto(
+                e.Id,
+                e.Type,
+                e.Brand,
+                e.Model,
+                e.Client.Name,
+                e.NextMaintenance!.Value,
+                (int)(e.NextMaintenance!.Value.Date - today).TotalDays))
+            .ToListAsync(cancellationToken);
+
         var stats = new DashboardStatsDto(
             clientsCount,
             quotes.Count,
@@ -69,7 +113,11 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
             quotes.Count(q => q.Status == QuoteStatus.Accepted),
             totalRevenue,
             pendingRevenue,
-            recentQuotes
+            interventions.Count,
+            interventions.Count(i => i.Status == InterventionStatus.Scheduled),
+            interventions.Count(i => i.Status == InterventionStatus.InProgress),
+            recentQuotes,
+            upcomingMaintenance
         );
 
         return Result.Success(stats);

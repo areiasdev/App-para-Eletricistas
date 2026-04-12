@@ -10,6 +10,16 @@ export interface RecentQuote {
   createdAt: string
 }
 
+export interface UpcomingMaintenance {
+  equipmentId: string
+  type: string
+  brand?: string
+  model?: string
+  clientName: string
+  nextMaintenance: string
+  daysUntil: number
+}
+
 export interface DashboardStats {
   totalClients: number
   totalQuotes: number
@@ -18,7 +28,11 @@ export interface DashboardStats {
   acceptedQuotes: number
   totalRevenue: number
   pendingRevenue: number
+  totalInterventions: number
+  scheduledInterventions: number
+  inProgressInterventions: number
   recentQuotes: RecentQuote[]
+  upcomingMaintenance: UpcomingMaintenance[]
 }
 
 export const dashboardApi = {
