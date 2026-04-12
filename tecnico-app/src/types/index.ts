@@ -72,6 +72,8 @@ export interface Equipment {
   notes?: string
   photos: string[]
   clientId: string
+  clientName: string
+  createdAt: string
 }
 
 export interface PaginatedResult<T> {
