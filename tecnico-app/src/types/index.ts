@@ -1,5 +1,28 @@
 export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected' | 'Invoiced'
 export type InterventionStatus = 'Scheduled' | 'InProgress' | 'Completed'
+
+export interface InterventionEquipment {
+  id: string
+  type: string
+  brand?: string
+  model?: string
+}
+
+export interface Intervention {
+  id: string
+  title: string
+  description?: string
+  status: InterventionStatus
+  scheduledAt?: string
+  completedAt?: string
+  technicianNotes?: string
+  clientId: string
+  clientName: string
+  quoteId?: string
+  quoteNumber?: string
+  equipment: InterventionEquipment[]
+  createdAt: string
+}
 export type Plan = 'Free' | 'Pro' | 'Team'
 
 export interface User {
