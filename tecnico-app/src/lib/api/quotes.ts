@@ -65,5 +65,7 @@ export const quotesApi = {
     URL.revokeObjectURL(url)
   },
 
+  sendEmail: (id: string) => api.post(`/quotes/${id}/send-email`),
+
   delete: (id: string) => api.delete(`/quotes/${id}`),
 }

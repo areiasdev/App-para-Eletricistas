@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
+using Plan = TecnicoApp.Domain.Enums.Plan;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.SignQuote;
 
@@ -12,6 +13,18 @@ public class SignQuoteCommandHandler(IAppDbContext db, ICurrentUserService curre
     public async Task<Result> Handle(SignQuoteCommand request, CancellationToken cancellationToken)
     {
         var userId = currentUser.UserId;
+
+        var user = await db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+        if (user is null) return Result.Unauthorized();
+
+        if (user.Plan == Plan.Free)
+            return Result.Invalid(new ValidationError(
+                "PlanLimit",
+                "A assinatura digital está disponível nos planos Pro e Team. Faz upgrade para desbloquear.",
+                "PLAN_LIMIT_SIGNATURE",
+                ValidationSeverity.Error));
 
         var quote = await db.Quotes
             .FirstOrDefaultAsync(q => q.Id == request.QuoteId, cancellationToken);

@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
+import { billingApi } from '@/lib/api/billing'
 
 const navItems = [
   {
@@ -71,10 +73,23 @@ const navItems = [
   },
 ]
 
+const planColors: Record<string, { bg: string; text: string }> = {
+  Pro:  { bg: 'rgba(245,158,11,0.18)', text: 'var(--color-brand-400)' },
+  Team: { bg: 'rgba(124,58,237,0.18)', text: '#a78bfa' },
+  Free: { bg: 'rgba(255,255,255,0.07)', text: 'rgba(255,255,255,0.35)' },
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
+  const { data: billing } = useQuery({
+    queryKey: ['billing-me'],
+    queryFn: billingApi.getMe,
+    staleTime: 1000 * 60 * 5,
+  })
+  const plan = billing?.plan ?? 'Free'
+  const planColor = planColors[plan] ?? planColors.Free
 
   const handleLogout = () => {
     clearAuth()
@@ -154,7 +169,15 @@ export function Sidebar() {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-medium text-white/80 truncate leading-tight">{user?.fullName}</p>
-            <p className="text-xs text-white/35 truncate leading-tight">{user?.email}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-xs text-white/35 truncate leading-tight">{user?.email}</p>
+              <span
+                className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wider leading-none"
+                style={{ backgroundColor: planColor.bg, color: planColor.text }}
+              >
+                {plan}
+              </span>
+            </div>
           </div>
         </div>
         <button

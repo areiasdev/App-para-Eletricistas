@@ -72,9 +72,22 @@ api.interceptors.response.use(
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data
-    if (data?.title) return data.title
+    // Validation errors from Ardalis.Result (422) — flatten first error value
+    if (data?.errors && typeof data.errors === 'object') {
+      const first = Object.values(data.errors)[0]
+      if (Array.isArray(first) && first.length > 0) return first[0] as string
+    }
     if (data?.detail) return data.detail
+    if (data?.title && data.title !== 'One or more validation errors occurred.')
+      return data.title
     if (typeof data === 'string') return data
   }
   return 'Ocorreu um erro inesperado. Tenta novamente.'
+}
+
+export const isPlanLimitError = (error: unknown): boolean => {
+  if (!axios.isAxiosError(error)) return false
+  const data = error.response?.data
+  if (!data?.errors) return false
+  return 'PlanLimit' in data.errors
 }

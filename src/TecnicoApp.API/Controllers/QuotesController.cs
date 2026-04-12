@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using TecnicoApp.Application.Common.DTOs;
 using TecnicoApp.Application.Features.Quotes.Commands.CreateQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.DeleteQuote;
+using TecnicoApp.Application.Features.Quotes.Commands.SendQuoteEmail;
 using TecnicoApp.Application.Features.Quotes.Commands.SignQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.UpdateQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.UpdateQuoteStatus;
@@ -98,6 +99,16 @@ public class QuotesController(IMediator mediator) : ControllerBase
         CancellationToken ct)
     {
         var result = await mediator.Send(new SignQuoteCommand(id, request.SignatureDataUrl), ct);
+        return result.IsSuccess ? NoContent() : result.ToActionResult(this);
+    }
+
+    [HttpPost("{id:guid}/send-email")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SendEmail(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new SendQuoteEmailCommand(id), ct);
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 

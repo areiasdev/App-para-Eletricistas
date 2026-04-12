@@ -3,6 +3,7 @@ using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using MimeKit.Utils;
 using TecnicoApp.Application.Common.Interfaces;
 
 namespace TecnicoApp.Infrastructure.Services;
@@ -32,7 +33,28 @@ public class SmtpEmailService(IConfiguration configuration, ILogger<SmtpEmailSer
         mime.From.Add(new MailboxAddress(fromName, fromAddr));
         mime.To.Add(new MailboxAddress(message.ToName, message.To));
         mime.Subject = message.Subject;
-        mime.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = message.HtmlBody };
+
+        if (message.Attachments is { Count: > 0 })
+        {
+            var multipart = new Multipart("mixed");
+            multipart.Add(new TextPart(MimeKit.Text.TextFormat.Html) { Text = message.HtmlBody });
+            foreach (var att in message.Attachments)
+            {
+                var part = new MimePart(att.ContentType)
+                {
+                    Content = new MimeContent(new MemoryStream(att.Content)),
+                    ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                    ContentTransferEncoding = ContentEncoding.Base64,
+                    FileName = att.FileName,
+                };
+                multipart.Add(part);
+            }
+            mime.Body = multipart;
+        }
+        else
+        {
+            mime.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = message.HtmlBody };
+        }
 
         using var client = new SmtpClient();
         await client.ConnectAsync(host, port, SecureSocketOptions.StartTlsWhenAvailable, cancellationToken);

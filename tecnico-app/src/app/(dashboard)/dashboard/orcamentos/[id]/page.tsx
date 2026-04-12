@@ -3,11 +3,13 @@
 import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useQuote, useUpdateQuoteStatus, useSignQuote, useDeleteQuote } from '@/hooks/useQuotes'
+import { useQuote, useUpdateQuoteStatus, useSignQuote, useDeleteQuote, useSendQuoteEmail } from '@/hooks/useQuotes'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { SignatureModal } from '@/components/features/SignatureModal'
+import { UpgradeModal } from '@/components/features/UpgradeModal'
 import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils/formatters'
 import { quotesApi } from '@/lib/api/quotes'
+import { getErrorMessage, isPlanLimitError } from '@/lib/api/client'
 import type { QuoteStatus } from '@/types'
 
 const nextStatuses: Partial<Record<QuoteStatus, { status: QuoteStatus; label: string; bg: string; color: string }[]>> = {
@@ -27,8 +29,11 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   const updateStatus = useUpdateQuoteStatus()
   const signQuote = useSignQuote()
   const deleteQuote = useDeleteQuote()
+  const sendEmail = useSendQuoteEmail()
   const [pdfLoading, setPdfLoading] = useState(false)
   const [showSignModal, setShowSignModal] = useState(false)
+  const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null)
+  const [emailSent, setEmailSent] = useState(false)
 
   const handleStatusChange = (status: QuoteStatus) => {
     updateStatus.mutate({ id, status })
@@ -47,8 +52,20 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   const handleSign = (dataUrl: string) => {
     signQuote.mutate(
       { id, signatureDataUrl: dataUrl },
-      { onSuccess: () => setShowSignModal(false) }
+      {
+        onSuccess: () => setShowSignModal(false),
+        onError: (err) => {
+          setShowSignModal(false)
+          if (isPlanLimitError(err)) setUpgradeMessage(getErrorMessage(err))
+        },
+      }
     )
+  }
+
+  const handleSendEmail = () => {
+    sendEmail.mutate(id, {
+      onSuccess: () => setEmailSent(true),
+    })
   }
 
   const handleDelete = () => {
@@ -88,6 +105,12 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
           onConfirm={handleSign}
           onClose={() => setShowSignModal(false)}
           isLoading={signQuote.isPending}
+        />
+      )}
+      {upgradeMessage && (
+        <UpgradeModal
+          message={upgradeMessage}
+          onClose={() => setUpgradeMessage(null)}
         />
       )}
 
@@ -150,6 +173,21 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               {pdfLoading ? 'A gerar...' : 'PDF'}
             </button>
 
+            {/* Send email */}
+            <button
+              onClick={handleSendEmail}
+              disabled={sendEmail.isPending || emailSent}
+              className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+              style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'white' }}
+              onMouseEnter={(e) => { if (!sendEmail.isPending && !emailSent) e.currentTarget.style.backgroundColor = 'var(--color-canvas)' }}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M1 2l12 5-12 5V9l8-2-8-2V2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+              </svg>
+              {sendEmail.isPending ? 'A enviar...' : emailSent ? 'Enviado ✓' : 'Enviar'}
+            </button>
+
             {/* Sign */}
             {canSign && (
               <button
@@ -206,6 +244,21 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             ))}
           </div>
         </div>
+
+        {/* Email sent banner */}
+        {emailSent && (
+          <div
+            className="rounded-xl px-5 py-3.5 flex items-center gap-3"
+            style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M1.5 7l3.5 3.5 7.5-7" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <p className="text-sm font-medium" style={{ color: '#15803d' }}>
+              Orçamento enviado com sucesso por email para o cliente.
+            </p>
+          </div>
+        )}
 
         {/* Meta */}
         <div className="rounded-xl border divide-y" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>

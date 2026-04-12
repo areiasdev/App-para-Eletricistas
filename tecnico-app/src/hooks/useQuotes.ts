@@ -59,6 +59,12 @@ export function useSignQuote() {
   })
 }
 
+export function useSendQuoteEmail() {
+  return useMutation({
+    mutationFn: (id: string) => quotesApi.sendEmail(id),
+  })
+}
+
 export function useDeleteQuote() {
   const qc = useQueryClient()
   return useMutation({

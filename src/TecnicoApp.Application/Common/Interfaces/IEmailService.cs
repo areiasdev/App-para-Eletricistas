@@ -1,10 +1,13 @@
 namespace TecnicoApp.Application.Common.Interfaces;
 
+public record EmailAttachment(string FileName, byte[] Content, string ContentType);
+
 public record EmailMessage(
     string To,
     string ToName,
     string Subject,
-    string HtmlBody
+    string HtmlBody,
+    IReadOnlyList<EmailAttachment>? Attachments = null
 );
 
 public interface IEmailService
