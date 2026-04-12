@@ -416,3 +416,15 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Next.js
+tecnico-app/.next/
+tecnico-app/out/
+tecnico-app/.env.local
+
+# Claude Code
+.claude/
+
+# App secrets
+appsettings.Production.json
+appsettings.Local.json
