@@ -38,7 +38,7 @@ public class GenerateQuotePdfQueryHandler(
                 l.Quantity,
                 l.UnitPrice,
                 l.VatRate,
-                l.Quantity * l.UnitPrice * (1 + l.VatRate / 100)))
+                Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
             .ToList();
 
         var pdfData = new QuotePdfData(

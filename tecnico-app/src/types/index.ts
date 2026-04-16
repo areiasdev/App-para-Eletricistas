@@ -1,5 +1,13 @@
 export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected' | 'Invoiced'
 export type InterventionStatus = 'Scheduled' | 'InProgress' | 'Completed'
+export type Plan = 'Free' | 'Pro' | 'Team' | 'Enterprise'
+export type UserRole = 'Owner' | 'Admin' | 'Technician' | 'Commercial'
+
+export interface InterventionMaterial {
+  name: string
+  quantity: number
+  unitCost: number
+}
 
 export interface InterventionEquipment {
   id: string
@@ -16,6 +24,10 @@ export interface Intervention {
   scheduledAt?: string
   completedAt?: string
   technicianNotes?: string
+  photos: string[]
+  materials: InterventionMaterial[]
+  assignedToUserId?: string
+  assignedToName?: string
   clientId: string
   clientName: string
   quoteId?: string
@@ -23,7 +35,16 @@ export interface Intervention {
   equipment: InterventionEquipment[]
   createdAt: string
 }
-export type Plan = 'Free' | 'Pro' | 'Team'
+
+export interface TeamMember {
+  id: string
+  memberId: string
+  fullName: string
+  email: string
+  role: UserRole
+  isAccepted: boolean
+  createdAt: string
+}
 
 export interface User {
   id: string

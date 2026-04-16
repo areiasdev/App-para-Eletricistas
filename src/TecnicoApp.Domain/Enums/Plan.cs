@@ -4,5 +4,6 @@ public enum Plan
 {
     Free,
     Pro,
-    Team
+    Team,
+    Enterprise
 }

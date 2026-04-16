@@ -14,6 +14,12 @@ public class GetInterventionByIdQueryHandler(IAppDbContext db, ICurrentUserServi
     {
         var userId = currentUser.UserId;
 
+        // Resolve ownerId: team members see their owner's data
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var intervention = await db.Interventions
             .AsNoTracking()
             .Include(i => i.Client)
@@ -24,8 +30,18 @@ public class GetInterventionByIdQueryHandler(IAppDbContext db, ICurrentUserServi
         if (intervention is null)
             return Result.NotFound();
 
-        if (intervention.UserId != userId)
+        if (intervention.UserId != ownerId)
             return Result.Forbidden();
+
+        // Resolve assigned-to name if present
+        string? assignedToName = null;
+        if (intervention.AssignedToUserId.HasValue)
+        {
+            assignedToName = await db.Users.AsNoTracking()
+                .Where(u => u.Id == intervention.AssignedToUserId.Value)
+                .Select(u => u.FullName)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
 
         return Result.Success(new InterventionDto(
             intervention.Id,
@@ -35,10 +51,14 @@ public class GetInterventionByIdQueryHandler(IAppDbContext db, ICurrentUserServi
             intervention.ScheduledAt,
             intervention.CompletedAt,
             intervention.TechnicianNotes,
+            intervention.Photos,
+            intervention.Materials,
             intervention.ClientId,
             intervention.Client.Name,
             intervention.QuoteId,
             intervention.Quote?.Number,
+            intervention.AssignedToUserId,
+            assignedToName,
             intervention.Equipment
                 .Select(e => new InterventionEquipmentDto(e.Id, e.Type, e.Brand, e.Model))
                 .ToList(),

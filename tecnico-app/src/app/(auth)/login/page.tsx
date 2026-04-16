@@ -129,7 +129,17 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm" style={{ color: 'var(--color-muted)' }}>
+          <p className="mt-4 text-center text-sm">
+            <Link
+              href="/esqueci-password"
+              className="font-medium transition-colors"
+              style={{ color: 'var(--color-muted)' }}
+            >
+              Esqueceste a password?
+            </Link>
+          </p>
+
+          <p className="mt-4 text-center text-sm" style={{ color: 'var(--color-muted)' }}>
             Não tens conta?{' '}
             <Link
               href="/register"
@@ -149,7 +159,7 @@ export default function LoginPage() {
           border: 1.5px solid var(--color-line-strong);
           padding: 0.625rem 0.875rem;
           font-size: 0.875rem;
-          background-color: white;
+          background-color: var(--color-canvas);
           color: var(--color-ink);
           outline: none;
           transition: border-color 0.15s;

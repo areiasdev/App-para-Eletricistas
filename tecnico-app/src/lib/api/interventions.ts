@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Intervention, InterventionStatus, PaginatedResult } from '@/types'
+import type { Intervention, InterventionMaterial, InterventionStatus, PaginatedResult } from '@/types'
 
 export interface InterventionListItem {
   id: string
@@ -20,6 +20,9 @@ export interface CreateInterventionRequest {
   scheduledAt?: string
   quoteId?: string
   equipmentIds: string[]
+  photos?: string[]
+  materials?: InterventionMaterial[]
+  assignedToUserId?: string
 }
 
 export interface UpdateInterventionRequest {
@@ -29,6 +32,9 @@ export interface UpdateInterventionRequest {
   technicianNotes?: string
   quoteId?: string
   equipmentIds: string[]
+  photos?: string[]
+  materials?: InterventionMaterial[]
+  assignedToUserId?: string
 }
 
 export const interventionsApi = {

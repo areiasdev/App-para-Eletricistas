@@ -63,7 +63,7 @@ public class EquipmentController(IMediator mediator) : ControllerBase
     {
         var command = new UpdateEquipmentCommand(
             id, request.Type, request.Brand, request.Model, request.SerialNumber,
-            request.InstalledAt, request.NextMaintenance, request.Notes);
+            request.InstalledAt, request.NextMaintenance, request.Notes, request.Photos);
 
         var result = await mediator.Send(command, ct);
         return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
@@ -86,5 +86,6 @@ public record UpdateEquipmentRequest(
     string? SerialNumber,
     DateTime? InstalledAt,
     DateTime? NextMaintenance,
-    string? Notes
+    string? Notes,
+    IReadOnlyList<string>? Photos
 );

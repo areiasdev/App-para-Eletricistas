@@ -25,7 +25,7 @@ export function UpgradeModal({ message, onClose }: UpgradeModalProps) {
     >
       <div
         className="relative w-full max-w-sm rounded-2xl p-7 shadow-2xl"
-        style={{ backgroundColor: 'white' }}
+        style={{ backgroundColor: 'var(--color-card)' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
@@ -61,7 +61,7 @@ export function UpgradeModal({ message, onClose }: UpgradeModalProps) {
           <button
             onClick={onClose}
             className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all duration-150"
-            style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'white' }}
+            style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
           >
             Agora não
           </button>

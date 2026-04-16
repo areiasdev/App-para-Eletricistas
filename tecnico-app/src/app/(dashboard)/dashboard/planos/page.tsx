@@ -12,50 +12,80 @@ const plans = [
     name: 'Free',
     price: '€0',
     period: '/mês',
-    description: 'Para começar a testar a plataforma.',
+    description: 'Para experimentar sem compromisso.',
     features: [
       'Até 5 clientes',
       'Até 10 orçamentos/mês',
+      '1 utilizador',
       'PDF de orçamentos',
       'Gestão de equipamentos',
       'Dashboard básico',
     ],
     cta: 'Plano atual',
     highlight: false,
+    enterprise: false,
   },
   {
     id: 'Pro' as const,
     name: 'Pro',
-    price: '€29',
+    price: '€19',
     period: '/mês',
-    description: 'Para técnicos que trabalham a sério.',
+    description: 'Para o técnico independente.',
     features: [
       'Clientes ilimitados',
-      'Orçamentos ilimitados',
-      'PDF + assinatura digital',
-      'Intervenções ilimitadas',
-      'Alertas de manutenção',
-      'Dashboard avançado',
-      'Suporte prioritário',
+      'Orçamentos + intervenções ilimitados',
+      '1 utilizador',
+      'PDF com assinatura digital',
+      'Alertas de manutenção automáticos',
+      'Dashboard com métricas',
+      'Suporte por email',
     ],
     cta: 'Subscrever Pro',
     highlight: true,
+    enterprise: false,
   },
   {
     id: 'Team' as const,
     name: 'Team',
-    price: '€59',
+    price: '€39',
     period: '/mês',
-    description: 'Para equipas de 2 a 10 técnicos.',
+    description: 'Para equipas de 2 a 5 técnicos.',
     features: [
       'Tudo do Pro',
-      'Até 10 utilizadores',
-      'Gestão de equipa',
+      'Até 5 utilizadores',
+      'Atribuição de tarefas por técnico',
       'Relatórios de equipa',
-      'Suporte dedicado',
+      'Exportação Excel/CSV',
+      'Suporte prioritário via chat',
     ],
     cta: 'Subscrever Team',
     highlight: false,
+    enterprise: false,
+  },
+  {
+    id: 'Enterprise' as const,
+    name: 'Enterprise',
+    price: '€199',
+    period: '/mês',
+    description: 'Para empresas com 6+ técnicos.',
+    features: [
+      'Tudo do Team',
+      'Utilizadores ilimitados',
+      'Portal do cliente (histórico + certificados)',
+      'Faturação automática pós-intervenção',
+      'Contratos de manutenção com SLA',
+      'Integração Primavera / PHC / Moloni',
+      'Relatórios de rentabilidade por técnico e cliente',
+      'Gestão de stock e materiais por intervenção',
+      'Roles e permissões (admin, técnico, comercial)',
+      'Audit log completo',
+      'SLA de suporte em 4h em dia útil',
+      'Onboarding e formação incluídos',
+      'Faturação anual — 2 meses grátis',
+    ],
+    cta: 'Falar com vendas',
+    highlight: false,
+    enterprise: true,
   },
 ]
 
@@ -150,7 +180,7 @@ function PlanosPageInner() {
       {billing?.hasActiveSubscription && (
         <div
           className="rounded-xl border px-5 py-4 flex items-center justify-between"
-          style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}
+          style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}
         >
           <div>
             <p className="text-sm font-medium" style={{ color: 'var(--color-ink)' }}>Gerir subscrição</p>
@@ -162,7 +192,7 @@ function PlanosPageInner() {
             onClick={handlePortal}
             disabled={portalLoading}
             className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
-            style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'white' }}
+            style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
           >
             {portalLoading ? 'A abrir...' : 'Painel de faturação →'}
           </button>
@@ -170,17 +200,94 @@ function PlanosPageInner() {
       )}
 
       {/* Plan cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {plans.map((plan) => {
           const isCurrent = currentPlan === plan.id
-          const isPaid = plan.id !== 'Free'
+          const isEnterprise = plan.enterprise
+          const isStripe = !isEnterprise && plan.id !== 'Free'
 
+          // Enterprise card — dark premium look
+          if (isEnterprise) {
+            return (
+              <div
+                key={plan.id}
+                className="rounded-2xl flex flex-col relative overflow-hidden"
+                style={{
+                  background: 'linear-gradient(160deg, #1c1917 0%, #292524 60%, #1c1917 100%)',
+                  border: '1px solid rgba(245,158,11,0.3)',
+                  boxShadow: '0 0 0 3px rgba(245,158,11,0.08)',
+                }}
+              >
+                <div
+                  className="rounded-t-2xl px-5 py-1.5 text-center"
+                  style={{ backgroundColor: 'rgba(245,158,11,0.15)', borderBottom: '1px solid rgba(245,158,11,0.2)' }}
+                >
+                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-brand-500)' }}>
+                    Para empresas
+                  </span>
+                </div>
+
+                <div className="flex-1 p-7 flex flex-col">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'rgba(245,158,11,0.7)' }}>
+                    {plan.name}
+                  </p>
+
+                  <div className="flex items-end gap-1 mb-2">
+                    <span className="text-4xl font-bold" style={{ color: 'white' }}>{plan.price}</span>
+                    <span className="text-sm pb-1" style={{ color: 'rgba(255,255,255,0.4)' }}>{plan.period}</span>
+                  </div>
+
+                  <p className="text-sm mb-6" style={{ color: 'rgba(255,255,255,0.5)' }}>{plan.description}</p>
+
+                  <ul className="space-y-2.5 flex-1">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2.5 text-sm">
+                        <span
+                          className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                          style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: 'var(--color-brand-500)' }}
+                        >
+                          <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
+                            <path d="M1 3l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </span>
+                        <span style={{ color: 'rgba(255,255,255,0.75)' }}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-8 space-y-3">
+                    {isCurrent ? (
+                      <div
+                        className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-center"
+                        style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: 'var(--color-brand-500)' }}
+                      >
+                        Plano atual ✓
+                      </div>
+                    ) : (
+                      <a
+                        href="mailto:vendas@tecnicoapp.pt?subject=Enterprise%20%E2%80%94%20Quero%20saber%20mais"
+                        className="block w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-center transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
+                        style={{ backgroundColor: 'var(--color-brand-500)', color: '#1c1917' }}
+                      >
+                        {plan.cta} →
+                      </a>
+                    )}
+                    <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      Resposta em 1 dia útil · Demo incluída
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          // Standard cards (Free, Pro, Team)
           return (
             <div
               key={plan.id}
               className="rounded-2xl border flex flex-col"
               style={{
-                backgroundColor: plan.highlight ? 'var(--color-sidebar)' : 'white',
+                backgroundColor: plan.highlight ? 'var(--color-sidebar)' : 'var(--color-card)',
                 borderColor: plan.highlight ? 'var(--color-brand-500)' : 'var(--color-line)',
                 boxShadow: plan.highlight ? '0 0 0 3px rgba(245,158,11,0.15)' : 'none',
               }}
@@ -258,14 +365,14 @@ function PlanosPageInner() {
                     >
                       Plano atual ✓
                     </div>
-                  ) : isPaid ? (
+                  ) : isStripe ? (
                     <button
                       onClick={() => handleSubscribe(plan.id as 'Pro' | 'Team')}
                       disabled={loadingPlan !== null}
                       className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110 active:scale-[0.99]"
                       style={{
                         backgroundColor: plan.highlight ? 'var(--color-brand-500)' : 'var(--color-ink)',
-                        color: plan.highlight ? 'var(--color-sidebar)' : 'white',
+                        color: plan.highlight ? 'var(--color-sidebar)' : 'var(--color-card)',
                       }}
                     >
                       {loadingPlan === plan.id ? 'A redirecionar...' : plan.cta}
@@ -286,7 +393,7 @@ function PlanosPageInner() {
       </div>
 
       <p className="text-xs text-center" style={{ color: 'var(--color-subtle)' }}>
-        Preços em EUR, IVA incluído. Pode cancelar a qualquer momento pelo painel de faturação Stripe.
+        Preços em EUR, IVA incluído. Pro e Team: cancela a qualquer momento. Enterprise: contrato anual com 2 meses grátis.
       </p>
     </div>
   )

@@ -1,0 +1,19 @@
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+*.user
+
+# Node
+tecnico-app/node_modules/
+tecnico-app/.next/
+tecnico-app/.env.local
+
+# Git / IDE
+.git/
+.gitignore
+**/.DS_Store
+
+# Docker
+docker-compose.env
+**/Dockerfile

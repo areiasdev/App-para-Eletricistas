@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Stripe;
 using TecnicoApp.Application.Common.Interfaces;
 using AppPlan = TecnicoApp.Domain.Enums.Plan;
@@ -10,15 +11,15 @@ using TecnicoApp.Infrastructure.Persistence;
 namespace TecnicoApp.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/v1/[controller]")]
 public class BillingController(
     IStripeService stripeService,
     ICurrentUserService currentUser,
     AppDbContext db,
-    IConfiguration configuration) : ControllerBase
+    IConfiguration configuration,
+    ILogger<BillingController> logger) : ControllerBase
 {
-    private static readonly Dictionary<string, Plan> PlanByPriceId = [];
-
     [HttpGet("me")]
     [Authorize]
     [ProducesResponseType(typeof(BillingMeResponse), StatusCodes.Status200OK)]
@@ -59,7 +60,9 @@ public class BillingController(
         if (string.IsNullOrWhiteSpace(priceId))
             return BadRequest(new { detail = "Plano inválido." });
 
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        if (!IsAllowedFrontendUrl(request.FrontendUrl))
+            return BadRequest(new { detail = "FrontendUrl inválido." });
+
         var successUrl = $"{request.FrontendUrl}/dashboard/planos?success=true";
         var cancelUrl  = $"{request.FrontendUrl}/dashboard/planos";
 
@@ -85,6 +88,9 @@ public class BillingController(
 
         if (string.IsNullOrWhiteSpace(user.StripeCustomerId))
             return BadRequest(new { detail = "Sem subscrição activa." });
+
+        if (!IsAllowedFrontendUrl(request.FrontendUrl))
+            return BadRequest(new { detail = "FrontendUrl inválido." });
 
         var returnUrl = $"{request.FrontendUrl}/dashboard/planos";
         var url = await stripeService.CreatePortalSessionAsync(user.StripeCustomerId, returnUrl, ct);
@@ -166,6 +172,18 @@ public class BillingController(
         }
 
         return Ok();
+    }
+
+    private bool IsAllowedFrontendUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            return false;
+        if (uri.Scheme != "https" && !uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+            return false;
+        var allowed = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+        return allowed.Any(origin =>
+            Uri.TryCreate(origin, UriKind.Absolute, out var o) &&
+            string.Equals(o.Host, uri.Host, StringComparison.OrdinalIgnoreCase));
     }
 }
 

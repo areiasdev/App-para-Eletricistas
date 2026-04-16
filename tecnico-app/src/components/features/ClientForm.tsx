@@ -56,7 +56,7 @@ export function ClientForm({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
       {/* Dados principais */}
-      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
           <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
             Dados do cliente
@@ -64,8 +64,9 @@ export function ClientForm({
         </div>
 
         <div className="p-5 space-y-4">
-          <FormField label="Nome *" error={errors.name?.message}>
+          <FormField label="Nome *" id="cf-name" error={errors.name?.message}>
             <input
+              id="cf-name"
               {...register('name')}
               placeholder="Ex: João Silva"
               className="form-input"
@@ -74,8 +75,9 @@ export function ClientForm({
           </FormField>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="NIF" error={errors.nif?.message}>
+            <FormField label="NIF" id="cf-nif" error={errors.nif?.message}>
               <input
+                id="cf-nif"
                 {...register('nif')}
                 maxLength={9}
                 placeholder="123456789"
@@ -83,8 +85,9 @@ export function ClientForm({
                 style={{ borderColor: errors.nif ? '#fca5a5' : 'var(--color-line-strong)' }}
               />
             </FormField>
-            <FormField label="Telefone" error={errors.phone?.message}>
+            <FormField label="Telefone" id="cf-phone" error={errors.phone?.message}>
               <input
+                id="cf-phone"
                 {...register('phone')}
                 placeholder="+351 912 345 678"
                 className="form-input"
@@ -93,8 +96,9 @@ export function ClientForm({
             </FormField>
           </div>
 
-          <FormField label="Email" error={errors.email?.message}>
+          <FormField label="Email" id="cf-email" error={errors.email?.message}>
             <input
+              id="cf-email"
               type="email"
               {...register('email')}
               placeholder="cliente@exemplo.pt"
@@ -103,8 +107,9 @@ export function ClientForm({
             />
           </FormField>
 
-          <FormField label="Notas internas" error={errors.notes?.message}>
+          <FormField label="Notas internas" id="cf-notes" error={errors.notes?.message}>
             <textarea
+              id="cf-notes"
               {...register('notes')}
               rows={3}
               placeholder="Observações sobre o cliente..."
@@ -116,7 +121,7 @@ export function ClientForm({
       </section>
 
       {/* Morada */}
-      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
           <label htmlFor="hasAddress" className="flex items-center gap-2.5 cursor-pointer">
             <input
@@ -134,8 +139,9 @@ export function ClientForm({
 
         {hasAddress && (
           <div className="p-5 space-y-4">
-            <FormField label="Rua *" error={errors.address?.street?.message}>
+            <FormField label="Rua *" id="cf-street" error={errors.address?.street?.message}>
               <input
+                id="cf-street"
                 {...register('address.street')}
                 placeholder="Ex: Rua das Flores, 123"
                 className="form-input"
@@ -143,16 +149,18 @@ export function ClientForm({
               />
             </FormField>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label="Cidade *" error={errors.address?.city?.message}>
+              <FormField label="Cidade *" id="cf-city" error={errors.address?.city?.message}>
                 <input
+                  id="cf-city"
                   {...register('address.city')}
                   placeholder="Ex: Lisboa"
                   className="form-input"
                   style={{ borderColor: errors.address?.city ? '#fca5a5' : 'var(--color-line-strong)' }}
                 />
               </FormField>
-              <FormField label="Código postal *" error={errors.address?.postalCode?.message}>
+              <FormField label="Código postal *" id="cf-postal" error={errors.address?.postalCode?.message}>
                 <input
+                  id="cf-postal"
                   {...register('address.postalCode')}
                   placeholder="1000-001"
                   className="form-input"
@@ -182,7 +190,7 @@ export function ClientForm({
           border: 1.5px solid var(--color-line-strong);
           padding: 0.5rem 0.75rem;
           font-size: 0.875rem;
-          background-color: white;
+          background-color: var(--color-card);
           color: var(--color-ink);
           outline: none;
           transition: border-color 0.15s, box-shadow 0.15s;
@@ -200,10 +208,10 @@ export function ClientForm({
   )
 }
 
-function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FormField({ label, id, error, children }: { label: string; id?: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
+      <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
         {label}
       </label>
       {children}

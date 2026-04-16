@@ -21,4 +21,10 @@ export const authApi = {
 
   refresh: (refreshToken: string) =>
     api.post<AuthResponse>('/auth/refresh', { refreshToken }).then((r) => r.data),
+
+  forgotPassword: (email: string) =>
+    api.post('/auth/forgot-password', { email }),
+
+  resetPassword: (data: { email: string; token: string; newPassword: string }) =>
+    api.post('/auth/reset-password', data),
 }

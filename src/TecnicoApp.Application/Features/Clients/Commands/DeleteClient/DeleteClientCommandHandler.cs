@@ -22,9 +22,35 @@ public sealed class DeleteClientCommandHandler(
         if (client is null)
             return Result.NotFound("Cliente não encontrado.");
 
+        var now = DateTime.UtcNow;
+        var email = currentUser.Email;
+
         client.IsDeleted = true;
-        client.ModifiedBy = currentUser.Email;
-        client.ModifiedAt = DateTime.UtcNow;
+        client.ModifiedBy = email;
+        client.ModifiedAt = now;
+
+        // Cascade soft-delete to equipment and interventions belonging to this client
+        var clientEquipment = await db.Equipment
+            .Where(e => e.ClientId == command.ClientId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var eq in clientEquipment)
+        {
+            eq.IsDeleted = true;
+            eq.ModifiedAt = now;
+            eq.ModifiedBy = email;
+        }
+
+        var clientInterventions = await db.Interventions
+            .Where(i => i.ClientId == command.ClientId)
+            .ToListAsync(cancellationToken);
+
+        foreach (var iv in clientInterventions)
+        {
+            iv.IsDeleted = true;
+            iv.ModifiedAt = now;
+            iv.ModifiedBy = email;
+        }
 
         await db.SaveChangesAsync(cancellationToken);
 

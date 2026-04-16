@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Quotes.DTOs;
 using TecnicoApp.Domain.Entities;
@@ -8,7 +9,7 @@ using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.CreateQuote;
 
-public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService currentUser)
+public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService currentUser, ILogger<CreateQuoteCommandHandler> logger)
     : IRequestHandler<CreateQuoteCommand, Result<QuoteDto>>
 {
     public async Task<Result<QuoteDto>> Handle(
@@ -71,7 +72,21 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         };
 
         db.Quotes.Add(quote);
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("quotes_number") == true)
+        {
+            // Unique constraint violation on Number — concurrent request generated same number
+            logger.LogWarning("Quote number conflict for {Number}, retrying.", number);
+            db.Quotes.Remove(quote);
+            var retryCount = await db.Quotes
+                .CountAsync(q => q.UserId == userId && q.CreatedAt.Year == year, cancellationToken);
+            quote.Number = $"ORC-{year}-{(retryCount + 1):D4}";
+            db.Quotes.Add(quote);
+            await db.SaveChangesAsync(cancellationToken);
+        }
 
         var dto = new QuoteDto(
             quote.Id,
@@ -90,7 +105,7 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
             quote.Lines
                 .Select(l => new QuoteLineDto(
                     l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
-                    l.Quantity * l.UnitPrice * (1 + l.VatRate / 100)))
+                    Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
                 .ToList(),
             quote.CreatedAt
         );

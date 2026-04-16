@@ -21,7 +21,7 @@ function StatCard({
     <div
       className="rounded-xl border p-5 transition-all duration-150 hover:shadow-sm group h-full flex flex-col justify-between"
       style={{
-        backgroundColor: accent ? 'var(--color-brand-500)' : 'white',
+        backgroundColor: accent ? 'var(--color-brand-500)' : 'var(--color-card)',
         borderColor: accent ? 'var(--color-brand-600)' : 'var(--color-line)',
         minHeight: '6rem',
       }}
@@ -52,7 +52,7 @@ function StatCard({
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: dashboardApi.getStats,
   })
@@ -72,11 +72,17 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {isError && (
+        <p className="text-sm rounded-xl px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+          Erro ao carregar estatísticas. Tenta recarregar a página.
+        </p>
+      )}
+
       {/* Stats */}
       {isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 stagger">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border p-5 animate-pulse" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+            <div key={i} className="rounded-xl border p-5 animate-pulse" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
               <div className="h-3 rounded w-2/3 mb-4" style={{ backgroundColor: 'var(--color-line)' }} />
               <div className="h-8 rounded w-1/2" style={{ backgroundColor: 'var(--color-line)' }} />
             </div>
@@ -141,7 +147,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+        <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
           {isLoading ? (
             <div className="p-6 space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -213,7 +219,7 @@ export default function DashboardPage() {
               Ver equipamentos →
             </Link>
           </div>
-          <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+          <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
             <table className="min-w-full">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-line)' }}>

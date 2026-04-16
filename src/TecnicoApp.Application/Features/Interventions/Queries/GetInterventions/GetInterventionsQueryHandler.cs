@@ -15,9 +15,15 @@ public class GetInterventionsQueryHandler(IAppDbContext db, ICurrentUserService 
     {
         var userId = currentUser.UserId;
 
+        // Resolve ownerId: team members see their owner's data
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var query = db.Interventions
             .AsNoTracking()
-            .Where(i => i.UserId == userId);
+            .Where(i => i.UserId == ownerId);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

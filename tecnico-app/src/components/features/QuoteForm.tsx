@@ -60,7 +60,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
       {/* ── Section 1: Dados gerais ── */}
-      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
           <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
             Dados gerais
@@ -68,8 +68,9 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
         </div>
 
         <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField label="Cliente *" error={errors.clientId?.message}>
+          <FormField label="Cliente *" id="qf-client" error={errors.clientId?.message}>
             <select
+              id="qf-client"
               {...register('clientId')}
               style={{
                 borderColor: errors.clientId ? '#fca5a5' : 'var(--color-line-strong)',
@@ -84,8 +85,9 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
             </select>
           </FormField>
 
-          <FormField label="Válido até" error={errors.validUntil?.message}>
+          <FormField label="Válido até" id="qf-valid-until" error={errors.validUntil?.message}>
             <input
+              id="qf-valid-until"
               type="date"
               {...register('validUntil')}
               className="form-input"
@@ -93,8 +95,9 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
             />
           </FormField>
 
-          <FormField label="Desconto (€)" error={errors.discount?.message}>
+          <FormField label="Desconto (€)" id="qf-discount" error={errors.discount?.message}>
             <input
+              id="qf-discount"
               type="number"
               step="0.01"
               min="0"
@@ -107,8 +110,9 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
         </div>
 
         <div className="px-5 pb-5">
-          <FormField label="Notas internas" error={errors.notes?.message}>
+          <FormField label="Notas internas" id="qf-notes" error={errors.notes?.message}>
             <textarea
+              id="qf-notes"
               {...register('notes')}
               rows={2}
               placeholder="Observações, condições, etc."
@@ -120,7 +124,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
       </section>
 
       {/* ── Section 2: Linhas ── */}
-      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <div className="px-5 py-3.5 border-b flex items-center justify-between" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
           <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
             Itens / Serviços
@@ -304,7 +308,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
           border: 1.5px solid var(--color-line-strong);
           padding: 0.5rem 0.75rem;
           font-size: 0.875rem;
-          background-color: white;
+          background-color: var(--color-card);
           color: var(--color-ink);
           outline: none;
           transition: border-color 0.15s, box-shadow 0.15s;
@@ -322,10 +326,10 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
   )
 }
 
-function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FormField({ label, id, error, children }: { label: string; id?: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
+      <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
         {label}
       </label>
       {children}

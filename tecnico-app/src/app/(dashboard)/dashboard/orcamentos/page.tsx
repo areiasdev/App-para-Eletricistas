@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { useQuotes, useDeleteQuote } from '@/hooks/useQuotes'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { formatDate, formatCurrency } from '@/lib/utils/formatters'
@@ -17,7 +19,10 @@ const statusOptions: { value: QuoteStatus | ''; label: string }[] = [
   { value: 'Invoiced', label: 'Faturado' },
 ]
 
-export default function OrcamentosPage() {
+function OrcamentosContent() {
+  const searchParams = useSearchParams()
+  const clientIdFilter = searchParams.get('clientId') ?? undefined
+
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [status, setStatus] = useState<QuoteStatus | ''>('')
@@ -26,6 +31,7 @@ export default function OrcamentosPage() {
   const { data, isLoading, isError, error } = useQuotes({
     search: debouncedSearch || undefined,
     status: status || undefined,
+    clientId: clientIdFilter,
     page,
     pageSize: 20,
   })
@@ -41,7 +47,10 @@ export default function OrcamentosPage() {
 
   const handleDelete = (id: string, number: string) => {
     if (!confirm(`Apagar o orçamento ${number}?`)) return
-    deleteQuote.mutate(id)
+    deleteQuote.mutate(id, {
+      onSuccess: () => toast.success('Orçamento apagado.'),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
   }
 
   return (
@@ -49,106 +58,140 @@ export default function OrcamentosPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Orçamentos</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {data ? `${data.totalCount} orçamento${data.totalCount !== 1 ? 's' : ''}` : ''}
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Orçamentos</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
+            {data ? `${data.totalCount} orçamento${data.totalCount !== 1 ? 's' : ''}` : '\u00a0'}
           </p>
         </div>
         <Link
           href="/dashboard/orcamentos/novo"
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 transition-colors"
+          className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
         >
           + Novo Orçamento
         </Link>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-3 flex-wrap items-center">
         <input
           type="search"
           placeholder="Pesquisar por número ou cliente..."
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 w-64"
+          className="rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150 w-64"
+          style={{ border: '1.5px solid var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)' }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
         />
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value as QuoteStatus | ''); setPage(1) }}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150"
+          style={{ border: '1.5px solid var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)' }}
+          onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
         >
           {statusOptions.map(o => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
+        {clientIdFilter && (
+          <Link
+            href="/dashboard/orcamentos"
+            className="text-xs font-medium rounded-lg px-3 py-2 border transition-colors duration-150"
+            style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}
+          >
+            × Limpar filtro de cliente
+          </Link>
+        )}
       </div>
 
       {/* Error */}
       {isError && (
-        <p className="text-sm text-red-600 bg-red-50 rounded-md px-4 py-3">
+        <p className="text-sm rounded-xl px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
           {getErrorMessage(error)}
         </p>
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
+      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+        <table className="min-w-full">
+          <thead>
+            <tr style={{ borderBottom: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
               {['Número', 'Cliente', 'Estado', 'Total', 'Válido até', 'Data', ''].map((h) => (
                 <th
                   key={h}
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: 'var(--color-muted)' }}
                 >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {isLoading &&
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={i}>
-                  {Array.from({ length: 7 }).map((_, j) => (
-                    <td key={j} className="px-6 py-4">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse" />
-                    </td>
-                  ))}
-                </tr>
-              ))}
+          <tbody>
+            {isLoading && Array.from({ length: 5 }).map((_, i) => (
+              <tr key={i} style={{ borderBottom: '1px solid var(--color-line)' }}>
+                {Array.from({ length: 7 }).map((_, j) => (
+                  <td key={j} className="px-5 py-4">
+                    <div className="h-4 rounded animate-pulse" style={{ backgroundColor: 'var(--color-line)' }} />
+                  </td>
+                ))}
+              </tr>
+            ))}
 
             {!isLoading && data?.items.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-400">
-                  {debouncedSearch || status
+                <td colSpan={7} className="px-5 py-14 text-center text-sm" style={{ color: 'var(--color-subtle)' }}>
+                  {debouncedSearch || status || clientIdFilter
                     ? 'Nenhum orçamento encontrado.'
-                    : 'Ainda não tens orçamentos. Cria o primeiro!'}
+                    : <>Ainda não tens orçamentos.{' '}
+                        <Link href="/dashboard/orcamentos/novo" className="font-medium underline underline-offset-2" style={{ color: 'var(--color-brand-600)' }}>
+                          Cria o primeiro
+                        </Link>
+                      </>}
                 </td>
               </tr>
             )}
 
             {data?.items.map((quote) => (
-              <tr key={quote.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  <Link href={`/dashboard/orcamentos/${quote.id}`} className="hover:text-blue-600 font-mono">
+              <tr
+                key={quote.id}
+                style={{ borderBottom: '1px solid var(--color-line)' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '')}
+              >
+                <td className="px-5 py-3.5">
+                  <Link
+                    href={`/dashboard/orcamentos/${quote.id}`}
+                    className="text-sm font-mono font-medium transition-colors duration-150"
+                    style={{ color: 'var(--color-ink)' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-500)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-ink)')}
+                  >
                     {quote.number}
                   </Link>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{quote.clientName}</td>
-                <td className="px-6 py-4">
+                <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{quote.clientName}</td>
+                <td className="px-5 py-3.5">
                   <QuoteStatusBadge status={quote.status} />
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                <td className="px-5 py-3.5 text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
                   {formatCurrency(quote.total)}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>
                   {quote.validUntil ? formatDate(quote.validUntil) : '—'}
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{formatDate(quote.createdAt)}</td>
-                <td className="px-6 py-4 text-right text-sm">
+                <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-subtle)' }}>{formatDate(quote.createdAt)}</td>
+                <td className="px-5 py-3.5">
                   <div className="flex justify-end gap-3">
                     <Link
                       href={`/dashboard/orcamentos/${quote.id}`}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-xs font-medium transition-colors duration-150"
+                      style={{ color: 'var(--color-muted)' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-500)')}
+                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
                     >
                       Ver
                     </Link>
@@ -156,13 +199,19 @@ export default function OrcamentosPage() {
                       <>
                         <Link
                           href={`/dashboard/orcamentos/${quote.id}/editar`}
-                          className="text-gray-600 hover:text-gray-800"
+                          className="text-xs font-medium transition-colors duration-150"
+                          style={{ color: 'var(--color-muted)' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-ink)')}
+                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
                         >
                           Editar
                         </Link>
                         <button
                           onClick={() => handleDelete(quote.id, quote.number)}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-xs font-medium transition-colors duration-150"
+                          style={{ color: 'var(--color-subtle)' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
                         >
                           Apagar
                         </button>
@@ -178,20 +227,22 @@ export default function OrcamentosPage() {
 
       {/* Pagination */}
       {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-gray-500">
+        <div className="flex items-center justify-between text-sm" style={{ color: 'var(--color-muted)' }}>
           <span>Página {data.page} de {data.totalPages}</span>
           <div className="flex gap-2">
             <button
               disabled={!data.hasPreviousPage}
               onClick={() => setPage((p) => p - 1)}
-              className="px-3 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              className="px-3 py-1.5 rounded-lg border text-sm font-medium disabled:opacity-40"
+              style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
             >
               ← Anterior
             </button>
             <button
               disabled={!data.hasNextPage}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1 rounded border border-gray-300 disabled:opacity-40 hover:bg-gray-50"
+              className="px-3 py-1.5 rounded-lg border text-sm font-medium disabled:opacity-40"
+              style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
             >
               Próxima →
             </button>
@@ -199,5 +250,13 @@ export default function OrcamentosPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function OrcamentosPage() {
+  return (
+    <Suspense fallback={<div className="h-8 w-48 rounded animate-pulse" style={{ backgroundColor: 'var(--color-line)' }} />}>
+      <OrcamentosContent />
+    </Suspense>
   )
 }

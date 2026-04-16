@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { Sidebar } from '@/components/shared/Sidebar'
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -24,8 +25,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'var(--color-canvas)' }}>
       <Sidebar />
-      <main className="flex-1 overflow-y-auto relative">
-        <div className="p-8 max-w-5xl mx-auto animate-fade-up">{children}</div>
+      {/* pt-14 on mobile to clear the fixed top bar; lg:pt-0 since sidebar is inline */}
+      <main className="flex-1 overflow-y-auto relative pt-14 lg:pt-0">
+        <div className="p-6 lg:p-8 max-w-5xl mx-auto animate-fade-up">
+            <ErrorBoundary>{children}</ErrorBoundary>
+          </div>
       </main>
     </div>
   )

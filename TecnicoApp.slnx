@@ -5,4 +5,7 @@
     <Project Path="src/TecnicoApp.Domain/TecnicoApp.Domain.csproj" />
     <Project Path="src/TecnicoApp.Infrastructure/TecnicoApp.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TecnicoApp.UnitTests/TecnicoApp.UnitTests.csproj" />
+  </Folder>
 </Solution>

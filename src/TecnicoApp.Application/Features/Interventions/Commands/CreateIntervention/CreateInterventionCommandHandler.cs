@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Interventions.DTOs;
 using TecnicoApp.Domain.Entities;
+using TecnicoApp.Domain.ValueObjects;
 
 namespace TecnicoApp.Application.Features.Interventions.Commands.CreateIntervention;
 
@@ -15,6 +16,12 @@ public class CreateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
     {
         var userId = currentUser.UserId;
 
+        // Resolve ownerId: team members see their owner's data
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var client = await db.Clients
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == request.ClientId, cancellationToken);
@@ -22,8 +29,25 @@ public class CreateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
         if (client is null)
             return Result.NotFound("Cliente não encontrado.");
 
-        if (client.UserId != userId)
+        if (client.UserId != ownerId)
             return Result.Forbidden();
+
+        // Validate quote belongs to the same owner and client
+        if (request.QuoteId.HasValue)
+        {
+            var quote = await db.Quotes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.Id == request.QuoteId.Value, cancellationToken);
+
+            if (quote is null)
+                return Result.NotFound("Orçamento não encontrado.");
+
+            if (quote.UserId != ownerId)
+                return Result.Forbidden();
+
+            if (quote.ClientId != request.ClientId)
+                return Result.Error("O orçamento não pertence ao cliente selecionado.");
+        }
 
         // Validate equipment belongs to this client
         var equipment = new List<Domain.Entities.Equipment>();
@@ -37,15 +61,22 @@ public class CreateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
                 return Result.Error("Um ou mais equipamentos não pertencem ao cliente selecionado.");
         }
 
+        var materials = request.Materials?
+            .Select(m => new InterventionMaterial(m.Name, m.Quantity, m.UnitCost))
+            .ToList() ?? [];
+
         var intervention = new Intervention
         {
             Title = request.Title,
             Description = request.Description,
             ClientId = request.ClientId,
-            UserId = userId,
+            UserId = ownerId,          // scope to owner's account
+            AssignedToUserId = userId != ownerId ? userId : request.AssignedToUserId,
             ScheduledAt = request.ScheduledAt,
             QuoteId = request.QuoteId,
             Equipment = equipment,
+            Photos = request.Photos?.ToList() ?? [],
+            Materials = materials,
         };
 
         db.Interventions.Add(intervention);
@@ -59,9 +90,13 @@ public class CreateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
             intervention.ScheduledAt,
             intervention.CompletedAt,
             intervention.TechnicianNotes,
+            intervention.Photos,
+            intervention.Materials,
             intervention.ClientId,
             client.Name,
             intervention.QuoteId,
+            null,
+            intervention.AssignedToUserId,
             null,
             equipment.Select(e => new InterventionEquipmentDto(e.Id, e.Type, e.Brand, e.Model)).ToList(),
             intervention.CreatedAt

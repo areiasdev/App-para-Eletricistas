@@ -30,5 +30,15 @@ public class CreateQuoteCommandValidator : AbstractValidator<CreateQuoteCommand>
         RuleFor(x => x.Discount)
             .GreaterThanOrEqualTo(0).When(x => x.Discount.HasValue)
             .WithMessage("O desconto não pode ser negativo.");
+
+        RuleFor(x => x)
+            .Must(x =>
+            {
+                if (!x.Discount.HasValue || x.Lines is null || x.Lines.Count == 0) return true;
+                var total = x.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100));
+                return x.Discount.Value <= total;
+            })
+            .WithMessage("O desconto não pode ser superior ao total do orçamento.")
+            .When(x => x.Discount.HasValue && x.Discount.Value > 0);
     }
 }

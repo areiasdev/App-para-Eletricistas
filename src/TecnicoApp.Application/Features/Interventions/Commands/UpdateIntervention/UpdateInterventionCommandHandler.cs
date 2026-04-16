@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Interventions.DTOs;
+using TecnicoApp.Domain.ValueObjects;
 
 namespace TecnicoApp.Application.Features.Interventions.Commands.UpdateIntervention;
 
@@ -14,6 +15,12 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
     {
         var userId = currentUser.UserId;
 
+        // Resolve ownerId: team members see their owner's data
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var intervention = await db.Interventions
             .Include(i => i.Client)
             .Include(i => i.Quote)
@@ -23,7 +30,7 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
         if (intervention is null)
             return Result.NotFound();
 
-        if (intervention.UserId != userId)
+        if (intervention.UserId != ownerId)
             return Result.Forbidden();
 
         // Update equipment set
@@ -45,11 +52,33 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
             intervention.Equipment.Clear();
         }
 
+        // Validate quote ownership and client match when QuoteId changes
+        if (request.QuoteId != intervention.QuoteId && request.QuoteId.HasValue)
+        {
+            var quote = await db.Quotes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.Id == request.QuoteId.Value, cancellationToken);
+
+            if (quote is null)
+                return Result.NotFound("Orçamento não encontrado.");
+
+            if (quote.UserId != ownerId)
+                return Result.Forbidden();
+
+            if (quote.ClientId != intervention.ClientId)
+                return Result.Error("O orçamento não pertence ao cliente selecionado.");
+        }
+
         intervention.Title = request.Title;
         intervention.Description = request.Description;
         intervention.ScheduledAt = request.ScheduledAt;
         intervention.TechnicianNotes = request.TechnicianNotes;
+        intervention.Photos = request.Photos?.ToList() ?? intervention.Photos;
+        intervention.Materials = request.Materials?
+            .Select(m => new InterventionMaterial(m.Name, m.Quantity, m.UnitCost))
+            .ToList() ?? intervention.Materials;
         intervention.QuoteId = request.QuoteId;
+        intervention.AssignedToUserId = request.AssignedToUserId;
         intervention.ModifiedBy = currentUser.Email;
 
         await db.SaveChangesAsync(cancellationToken);
@@ -62,10 +91,14 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
             intervention.ScheduledAt,
             intervention.CompletedAt,
             intervention.TechnicianNotes,
+            intervention.Photos,
+            intervention.Materials,
             intervention.ClientId,
             intervention.Client.Name,
             intervention.QuoteId,
             intervention.Quote?.Number,
+            intervention.AssignedToUserId,
+            null,
             intervention.Equipment
                 .Select(e => new InterventionEquipmentDto(e.Id, e.Type, e.Brand, e.Model))
                 .ToList(),

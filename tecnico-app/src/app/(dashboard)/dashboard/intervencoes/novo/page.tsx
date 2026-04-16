@@ -5,12 +5,13 @@ import Link from 'next/link'
 import { InterventionForm, type InterventionFormValues } from '@/components/features/InterventionForm'
 import { useCreateIntervention } from '@/hooks/useInterventions'
 import { getErrorMessage } from '@/lib/api/client'
+import type { InterventionMaterial } from '@/types'
 
 export default function NovaIntervencaoPage() {
   const router = useRouter()
   const createIntervention = useCreateIntervention()
 
-  const handleSubmit = (values: InterventionFormValues) => {
+  const handleSubmit = (values: InterventionFormValues, materials: InterventionMaterial[]) => {
     createIntervention.mutate(
       {
         title: values.title,
@@ -19,6 +20,8 @@ export default function NovaIntervencaoPage() {
         scheduledAt: values.scheduledAt || undefined,
         quoteId: values.quoteId || undefined,
         equipmentIds: values.equipmentIds,
+        photos: values.photos ?? [],
+        materials: materials.length > 0 ? materials : undefined,
       },
       {
         onSuccess: (iv) => router.push(`/dashboard/intervencoes/${iv.id}`),

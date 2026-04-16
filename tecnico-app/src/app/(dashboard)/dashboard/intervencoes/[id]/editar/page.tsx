@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useIntervention, useUpdateIntervention } from '@/hooks/useInterventions'
 import { InterventionForm, type InterventionFormValues } from '@/components/features/InterventionForm'
 import { getErrorMessage } from '@/lib/api/client'
+import type { InterventionMaterial } from '@/types'
 
 export default function EditarIntervencaoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -13,7 +14,7 @@ export default function EditarIntervencaoPage({ params }: { params: Promise<{ id
   const { data: iv, isLoading } = useIntervention(id)
   const updateIntervention = useUpdateIntervention(id)
 
-  const handleSubmit = (values: InterventionFormValues) => {
+  const handleSubmit = (values: InterventionFormValues, materials: InterventionMaterial[]) => {
     updateIntervention.mutate(
       {
         title: values.title,
@@ -22,6 +23,8 @@ export default function EditarIntervencaoPage({ params }: { params: Promise<{ id
         technicianNotes: values.technicianNotes || undefined,
         quoteId: values.quoteId || undefined,
         equipmentIds: values.equipmentIds,
+        photos: values.photos ?? [],
+        materials: materials.length > 0 ? materials : undefined,
       },
       {
         onSuccess: () => router.push(`/dashboard/intervencoes/${id}`),
@@ -97,7 +100,9 @@ export default function EditarIntervencaoPage({ params }: { params: Promise<{ id
           technicianNotes: iv.technicianNotes ?? '',
           quoteId: iv.quoteId ?? '',
           equipmentIds: iv.equipment.map((e) => e.id),
+          photos: iv.photos ?? [],
         }}
+        defaultMaterials={iv.materials ?? []}
         onSubmit={handleSubmit}
         isLoading={updateIntervention.isPending}
         submitLabel="Guardar alterações"

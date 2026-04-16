@@ -2,15 +2,19 @@ using Ardalis.Result.AspNetCore;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using TecnicoApp.Application.Features.Auth.Commands.ForgotPassword;
 using TecnicoApp.Application.Features.Auth.Commands.Login;
 using TecnicoApp.Application.Features.Auth.Commands.RefreshToken;
 using TecnicoApp.Application.Features.Auth.Commands.Register;
+using TecnicoApp.Application.Features.Auth.Commands.ResetPassword;
 using TecnicoApp.Application.Features.Auth.DTOs;
 
 namespace TecnicoApp.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
+[EnableRateLimiting("auth")]
 public class AuthController(IMediator mediator) : ControllerBase
 {
     [HttpPost("register")]
@@ -50,5 +54,28 @@ public class AuthController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(command, ct);
         return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordCommand command,
+        CancellationToken ct)
+    {
+        await mediator.Send(command, ct);
+        return NoContent(); // Always 204 to avoid user enumeration
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordCommand command,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(command, ct);
+        return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 }

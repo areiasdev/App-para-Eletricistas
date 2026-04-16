@@ -1,9 +1,11 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Ardalis.Result.AspNetCore;
 using Hangfire;
 using Hangfire.PostgreSql;
 using TecnicoApp.Infrastructure.Jobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -15,6 +17,15 @@ using TecnicoApp.Infrastructure;
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Validate critical config at startup ──────────────────────────────────────
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
+
+if (jwtSecret.Length < 32 || jwtSecret.StartsWith("SET_VIA") || jwtSecret.StartsWith("CHANGE") || jwtSecret.StartsWith("REPLACE"))
+    throw new InvalidOperationException(
+        "Jwt:Secret must be a strong random string of at least 32 characters. " +
+        "Generate one with: openssl rand -base64 48");
 
 // ── Serilog ───────────────────────────────────────────────────────────────────
 builder.Host.UseSerilog((ctx, config) =>
@@ -40,14 +51,49 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.FromSeconds(30), // tight window, default is 5 min
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Secret"]!))
+                Encoding.UTF8.GetBytes(jwtSecret))
         };
     });
 
 builder.Services.AddAuthorization();
+
+// ── Rate limiting ─────────────────────────────────────────────────────────────
+builder.Services.AddRateLimiter(options =>
+{
+    // Auth endpoints: 10 attempts per minute per IP (brute-force protection)
+    options.AddFixedWindowLimiter("auth", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // General API: 120 requests per minute per IP
+    options.AddFixedWindowLimiter("api", opt =>
+    {
+        opt.PermitLimit = 120;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 10;
+    });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Use real IP (respects X-Forwarded-For behind reverse proxy)
+    options.OnRejected = async (context, ct) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/problem+json";
+        await context.HttpContext.Response.WriteAsync(
+            """{"type":"https://tecnicoapp.pt/errors/rate-limit","title":"Demasiadas tentativas. Aguarda um momento.","status":429}""",
+            ct);
+    };
+});
 
 // ── Swagger ───────────────────────────────────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();
@@ -88,8 +134,8 @@ var allowedOrigins = builder.Configuration
 builder.Services.AddCors(options =>
     options.AddPolicy("TecnicoAppCors", policy =>
         policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
+              .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
+              .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
               .AllowCredentials()));
 
 // ── Hangfire ──────────────────────────────────────────────────────────────────
@@ -106,6 +152,22 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+// ── Security headers ──────────────────────────────────────────────────────────
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers.Append("X-Content-Type-Options", "nosniff");
+    headers.Append("X-Frame-Options", "DENY");
+    headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    // Remove server fingerprint headers
+    headers.Remove("Server");
+    headers.Remove("X-Powered-By");
+    if (!app.Environment.IsDevelopment())
+        headers.Append("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+    await next();
+});
+
 // ── Middleware pipeline ───────────────────────────────────────────────────────
 app.UseMiddleware<ExceptionMiddleware>();
 
@@ -117,6 +179,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("TecnicoAppCors");
 app.UseSerilogRequestLogging();
+app.UseRateLimiter();
 
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();

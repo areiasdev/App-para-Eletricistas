@@ -14,6 +14,7 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<QuoteLine> QuoteLines => Set<QuoteLine>();
     public DbSet<Equipment> Equipment => Set<Equipment>();
     public DbSet<Intervention> Interventions => Set<Intervention>();
+    public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

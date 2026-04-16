@@ -1,4 +1,5 @@
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Domain.ValueObjects;
 
 namespace TecnicoApp.Domain.Entities;
 
@@ -11,6 +12,7 @@ public class Intervention : BaseEntity
     public DateTime? CompletedAt { get; set; }
     public string? TechnicianNotes { get; set; }
     public List<string> Photos { get; set; } = [];
+    public List<InterventionMaterial> Materials { get; set; } = [];
     public string? ReportPdfUrl { get; set; }
 
     public Guid ClientId { get; set; }
@@ -19,6 +21,7 @@ public class Intervention : BaseEntity
     public User User { get; set; } = null!;
     public Guid? QuoteId { get; set; }
     public Quote? Quote { get; set; }
+    public Guid? AssignedToUserId { get; set; }
 
     public ICollection<Equipment> Equipment { get; set; } = [];
 }

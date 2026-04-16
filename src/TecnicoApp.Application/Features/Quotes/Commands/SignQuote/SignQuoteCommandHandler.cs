@@ -40,11 +40,16 @@ public class SignQuoteCommandHandler(IAppDbContext db, ICurrentUserService curre
                 "Status",
                 "Só é possível assinar orçamentos no estado Enviado ou Aceite."));
 
+        // Only allow safe raster formats (no SVG — SVG can embed script)
         if (string.IsNullOrWhiteSpace(request.SignatureDataUrl) ||
-            !request.SignatureDataUrl.StartsWith("data:image/"))
+            !System.Text.RegularExpressions.Regex.IsMatch(
+                request.SignatureDataUrl,
+                @"^data:image/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/]+=*$",
+                System.Text.RegularExpressions.RegexOptions.None,
+                TimeSpan.FromMilliseconds(100)))
             return Result.Invalid(new ValidationError(
                 "SignatureDataUrl",
-                "A assinatura deve ser uma imagem em formato data URI."));
+                "A assinatura deve ser uma imagem PNG, JPEG ou GIF em formato data URI."));
 
         quote.SignatureUrl = request.SignatureDataUrl;
         quote.SignedAt = DateTime.UtcNow;

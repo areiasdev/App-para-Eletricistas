@@ -34,6 +34,7 @@ public class CreateEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
             NextMaintenance = request.NextMaintenance,
             Notes = request.Notes,
             ClientId = request.ClientId,
+            Photos = request.Photos?.ToList() ?? [],
         };
 
         db.Equipment.Add(equipment);

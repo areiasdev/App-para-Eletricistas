@@ -66,7 +66,8 @@ public class InterventionsController(IMediator mediator) : ControllerBase
     {
         var command = new UpdateInterventionCommand(
             id, request.Title, request.Description, request.ScheduledAt,
-            request.TechnicianNotes, request.QuoteId, request.EquipmentIds);
+            request.TechnicianNotes, request.QuoteId, request.EquipmentIds, request.Photos,
+            request.Materials, request.AssignedToUserId);
 
         var result = await mediator.Send(command, ct);
         return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
@@ -100,7 +101,10 @@ public record UpdateInterventionRequest(
     DateTime? ScheduledAt,
     string? TechnicianNotes,
     Guid? QuoteId,
-    IReadOnlyList<Guid> EquipmentIds
+    IReadOnlyList<Guid> EquipmentIds,
+    IReadOnlyList<string>? Photos,
+    IReadOnlyList<TecnicoApp.Application.Features.Interventions.Commands.CreateIntervention.InterventionMaterialRequest>? Materials,
+    Guid? AssignedToUserId
 );
 
 public record UpdateInterventionStatusRequest(InterventionStatus Status);

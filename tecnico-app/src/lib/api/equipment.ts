@@ -22,9 +22,19 @@ export interface CreateEquipmentRequest {
   installedAt?: string
   nextMaintenance?: string
   notes?: string
+  photos?: string[]
 }
 
-export type UpdateEquipmentRequest = Omit<CreateEquipmentRequest, 'clientId'>
+export interface UpdateEquipmentRequest {
+  type: string
+  brand?: string
+  model?: string
+  serialNumber?: string
+  installedAt?: string
+  nextMaintenance?: string
+  notes?: string
+  photos?: string[]
+}
 
 export const equipmentApi = {
   list: (params?: { search?: string; clientId?: string; page?: number; pageSize?: number }) =>

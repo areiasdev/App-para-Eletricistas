@@ -35,22 +35,39 @@ public class MaintenanceAlertJob(
             "[MaintenanceAlert] Found {Count} equipment items due for maintenance on {Date}",
             equipment.Count, targetDate.ToString("yyyy-MM-dd"));
 
+        var sent = 0;
+        var failed = 0;
+
         foreach (var eq in equipment)
         {
             var user = eq.Client.User;
             if (user is null) continue;
 
-            var subject = $"🔧 Manutenção agendada em 7 dias — {eq.Type}";
-            var html = BuildEmailHtml(eq.Type, eq.Brand, eq.Model, eq.Client.Name,
-                eq.NextMaintenance!.Value, user.FullName);
+            try
+            {
+                var subject = $"🔧 Manutenção agendada em 7 dias — {eq.Type}";
+                var html = BuildEmailHtml(eq.Type, eq.Brand, eq.Model, eq.Client.Name,
+                    eq.NextMaintenance!.Value, user.FullName);
 
-            await emailService.SendAsync(
-                new EmailMessage(user.Email, user.FullName, subject, html));
+                await emailService.SendAsync(
+                    new EmailMessage(user.Email, user.FullName, subject, html));
 
-            logger.LogInformation(
-                "[MaintenanceAlert] Alert sent to {Email} for equipment {EquipmentId}",
-                user.Email, eq.Id);
+                logger.LogInformation(
+                    "[MaintenanceAlert] Alert sent to {Email} for equipment {EquipmentId}",
+                    user.Email, eq.Id);
+                sent++;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "[MaintenanceAlert] Failed to send alert to {Email} for equipment {EquipmentId}",
+                    user.Email, eq.Id);
+                failed++;
+            }
         }
+
+        logger.LogInformation(
+            "[MaintenanceAlert] Completed. Sent: {Sent}, Failed: {Failed}", sent, failed);
     }
 
     private static string BuildEmailHtml(

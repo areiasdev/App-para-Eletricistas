@@ -13,24 +13,56 @@
   --color-brand-600: #d97706;
   --color-brand-700: #b45309;
 
-  /* Surfaces */
+  /* Surfaces — light defaults */
   --color-canvas:  #f7f7f4;
   --color-sidebar: #17171a;
   --color-card:    #ffffff;
 
-  /* Text */
+  /* Text — light defaults */
   --color-ink:    #18181b;
   --color-muted:  #71717a;
   --color-subtle: #a1a1aa;
 
-  /* Borders */
-  --color-line:       #e4e4e7;
+  /* Borders — light defaults */
+  --color-line:        #e4e4e7;
   --color-line-strong: #d4d4d8;
 }
 
+/* ── Light (default) ────────────────────────────────────────────────────── */
 :root {
   --background: #f7f7f4;
   --foreground: #18181b;
+
+  --color-canvas:       #f7f7f4;
+  --color-sidebar:      #17171a;
+  --color-card:         #ffffff;
+  --color-ink:          #18181b;
+  --color-muted:        #71717a;
+  --color-subtle:       #a1a1aa;
+  --color-line:         #e4e4e7;
+  --color-line-strong:  #d4d4d8;
+}
+
+/* ── Dark ────────────────────────────────────────────────────────────────── */
+.dark {
+  color-scheme: dark;
+  --background: #17171a;
+  --foreground: #f4f4f5;
+
+  --color-canvas:       #1c1c21;
+  --color-sidebar:      #111114;
+  --color-card:         #232328;
+  --color-ink:          #f4f4f5;
+  --color-muted:        #a1a1aa;
+  --color-subtle:       #71717a;
+  --color-line:         #2d2d33;
+  --color-line-strong:  #3f3f46;
+}
+
+/* Dark mode: override inline white backgrounds on cards/tables */
+.dark [style*="background-color: white"],
+.dark [style*="backgroundColor: white"] {
+  background-color: var(--color-card) !important;
 }
 
 * { box-sizing: border-box; }
@@ -43,6 +75,7 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 @keyframes fade-up {

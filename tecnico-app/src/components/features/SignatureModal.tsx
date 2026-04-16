@@ -34,7 +34,7 @@ export function SignatureModal({ quoteNumber, onConfirm, onClose, isLoading }: S
     >
       <div
         className="rounded-2xl w-full max-w-lg space-y-5"
-        style={{ backgroundColor: 'white', padding: '28px' }}
+        style={{ backgroundColor: 'var(--color-card)', padding: '28px' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between">

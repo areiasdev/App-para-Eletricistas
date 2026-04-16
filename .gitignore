@@ -425,6 +425,16 @@ tecnico-app/.env.local
 # Claude Code
 .claude/
 
-# App secrets
+# App secrets — never commit real credentials
+src/**/appsettings.Development.json
+src/**/appsettings.Staging.json
+src/**/appsettings.Production.json
+src/**/appsettings.Local.json
+appsettings.Development.json
+appsettings.Staging.json
 appsettings.Production.json
 appsettings.Local.json
+
+# Docker env — contains real DB passwords
+docker-compose.env
+.env

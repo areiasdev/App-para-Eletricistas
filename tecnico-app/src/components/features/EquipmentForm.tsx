@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -14,6 +15,7 @@ const equipmentSchema = z.object({
   installedAt: z.string().optional(),
   nextMaintenance: z.string().optional(),
   notes: z.string().optional(),
+  photos: z.array(z.string().url('URL inválido')).optional(),
 })
 
 export type EquipmentFormValues = z.infer<typeof equipmentSchema>
@@ -38,17 +40,33 @@ export function EquipmentForm({
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<EquipmentFormValues>({
     resolver: zodResolver(equipmentSchema),
-    defaultValues,
+    defaultValues: { photos: [], ...defaultValues },
   })
+
+  const photos = watch('photos') ?? []
+  const [photoInput, setPhotoInput] = useState('')
+
+  const addPhoto = () => {
+    const url = photoInput.trim()
+    if (!url) return
+    setValue('photos', [...photos, url])
+    setPhotoInput('')
+  }
+
+  const removePhoto = (i: number) => {
+    setValue('photos', photos.filter((_, idx) => idx !== i))
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
 
       {/* ── Identificação ── */}
-      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
           <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
             Identificação
@@ -112,7 +130,7 @@ export function EquipmentForm({
       </section>
 
       {/* ── Manutenção ── */}
-      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}>
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
           <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
             Manutenção
@@ -154,6 +172,57 @@ export function EquipmentForm({
         </div>
       </section>
 
+      {/* ── Fotos ── */}
+      <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+        <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
+          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
+            Fotos
+          </h2>
+        </div>
+        <div className="p-5 space-y-3">
+          <p className="text-xs" style={{ color: 'var(--color-subtle)' }}>
+            Adiciona URLs de fotos do equipamento (ex: Google Drive, Dropbox, Imgur).
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={photoInput}
+              onChange={e => setPhotoInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPhoto() } }}
+              placeholder="https://exemplo.com/foto.jpg"
+              className="form-input flex-1"
+              style={{ borderColor: 'var(--color-line-strong)' }}
+            />
+            <button
+              type="button"
+              onClick={addPhoto}
+              className="rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150"
+              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            >
+              Adicionar
+            </button>
+          </div>
+          {photos.length > 0 && (
+            <ul className="space-y-2">
+              {photos.map((url, i) => (
+                <li key={i} className="flex items-center gap-2 rounded-lg border px-3 py-2"
+                  style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
+                  <span className="text-xs truncate flex-1" style={{ color: 'var(--color-ink)' }}>{url}</span>
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="shrink-0 text-xs px-2 py-0.5 rounded transition-colors duration-150"
+                    style={{ color: '#dc2626' }}
+                  >
+                    Remover
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
       <div className="flex justify-end">
         <button
           type="submit"
@@ -172,7 +241,7 @@ export function EquipmentForm({
           border: 1.5px solid var(--color-line-strong);
           padding: 0.5rem 0.75rem;
           font-size: 0.875rem;
-          background-color: white;
+          background-color: var(--color-card);
           color: var(--color-ink);
           outline: none;
           transition: border-color 0.15s, box-shadow 0.15s;
@@ -190,10 +259,10 @@ export function EquipmentForm({
   )
 }
 
-function FormField({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function FormField({ label, id, error, children }: { label: string; id?: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
+      <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
         {label}
       </label>
       {children}

@@ -1,7 +1,7 @@
 import { api } from './client'
 
 export interface BillingMe {
-  plan: 'Free' | 'Pro' | 'Team'
+  plan: 'Free' | 'Pro' | 'Team' | 'Enterprise'
   hasActiveSubscription: boolean
 }
 

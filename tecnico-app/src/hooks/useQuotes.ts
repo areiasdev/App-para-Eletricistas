@@ -60,8 +60,10 @@ export function useSignQuote() {
 }
 
 export function useSendQuoteEmail() {
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => quotesApi.sendEmail(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QUOTES_KEY] }),
   })
 }
 

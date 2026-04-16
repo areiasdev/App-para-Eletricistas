@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Quotes.DTOs;
 
@@ -10,7 +11,8 @@ public class SendQuoteEmailCommandHandler(
     IAppDbContext db,
     ICurrentUserService currentUser,
     IPdfService pdfService,
-    IEmailService emailService)
+    IEmailService emailService,
+    ILogger<SendQuoteEmailCommandHandler> logger)
     : IRequestHandler<SendQuoteEmailCommand, Result>
 {
     public async Task<Result> Handle(SendQuoteEmailCommand request, CancellationToken cancellationToken)
@@ -39,7 +41,7 @@ public class SendQuoteEmailCommandHandler(
         // Generate PDF
         var lineDtos = quote.Lines.Select(l => new QuoteLineDto(
             l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
-            l.Quantity * l.UnitPrice * (1 + l.VatRate / 100))).ToList();
+            Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero))).ToList();
 
         var pdfData = new QuotePdfData(
             Number: quote.Number,
@@ -64,10 +66,15 @@ public class SendQuoteEmailCommandHandler(
 
         byte[] pdfBytes;
         try { pdfBytes = pdfService.GenerateQuotePdf(pdfData); }
-        catch { return Result.Error("Não foi possível gerar o PDF do orçamento."); }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate PDF for quote {QuoteId}", request.QuoteId);
+            return Result.Error("Não foi possível gerar o PDF do orçamento.");
+        }
 
-        // Build HTML email
-        var issuerDisplay = user.CompanyName ?? user.FullName;
+        // Build HTML email — HTML-encode user-supplied strings to prevent injection
+        var issuerDisplay = System.Net.WebUtility.HtmlEncode(user.CompanyName ?? user.FullName);
+        var clientDisplayName = System.Net.WebUtility.HtmlEncode(quote.Client.Name);
         var totalFormatted = quote.Total.ToString("C", new System.Globalization.CultureInfo("pt-PT"));
         var validStr = quote.ValidUntil.HasValue
             ? quote.ValidUntil.Value.ToString("d 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("pt-PT"))
@@ -89,7 +96,7 @@ public class SendQuoteEmailCommandHandler(
                     <tr><td style="padding:32px;">
                       <p style="margin:0 0 8px;color:#6b7280;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Orçamento</p>
                       <p style="margin:0 0 24px;color:#1a1a1a;font-size:28px;font-weight:700;font-family:monospace;">{quote.Number}</p>
-                      <p style="margin:0 0 16px;color:#374151;font-size:15px;">Olá {quote.Client.Name},</p>
+                      <p style="margin:0 0 16px;color:#374151;font-size:15px;">Olá {clientDisplayName},</p>
                       <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
                         <strong>{issuerDisplay}</strong> enviou-te um orçamento. Encontras o PDF em anexo com todos os detalhes.
                       </p>
@@ -109,6 +116,7 @@ public class SendQuoteEmailCommandHandler(
                       </table>
                       <p style="margin:0 0 8px;color:#6b7280;font-size:13px;line-height:1.6;">
                         Para qualquer questão, contacta diretamente <strong>{issuerDisplay}</strong>.
+                        <!-- issuerDisplay and clientDisplayName are HTML-encoded -->
                       </p>
                     </td></tr>
                     <tr>
@@ -128,10 +136,12 @@ public class SendQuoteEmailCommandHandler(
             Content: pdfBytes,
             ContentType: "application/pdf");
 
+        // Use plain issuerDisplay (non-HTML-encoded) for plain-text subject
+        var issuerPlain = user.CompanyName ?? user.FullName;
         await emailService.SendAsync(new EmailMessage(
             To: quote.Client.Email,
             ToName: quote.Client.Name,
-            Subject: $"Orçamento {quote.Number} de {issuerDisplay}",
+            Subject: $"Orçamento {quote.Number} de {issuerPlain.Replace('\n', ' ').Replace('\r', ' ')}",
             HtmlBody: html,
             Attachments: [attachment]
         ), cancellationToken);

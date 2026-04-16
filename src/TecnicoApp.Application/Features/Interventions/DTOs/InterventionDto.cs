@@ -1,4 +1,5 @@
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Domain.ValueObjects;
 
 namespace TecnicoApp.Application.Features.Interventions.DTOs;
 
@@ -12,10 +13,14 @@ public record InterventionDto(
     DateTime? ScheduledAt,
     DateTime? CompletedAt,
     string? TechnicianNotes,
+    IReadOnlyList<string> Photos,
+    IReadOnlyList<InterventionMaterial> Materials,
     Guid ClientId,
     string ClientName,
     Guid? QuoteId,
     string? QuoteNumber,
+    Guid? AssignedToUserId,
+    string? AssignedToName,
     IReadOnlyList<InterventionEquipmentDto> Equipment,
     DateTime CreatedAt
 );

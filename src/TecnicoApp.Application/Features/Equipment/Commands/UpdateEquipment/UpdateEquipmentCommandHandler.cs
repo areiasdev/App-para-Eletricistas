@@ -31,6 +31,7 @@ public class UpdateEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
         equipment.InstalledAt = request.InstalledAt;
         equipment.NextMaintenance = request.NextMaintenance;
         equipment.Notes = request.Notes;
+        equipment.Photos = request.Photos?.ToList() ?? equipment.Photos;
         equipment.ModifiedBy = currentUser.Email;
 
         await db.SaveChangesAsync(cancellationToken);

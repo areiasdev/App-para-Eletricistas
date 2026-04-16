@@ -18,7 +18,7 @@ public sealed class RefreshTokenCommandHandler(
         var user = await db.Users
             .FirstOrDefaultAsync(u => u.RefreshToken == command.RefreshToken, cancellationToken);
 
-        if (user is null || user.RefreshTokenExpiresAt < DateTime.UtcNow)
+        if (user is null || user.RefreshTokenExpiresAt is null || user.RefreshTokenExpiresAt < DateTime.UtcNow)
             return Result.Unauthorized();
 
         user.RefreshToken = tokenService.GenerateRefreshToken();

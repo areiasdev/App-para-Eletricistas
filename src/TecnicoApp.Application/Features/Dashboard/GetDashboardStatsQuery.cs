@@ -50,44 +50,60 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
     {
         var userId = currentUser.UserId;
 
+        // All counts and aggregates done in SQL — no in-memory loading
         var clientsCount = await db.Clients
             .CountAsync(c => c.UserId == userId, cancellationToken);
 
-        var quotes = await db.Quotes
+        var quoteCounts = await db.Quotes
             .AsNoTracking()
             .Where(q => q.UserId == userId)
-            .Include(q => q.Lines)
-            .Include(q => q.Client)
-            .ToListAsync(cancellationToken);
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Draft = g.Count(q => q.Status == QuoteStatus.Draft),
+                Sent = g.Count(q => q.Status == QuoteStatus.Sent),
+                Accepted = g.Count(q => q.Status == QuoteStatus.Accepted),
+                TotalRevenue = g
+                    .Where(q => q.Status == QuoteStatus.Invoiced)
+                    .Sum(q => (decimal?)q.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100m)) - (q.Discount ?? 0)) ?? 0m,
+                PendingRevenue = g
+                    .Where(q => q.Status == QuoteStatus.Accepted)
+                    .Sum(q => (decimal?)q.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100m)) - (q.Discount ?? 0)) ?? 0m,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        var totalRevenue = quotes
-            .Where(q => q.Status == QuoteStatus.Invoiced)
-            .Sum(q => q.Total);
-
-        var pendingRevenue = quotes
-            .Where(q => q.Status == QuoteStatus.Accepted)
-            .Sum(q => q.Total);
-
-        var recentQuotes = quotes
+        var recentQuotes = await db.Quotes
+            .AsNoTracking()
+            .Where(q => q.UserId == userId)
             .OrderByDescending(q => q.CreatedAt)
             .Take(5)
             .Select(q => new RecentQuoteDto(
-                q.Id, q.Number, q.Status, q.Client.Name, q.Total, q.CreatedAt))
-            .ToList();
-
-        // Interventions
-        var interventions = await db.Interventions
-            .AsNoTracking()
-            .Where(i => i.UserId == userId)
+                q.Id,
+                q.Number,
+                q.Status,
+                q.Client.Name,
+                q.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100m)) - (q.Discount ?? 0),
+                q.CreatedAt))
             .ToListAsync(cancellationToken);
 
-        // Upcoming maintenance (next 30 days)
+        var interventionCounts = await db.Interventions
+            .AsNoTracking()
+            .Where(i => i.UserId == userId)
+            .GroupBy(_ => 1)
+            .Select(g => new
+            {
+                Total = g.Count(),
+                Scheduled = g.Count(i => i.Status == InterventionStatus.Scheduled),
+                InProgress = g.Count(i => i.Status == InterventionStatus.InProgress),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
         var today = DateTime.UtcNow.Date;
         var limit = today.AddDays(30);
 
         var upcomingMaintenance = await db.Equipment
             .AsNoTracking()
-            .Include(e => e.Client)
             .Where(e =>
                 e.Client.UserId == userId &&
                 e.NextMaintenance.HasValue &&
@@ -107,15 +123,15 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
 
         var stats = new DashboardStatsDto(
             clientsCount,
-            quotes.Count,
-            quotes.Count(q => q.Status == QuoteStatus.Draft),
-            quotes.Count(q => q.Status == QuoteStatus.Sent),
-            quotes.Count(q => q.Status == QuoteStatus.Accepted),
-            totalRevenue,
-            pendingRevenue,
-            interventions.Count,
-            interventions.Count(i => i.Status == InterventionStatus.Scheduled),
-            interventions.Count(i => i.Status == InterventionStatus.InProgress),
+            quoteCounts?.Total ?? 0,
+            quoteCounts?.Draft ?? 0,
+            quoteCounts?.Sent ?? 0,
+            quoteCounts?.Accepted ?? 0,
+            quoteCounts?.TotalRevenue ?? 0m,
+            quoteCounts?.PendingRevenue ?? 0m,
+            interventionCounts?.Total ?? 0,
+            interventionCounts?.Scheduled ?? 0,
+            interventionCounts?.InProgress ?? 0,
             recentQuotes,
             upcomingMaintenance
         );

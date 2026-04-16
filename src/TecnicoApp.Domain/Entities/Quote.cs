@@ -21,7 +21,8 @@ public class Quote : BaseEntity
     public ICollection<QuoteLine> Lines { get; set; } = [];
 
     // Propriedades calculadas — não persistidas
-    public decimal SubTotal => Lines.Sum(l => l.Quantity * l.UnitPrice);
-    public decimal VatTotal => Lines.Sum(l => l.Quantity * l.UnitPrice * (l.VatRate / 100));
-    public decimal Total => SubTotal + VatTotal - (Discount ?? 0);
+    // Round each line individually before summing to avoid cent-level drift across many lines
+    public decimal SubTotal => Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2, MidpointRounding.AwayFromZero));
+    public decimal VatTotal => Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice * (l.VatRate / 100), 2, MidpointRounding.AwayFromZero));
+    public decimal Total => Math.Round(SubTotal + VatTotal - (Discount ?? 0), 2, MidpointRounding.AwayFromZero);
 }

@@ -23,27 +23,41 @@ export default function EditarEquipamentoPage({ params }: { params: Promise<{ id
         installedAt: values.installedAt || undefined,
         nextMaintenance: values.nextMaintenance || undefined,
         notes: values.notes,
+        photos: values.photos ?? [],
       },
       { onSuccess: () => router.push(`/dashboard/equipamentos/${id}`) }
     )
   }
 
-  if (isLoading) return <div className="animate-pulse h-8 bg-gray-100 rounded w-1/3" />
+  if (isLoading) {
+    return (
+      <div className="max-w-2xl space-y-4 animate-pulse">
+        <div className="h-8 rounded-lg w-1/3" style={{ backgroundColor: 'var(--color-line)' }} />
+        <div className="h-4 rounded-lg w-1/4" style={{ backgroundColor: 'var(--color-line)' }} />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/dashboard/equipamentos" className="hover:text-gray-700">Equipamentos</Link>
-        <span>/</span>
-        <Link href={`/dashboard/equipamentos/${id}`} className="hover:text-gray-700">{equipment?.type}</Link>
-        <span>/</span>
-        <span className="text-gray-900">Editar</span>
+      <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-muted)' }}>
+        <Link href="/dashboard/equipamentos"
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-ink)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
+        >Equipamentos</Link>
+        <span style={{ color: 'var(--color-line-strong)' }}>/</span>
+        <Link href={`/dashboard/equipamentos/${id}`}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-ink)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
+        >{equipment?.type}</Link>
+        <span style={{ color: 'var(--color-line-strong)' }}>/</span>
+        <span style={{ color: 'var(--color-ink)' }}>Editar</span>
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-900">Editar Equipamento</h1>
+      <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Editar Equipamento</h1>
 
       {updateEquipment.isError && (
-        <p className="text-sm text-red-600 bg-red-50 rounded-md px-4 py-3">
+        <p className="text-sm rounded-xl px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
           {getErrorMessage(updateEquipment.error)}
         </p>
       )}
@@ -63,6 +77,7 @@ export default function EditarEquipamentoPage({ params }: { params: Promise<{ id
               ? new Date(equipment.nextMaintenance).toISOString().split('T')[0]
               : '',
             notes: equipment.notes ?? '',
+            photos: equipment.photos ?? [],
           }}
           onSubmit={handleSubmit}
           isLoading={updateEquipment.isPending}
