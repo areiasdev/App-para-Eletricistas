@@ -82,4 +82,28 @@ public class CreateInterventionCommandValidatorTests
         result.IsValid.Should().BeFalse();
         result.Errors.Should().Contain(e => e.ErrorMessage.Contains("20"));
     }
+
+    [Fact]
+    public void Duplicate_photo_urls_fail()
+    {
+        var photos = new List<string>
+        {
+            "https://example.com/foto.jpg",
+            "https://example.com/foto.jpg"
+        };
+        var result = _validator.Validate(Valid() with { Photos = photos });
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.ErrorMessage.Contains("duplicadas"));
+    }
+
+    [Fact]
+    public void Unique_photo_urls_pass()
+    {
+        var photos = new List<string>
+        {
+            "https://example.com/foto1.jpg",
+            "https://example.com/foto2.jpg"
+        };
+        _validator.Validate(Valid() with { Photos = photos }).IsValid.Should().BeTrue();
+    }
 }
