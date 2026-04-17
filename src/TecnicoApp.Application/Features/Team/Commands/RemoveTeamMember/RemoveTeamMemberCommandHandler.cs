@@ -28,8 +28,25 @@ public class RemoveTeamMemberCommandHandler(IAppDbContext db, ICurrentUserServic
         if (teamMember.OwnerId != ownerId)
             return Result.Forbidden();
 
+        var memberId = teamMember.MemberId;
+
+        // M2: Re-assign interventions created by this member back to the owner
+        var memberInterventions = await db.Interventions
+            .Where(i => i.UserId == memberId)
+            .ToListAsync(cancellationToken);
+        foreach (var iv in memberInterventions)
+            iv.UserId = ownerId;
+
+        // M2: Clear AssignedToUserId on interventions pointing to this member
+        var assignedInterventions = await db.Interventions
+            .Where(i => i.AssignedToUserId == memberId)
+            .ToListAsync(cancellationToken);
+        foreach (var iv in assignedInterventions)
+            iv.AssignedToUserId = null;
+
         // Clear OwnerId on the member user so they become independent again
         teamMember.Member.OwnerId = null;
+        teamMember.Member.Role = Domain.Enums.UserRole.Owner;
         teamMember.Member.ModifiedAt = DateTime.UtcNow;
 
         // Soft delete the team member record

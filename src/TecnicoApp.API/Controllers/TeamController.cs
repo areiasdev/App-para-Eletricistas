@@ -2,6 +2,7 @@ using Ardalis.Result.AspNetCore;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TecnicoApp.Application.Features.Team.Commands.AcceptInvite;
 using TecnicoApp.Application.Features.Team.Commands.InviteTeamMember;
 using TecnicoApp.Application.Features.Team.Commands.RemoveTeamMember;
 using TecnicoApp.Application.Features.Team.Commands.UpdateTeamMemberRole;
@@ -57,7 +58,22 @@ public class TeamController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new UpdateTeamMemberRoleCommand(id, request.Role), ct);
         return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
     }
+
+    [HttpPost("accept-invite")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AcceptInvite(
+        [FromBody] AcceptInviteRequest request,
+        CancellationToken ct)
+    {
+        var result = await mediator.Send(
+            new AcceptInviteCommand(request.Token, request.FullName, request.NewPassword), ct);
+        return result.IsSuccess ? Ok() : result.ToActionResult(this);
+    }
 }
 
 public record InviteTeamMemberRequest(string Email, UserRole Role);
 public record UpdateRoleRequest(UserRole Role);
+public record AcceptInviteRequest(string Token, string FullName, string NewPassword);

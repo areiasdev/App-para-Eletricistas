@@ -9,5 +9,6 @@ public record TeamMemberDto(
     string Email,
     UserRole Role,
     bool IsAccepted,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string? InviteToken = null   // Only set on invite creation; null on subsequent reads
 );

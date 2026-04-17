@@ -75,9 +75,14 @@ public class InviteTeamMemberCommandHandler(
         var existingUser = await db.Users
             .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
 
-        // Check that this user doesn't already belong to another team via TeamMembers
         if (existingUser is not null)
         {
+            // M1 — Circular reference guard: reject if the invited user is already an owner of other users
+            var isAlreadyAnOwner = await db.Users.AnyAsync(u => u.OwnerId == existingUser.Id, cancellationToken);
+            if (isAlreadyAnOwner)
+                return Result.Error("Este utilizador já é proprietário de uma equipa e não pode ser convidado como membro.");
+
+            // Check that this user doesn't already belong to another team via TeamMembers
             var belongsToAnotherTeam = await db.TeamMembers
                 .AnyAsync(t => t.MemberId == existingUser.Id && t.OwnerId != ownerId, cancellationToken);
 
@@ -109,12 +114,20 @@ public class InviteTeamMemberCommandHandler(
             db.Users.Add(memberUser);
         }
 
+        // M5 — Generate invite token
+        var rawToken = Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+            .Replace("+", "-").Replace("/", "_").TrimEnd('=');
+        var tokenHash = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(
+                System.Text.Encoding.UTF8.GetBytes(rawToken)));
+
         var teamMember = new TeamMember
         {
             OwnerId = ownerId,
             MemberId = memberUser.Id,
             Role = request.Role,
             InviteEmail = normalizedEmail,
+            InviteTokenHash = tokenHash,
             IsAccepted = false
         };
 
@@ -128,6 +141,7 @@ public class InviteTeamMemberCommandHandler(
             teamMember.InviteEmail,
             teamMember.Role,
             teamMember.IsAccepted,
-            teamMember.CreatedAt));
+            teamMember.CreatedAt,
+            rawToken));
     }
 }

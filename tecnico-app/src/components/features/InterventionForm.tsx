@@ -71,8 +71,9 @@ export function InterventionForm({
 
   const addMaterial = () => {
     const name = matName.trim()
-    const qty = parseFloat(matQty)
-    const cost = parseFloat(matCost)
+    // B2: clamp to 2 decimal places to avoid float precision issues
+    const qty = Math.round(parseFloat(matQty) * 100) / 100
+    const cost = Math.round(parseFloat(matCost) * 100) / 100
     if (!name || isNaN(qty) || qty <= 0 || isNaN(cost) || cost < 0) return
     setMaterials(prev => [...prev, { name, quantity: qty, unitCost: cost }])
     setMatName('')

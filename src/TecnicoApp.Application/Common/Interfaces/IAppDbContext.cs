@@ -12,6 +12,7 @@ public interface IAppDbContext
     DbSet<Equipment> Equipment { get; }
     DbSet<Intervention> Interventions { get; }
     DbSet<TeamMember> TeamMembers { get; }
+    DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

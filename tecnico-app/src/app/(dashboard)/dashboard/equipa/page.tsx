@@ -29,16 +29,22 @@ export default function EquipaPage() {
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<UserRole>('Technician')
   const [inviteError, setInviteError] = useState<string | null>(null)
+  const [inviteLink, setInviteLink] = useState<string | null>(null)
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return
     setInviteError(null)
+    setInviteLink(null)
     inviteMember.mutate(
       { email: inviteEmail.trim(), role: inviteRole },
       {
-        onSuccess: () => {
+        onSuccess: (member) => {
           setInviteEmail('')
-          toast.success('Membro adicionado com sucesso.')
+          if (member.inviteToken) {
+            const link = `${window.location.origin}/aceitar-convite?token=${member.inviteToken}`
+            setInviteLink(link)
+          }
+          toast.success('Membro adicionado. Partilha o link de convite.')
         },
         onError: (err) => setInviteError(getErrorMessage(err)),
       }
@@ -119,8 +125,29 @@ export default function EquipaPage() {
           </button>
         </div>
 
+        {inviteLink && (
+          <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: 'rgba(16,185,129,0.3)', backgroundColor: 'rgba(16,185,129,0.05)' }}>
+            <p className="text-xs font-semibold" style={{ color: '#34d399' }}>
+              Link de convite gerado — partilha com o novo membro:
+            </p>
+            <div className="flex gap-2 items-center">
+              <code className="text-xs flex-1 truncate rounded px-2 py-1"
+                style={{ backgroundColor: 'var(--color-canvas)', color: 'var(--color-ink)', border: '1px solid var(--color-line)' }}>
+                {inviteLink}
+              </code>
+              <button
+                onClick={() => { navigator.clipboard.writeText(inviteLink); toast.success('Link copiado.') }}
+                className="shrink-0 rounded px-3 py-1 text-xs font-medium transition-all duration-150"
+                style={{ backgroundColor: 'rgba(16,185,129,0.15)', color: '#34d399' }}
+              >
+                Copiar
+              </button>
+            </div>
+          </div>
+        )}
+
         <p className="text-xs" style={{ color: 'var(--color-subtle)' }}>
-          Se o utilizador ainda não tiver conta, será criada automaticamente. Poderá redefinir a password no primeiro acesso.
+          Se o utilizador ainda não tiver conta, será criada automaticamente. Partilha o link de convite para ativar a conta.
         </p>
       </div>
 

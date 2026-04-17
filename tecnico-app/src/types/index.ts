@@ -44,6 +44,7 @@ export interface TeamMember {
   role: UserRole
   isAccepted: boolean
   createdAt: string
+  inviteToken?: string  // Only present on invite creation response
 }
 
 export interface User {

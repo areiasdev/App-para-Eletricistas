@@ -23,7 +23,7 @@ public class GetTeamQueryHandler(IAppDbContext db, ICurrentUserService currentUs
         var members = await db.TeamMembers
             .AsNoTracking()
             .Include(t => t.Member)
-            .Where(t => t.OwnerId == ownerId)
+            .Where(t => t.OwnerId == ownerId && !t.Member.IsDeleted)  // M6: exclude soft-deleted members
             .OrderBy(t => t.CreatedAt)
             .Select(t => new TeamMemberDto(
                 t.Id,

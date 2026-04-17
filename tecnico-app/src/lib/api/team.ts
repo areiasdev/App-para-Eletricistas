@@ -13,4 +13,7 @@ export const teamApi = {
 
   remove: (id: string) =>
     api.delete(`/team/${id}`),
+
+  acceptInvite: (data: { token: string; fullName: string; newPassword: string }) =>
+    api.post('/team/accept-invite', data),
 }

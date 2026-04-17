@@ -78,6 +78,18 @@ const navItems = [
     teamOnly: true,
   },
   {
+    href: '/dashboard/relatorios',
+    label: 'Relatórios',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <rect x="1" y="8" width="3" height="7" rx="1" fill="currentColor" opacity=".5"/>
+        <rect x="6" y="5" width="3" height="10" rx="1" fill="currentColor" opacity=".7"/>
+        <rect x="11" y="2" width="3" height="13" rx="1" fill="currentColor"/>
+      </svg>
+    ),
+    enterpriseOnly: true,
+  },
+  {
     href: '/dashboard/planos',
     label: 'Plano',
     icon: (
@@ -146,6 +158,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           if ('teamOnly' in item && item.teamOnly && plan !== 'Team' && plan !== 'Enterprise') return null
+          if ('enterpriseOnly' in item && item.enterpriseOnly && plan !== 'Enterprise') return null
           const isActive =
             item.href === '/dashboard'
               ? pathname === '/dashboard'

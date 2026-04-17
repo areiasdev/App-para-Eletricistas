@@ -20,7 +20,9 @@ public class CreateInterventionCommandValidator : AbstractValidator<CreateInterv
             .When(x => x.Photos is { Count: > 0 });
         RuleFor(x => x.Photos)
             .Must(p => p == null || p.Count <= 20)
-            .WithMessage("Máximo de 20 fotos por intervenção.");
+            .WithMessage("Máximo de 20 fotos por intervenção.")
+            .Must(p => p == null || p.Distinct().Count() == p.Count)
+            .WithMessage("Não são permitidas fotos duplicadas.");
 
         RuleForEach(x => x.Materials)
             .ChildRules(m =>
