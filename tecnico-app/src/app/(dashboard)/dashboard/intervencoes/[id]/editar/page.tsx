@@ -25,6 +25,7 @@ export default function EditarIntervencaoPage({ params }: { params: Promise<{ id
         equipmentIds: values.equipmentIds,
         photos: values.photos ?? [],
         materials: materials.length > 0 ? materials : undefined,
+        assignedToUserId: values.assignedToUserId || undefined,
       },
       {
         onSuccess: () => router.push(`/dashboard/intervencoes/${id}`),
@@ -101,6 +102,7 @@ export default function EditarIntervencaoPage({ params }: { params: Promise<{ id
           quoteId: iv.quoteId ?? '',
           equipmentIds: iv.equipment.map((e) => e.id),
           photos: iv.photos ?? [],
+          assignedToUserId: iv.assignedToUserId ?? '',
         }}
         defaultMaterials={iv.materials ?? []}
         onSubmit={handleSubmit}

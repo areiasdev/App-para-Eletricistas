@@ -26,6 +26,10 @@ public class InviteTeamMemberCommandHandler(
         if (callingUser is null)
             return Result.Unauthorized();
 
+        // A4 — Only Owner or Admin can invite members
+        if (callingUser.Role != UserRole.Owner && callingUser.Role != UserRole.Admin)
+            return Result.Forbidden();
+
         // Only owners (or admins acting as owner) can invite — use their own account as owner
         var ownerId = callingUser.OwnerId ?? callingUser.Id;
 
@@ -51,29 +55,40 @@ public class InviteTeamMemberCommandHandler(
                 return Result.Error($"Limite de {maxMembers} membros de equipa atingido para o seu plano.");
         }
 
-        // Check if this email is already a member
+        // B1 — Self-invite guard
+        if (request.Email.Equals(callingUser.Email, StringComparison.OrdinalIgnoreCase))
+            return Result.Error("Não podes convidar-te a ti próprio.");
+
+        // M3 — Normalize email to avoid case-sensitive duplicates
+        var normalizedEmail = request.Email.ToLowerInvariant();
+
+        // C3 — Check TeamMembers table directly (not User.OwnerId) to detect existing/pending invites
         var existingMember = await db.TeamMembers
-            .FirstOrDefaultAsync(t => t.OwnerId == ownerId && t.InviteEmail == request.Email, cancellationToken);
+            .FirstOrDefaultAsync(
+                t => t.OwnerId == ownerId && t.InviteEmail == normalizedEmail,
+                cancellationToken);
 
         if (existingMember is not null)
             return Result.Error("Este email já foi convidado para a sua equipa.");
 
         // Look up if a user with this email already exists
         var existingUser = await db.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail, cancellationToken);
+
+        // Check that this user doesn't already belong to another team via TeamMembers
+        if (existingUser is not null)
+        {
+            var belongsToAnotherTeam = await db.TeamMembers
+                .AnyAsync(t => t.MemberId == existingUser.Id && t.OwnerId != ownerId, cancellationToken);
+
+            if (belongsToAnotherTeam)
+                return Result.Error("Este utilizador já pertence a outra equipa.");
+        }
 
         User memberUser;
 
         if (existingUser is not null)
         {
-            // Check if they already belong to this owner
-            if (existingUser.OwnerId == ownerId)
-                return Result.Error("Este utilizador já pertence à sua equipa.");
-
-            // Check if they already belong to another owner
-            if (existingUser.OwnerId.HasValue && existingUser.OwnerId != ownerId)
-                return Result.Error("Este utilizador já pertence a outra equipa.");
-
             memberUser = existingUser;
             memberUser.OwnerId = ownerId;
             memberUser.Role = request.Role;
@@ -84,8 +99,8 @@ public class InviteTeamMemberCommandHandler(
             var tempPassword = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
             memberUser = new User
             {
-                Email = request.Email,
-                FullName = request.Email, // placeholder until they accept
+                Email = normalizedEmail,
+                FullName = normalizedEmail, // placeholder until they accept
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword),
                 OwnerId = ownerId,
                 Role = request.Role,
@@ -99,7 +114,7 @@ public class InviteTeamMemberCommandHandler(
             OwnerId = ownerId,
             MemberId = memberUser.Id,
             Role = request.Role,
-            InviteEmail = request.Email,
+            InviteEmail = normalizedEmail,
             IsAccepted = false
         };
 

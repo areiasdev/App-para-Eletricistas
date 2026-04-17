@@ -7,7 +7,7 @@ using TecnicoApp.Domain.ValueObjects;
 
 namespace TecnicoApp.Application.Features.Interventions.Commands.UpdateIntervention;
 
-public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserService currentUser)
+public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserService currentUser, IPlanGateService planGate)
     : IRequestHandler<UpdateInterventionCommand, Result<InterventionDto>>
 {
     public async Task<Result<InterventionDto>> Handle(
@@ -20,6 +20,27 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
             .Where(u => u.Id == userId)
             .Select(u => u.OwnerId ?? u.Id)
             .FirstOrDefaultAsync(cancellationToken);
+
+        // Load owner user to check plan gates
+        var ownerUser = await db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == ownerId, cancellationToken);
+
+        if (ownerUser is null)
+            return Result.Unauthorized();
+
+        // C1 — Plan gate: materials require Pro/Team/Enterprise
+        if (request.Materials is { Count: > 0 } && !planGate.CanUseMaterials(ownerUser.Plan))
+            return Result.Error("O seu plano não suporta materiais em intervenções. Actualize para o plano Pro ou superior.");
+
+        // C2 — Validate AssignedToUserId belongs to owner's team
+        if (request.AssignedToUserId.HasValue && request.AssignedToUserId.Value != ownerId)
+        {
+            var isTeamMember = await db.Users.AsNoTracking()
+                .AnyAsync(u => u.Id == request.AssignedToUserId.Value && u.OwnerId == ownerId, cancellationToken);
+
+            if (!isTeamMember)
+                return Result.Error("O utilizador atribuído não pertence à sua equipa.");
+        }
 
         var intervention = await db.Interventions
             .Include(i => i.Client)

@@ -7,6 +7,9 @@ import { z } from 'zod'
 import { cn } from '@/lib/utils'
 import { useClients } from '@/hooks/useClients'
 import { useEquipmentList } from '@/hooks/useEquipment'
+import { useTeam } from '@/hooks/useTeam'
+import { useQuery } from '@tanstack/react-query'
+import { billingApi } from '@/lib/api/billing'
 import type { InterventionMaterial } from '@/types'
 
 const interventionSchema = z.object({
@@ -18,6 +21,7 @@ const interventionSchema = z.object({
   quoteId: z.string().optional(),
   equipmentIds: z.array(z.string()),
   photos: z.array(z.string().url('URL inválido')).optional(),
+  assignedToUserId: z.string().optional(),
 })
 
 export type InterventionFormValues = z.infer<typeof interventionSchema>
@@ -81,6 +85,9 @@ export function InterventionForm({
   }
 
   const { data: clientsData } = useClients({ pageSize: 200 })
+  const { data: billing } = useQuery({ queryKey: ['billing-me'], queryFn: billingApi.getMe, staleTime: 1000 * 60 * 5 })
+  const isTeamPlan = billing?.plan === 'Team' || billing?.plan === 'Enterprise'
+  const { data: teamMembers = [] } = useTeam()
 
   // When editing, clientsData loads after mount — re-apply the default clientId so
   // the uncontrolled select picks up the correct option once the options are in the DOM.
@@ -135,6 +142,19 @@ export function InterventionForm({
             <input type="datetime-local" {...register('scheduledAt')} className={inputCls(false)} />
           </Field>
         </div>
+
+        {isTeamPlan && teamMembers.length > 0 && (
+          <Field label="Atribuir a" error={undefined}>
+            <select {...register('assignedToUserId')} className={inputCls(false)}>
+              <option value="">— Não atribuído —</option>
+              {teamMembers.map((m) => (
+                <option key={m.memberId} value={m.memberId}>
+                  {m.fullName || m.email}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
 
         <Field label="Descrição" error={errors.description?.message}>
           <textarea
