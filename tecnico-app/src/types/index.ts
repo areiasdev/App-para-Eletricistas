@@ -56,8 +56,6 @@ export interface User {
 
 export interface AuthResponse {
   accessToken: string
-  refreshToken: string
-  refreshTokenExpiresAt: string
   user: User
 }
 

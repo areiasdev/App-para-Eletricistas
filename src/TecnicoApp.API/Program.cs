@@ -136,6 +136,7 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
               .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+              .SetPreflightMaxAge(TimeSpan.FromHours(2))
               .AllowCredentials()));
 
 // ── Hangfire ──────────────────────────────────────────────────────────────────
@@ -160,6 +161,8 @@ app.Use(async (context, next) =>
     headers.Append("X-Frame-Options", "DENY");
     headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
     headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    headers.Append("Content-Security-Policy",
+        "default-src 'none'; frame-ancestors 'none'; form-action 'none'");
     // Remove server fingerprint headers
     headers.Remove("Server");
     headers.Remove("X-Powered-By");
@@ -181,8 +184,7 @@ app.UseCors("TecnicoAppCors");
 app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 
-if (!app.Environment.IsDevelopment())
-    app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 

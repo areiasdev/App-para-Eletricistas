@@ -32,14 +32,16 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
         if (request.Materials is { Count: > 0 } && !planGate.CanUseMaterials(ownerUser.Plan))
             return Result.Error("O seu plano não suporta materiais em intervenções. Actualize para o plano Pro ou superior.");
 
-        // C2 — Validate AssignedToUserId belongs to owner's team
+        // C2/H6 — AssignedToUserId must belong to owner's team AND have accepted the invite
         if (request.AssignedToUserId.HasValue && request.AssignedToUserId.Value != ownerId)
         {
-            var isTeamMember = await db.Users.AsNoTracking()
-                .AnyAsync(u => u.Id == request.AssignedToUserId.Value && u.OwnerId == ownerId, cancellationToken);
+            var isActiveTeamMember = await db.TeamMembers.AsNoTracking()
+                .AnyAsync(t => t.MemberId == request.AssignedToUserId.Value
+                            && t.OwnerId == ownerId
+                            && t.IsAccepted, cancellationToken);
 
-            if (!isTeamMember)
-                return Result.Error("O utilizador atribuído não pertence à sua equipa.");
+            if (!isActiveTeamMember)
+                return Result.Error("O utilizador atribuído não pertence à sua equipa ou ainda não aceitou o convite.");
         }
 
         var intervention = await db.Interventions

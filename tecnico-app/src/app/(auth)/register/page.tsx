@@ -22,9 +22,7 @@ export default function RegisterPage() {
     mutationFn: (data: RegisterFormValues) =>
       authApi.register({ fullName: data.fullName, email: data.email, password: data.password }),
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken, data.refreshToken)
-      localStorage.setItem('accessToken', data.accessToken)
-      localStorage.setItem('refreshToken', data.refreshToken)
+      setAuth(data.user, data.accessToken)
       router.push('/dashboard')
     },
   })

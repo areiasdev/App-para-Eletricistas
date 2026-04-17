@@ -94,13 +94,20 @@ function PlanosPageInner() {
   const successParam = searchParams.get('success')
   const [loadingPlan, setLoadingPlan] = useState<'Pro' | 'Team' | null>(null)
   const [portalLoading, setPortalLoading] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(successParam === 'true')
+  const [showSuccess, setShowSuccess] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   const { data: billing, isLoading } = useQuery({
     queryKey: ['billing-me'],
     queryFn: billingApi.getMe,
   })
+
+  // Verify upgrade server-side — don't trust ?success=true alone (easily faked)
+  useEffect(() => {
+    if (successParam === 'true' && billing && billing.plan !== 'Free') {
+      setShowSuccess(true)
+    }
+  }, [successParam, billing])
 
   useEffect(() => {
     if (showSuccess) {

@@ -58,8 +58,16 @@ public class AppDbContext : DbContext, IAppDbContext
             string? changes = null;
             if (entry.State == EntityState.Modified)
             {
+                // Exclude audit-noise fields and sensitive credential fields
+                var sensitiveFields = new HashSet<string>
+                {
+                    "ModifiedAt", "ModifiedBy",
+                    "PasswordHash", "RefreshToken", "RefreshTokenExpiresAt",
+                    "PasswordResetTokenHash", "PasswordResetTokenExpiresAt",
+                    "InviteTokenHash"
+                };
                 var modified = entry.Properties
-                    .Where(p => p.IsModified && p.Metadata.Name is not ("ModifiedAt" or "ModifiedBy"))
+                    .Where(p => p.IsModified && !sensitiveFields.Contains(p.Metadata.Name))
                     .ToDictionary(p => p.Metadata.Name, p => p.CurrentValue);
                 if (modified.Count > 0)
                     changes = JsonSerializer.Serialize(modified);

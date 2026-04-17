@@ -15,13 +15,17 @@ public sealed class ResetPasswordCommandHandler(IAppDbContext db)
         var user = await db.Users
             .FirstOrDefaultAsync(u => u.Email == command.Email.ToLowerInvariant(), cancellationToken);
 
+        // Always run BCrypt.Verify to prevent timing attacks that reveal
+        // whether an email address has an active reset token.
+        var dummyHash = "$2a$11$wBm59VnNtLNGAp5r3Q7rZuRrF1q8VVpYQ3VYY6g.7A5R3R3R3R3RO";
+        var storedHash = user?.PasswordResetTokenHash ?? dummyHash;
+        var tokenValid = BCrypt.Net.BCrypt.Verify(command.Token, storedHash);
+
         if (user is null
             || user.PasswordResetTokenHash is null
             || user.PasswordResetTokenExpiresAt is null
-            || user.PasswordResetTokenExpiresAt < DateTime.UtcNow)
-            return Result.Invalid(new ValidationError("Token inválido ou expirado."));
-
-        if (!BCrypt.Net.BCrypt.Verify(command.Token, user.PasswordResetTokenHash))
+            || user.PasswordResetTokenExpiresAt < DateTime.UtcNow
+            || !tokenValid)
             return Result.Invalid(new ValidationError("Token inválido ou expirado."));
 
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(command.NewPassword);

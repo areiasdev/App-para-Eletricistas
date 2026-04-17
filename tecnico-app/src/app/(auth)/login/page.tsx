@@ -21,9 +21,7 @@ export default function LoginPage() {
   const login = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken, data.refreshToken)
-      localStorage.setItem('accessToken', data.accessToken)
-      localStorage.setItem('refreshToken', data.refreshToken)
+      setAuth(data.user, data.accessToken)
       router.push('/dashboard')
     },
   })

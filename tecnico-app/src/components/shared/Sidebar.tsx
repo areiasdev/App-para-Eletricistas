@@ -9,6 +9,7 @@ import { useThemeStore } from '@/stores/themeStore'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { billingApi } from '@/lib/api/billing'
+import { authApi } from '@/lib/api/auth'
 
 const navItems = [
   {
@@ -130,10 +131,13 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const planColor = planColors[plan] ?? planColors.Free
   const { theme, toggleTheme } = useThemeStore()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await authApi.logout() // revoke refresh token on the server + clear httpOnly cookie
+    } catch {
+      // Best-effort — always clear local state even if the network call fails
+    }
     clearAuth()
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
     router.push('/login')
   }
 

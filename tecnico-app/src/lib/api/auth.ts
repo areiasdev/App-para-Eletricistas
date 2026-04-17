@@ -19,8 +19,12 @@ export const authApi = {
   login: (data: LoginRequest) =>
     api.post<AuthResponse>('/auth/login', data).then((r) => r.data),
 
-  refresh: (refreshToken: string) =>
-    api.post<AuthResponse>('/auth/refresh', { refreshToken }).then((r) => r.data),
+  // No body — refresh token is read from the httpOnly cookie automatically
+  refresh: () =>
+    api.post<AuthResponse>('/auth/refresh').then((r) => r.data),
+
+  logout: () =>
+    api.post('/auth/logout'),
 
   forgotPassword: (email: string) =>
     api.post('/auth/forgot-password', { email }),
