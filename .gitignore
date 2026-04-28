@@ -422,8 +422,15 @@ tecnico-app/.next/
 tecnico-app/out/
 tecnico-app/.env.local
 
-# Claude Code
+# Claude Code — dev tool, not part of project
+CLAUDE.md
+AGENTS.md
 .claude/
+
+# Personal files — never commit
+*.pdf
+PLANO_*.md
+dev.ps1
 
 # App secrets — never commit real credentials
 src/**/appsettings.Development.json
