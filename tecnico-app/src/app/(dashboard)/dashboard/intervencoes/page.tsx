@@ -328,7 +328,18 @@ function IntervencoesContent() {
                 </td>
                 <td className="px-5 py-4 text-sm" style={{ color: 'var(--color-muted)' }}>{iv.clientName}</td>
                 <td className="px-5 py-4">
-                  <InterventionStatusBadge status={iv.status} />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <InterventionStatusBadge status={iv.status} />
+                    {iv.status === 'Scheduled' && iv.scheduledAt && new Date(iv.scheduledAt) < new Date() && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}
+                        title="Data agendada já passou"
+                      >
+                        ⚠ Em atraso
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-5 py-4 text-sm" style={{ color: 'var(--color-muted)' }}>
                   {iv.scheduledAt ? formatDateTime(iv.scheduledAt) : '—'}

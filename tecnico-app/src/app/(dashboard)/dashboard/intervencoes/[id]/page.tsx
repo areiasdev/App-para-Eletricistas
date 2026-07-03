@@ -94,6 +94,11 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
 
   const actions = nextStatuses[iv.status] ?? []
 
+  const isOverdue =
+    iv.status === 'Scheduled' &&
+    !!iv.scheduledAt &&
+    new Date(iv.scheduledAt) < new Date()
+
   return (
     <div className="max-w-3xl space-y-6">
       {/* Breadcrumb */}
@@ -170,6 +175,29 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
           ))}
         </div>
       </div>
+
+      {/* Overdue warning */}
+      {isOverdue && (
+        <div
+          className="flex items-start gap-3 rounded-xl border px-4 py-3"
+          style={{ backgroundColor: '#fffbeb', borderColor: '#fcd34d' }}
+        >
+          <svg className="shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L1.5 17h17L10 2z" stroke="#d97706" strokeWidth="1.5" strokeLinejoin="round" fill="#fef3c7"/>
+            <path d="M10 8v4" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round"/>
+            <circle cx="10" cy="14.5" r="0.75" fill="#d97706"/>
+          </svg>
+          <div>
+            <p className="text-sm font-semibold" style={{ color: '#92400e' }}>
+              Intervenção em atraso
+            </p>
+            <p className="text-sm mt-0.5" style={{ color: '#b45309' }}>
+              A data agendada ({formatDateTime(iv.scheduledAt!)}) já passou e a intervenção ainda está como{' '}
+              <strong>Agendada</strong>. Inicia a intervenção ou reagenda para uma nova data.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Main info */}
       <div className="rounded-xl border divide-y" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>

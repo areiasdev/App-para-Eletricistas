@@ -91,6 +91,18 @@ const navItems = [
     enterpriseOnly: true,
   },
   {
+    href: '/dashboard/audit-logs',
+    label: 'Audit Log',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.3"/>
+        <path d="M5 5h6M5 8h4M5 11h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+        <circle cx="11.5" cy="11" r="1" fill="currentColor"/>
+      </svg>
+    ),
+    enterpriseOnly: true,
+  },
+  {
     href: '/dashboard/planos',
     label: 'Plano',
     icon: (
@@ -115,6 +127,7 @@ const planColors: Record<string, { bg: string; text: string }> = {
   Pro:        { bg: 'rgba(245,158,11,0.18)', text: 'var(--color-brand-400)' },
   Team:       { bg: 'rgba(124,58,237,0.18)', text: '#a78bfa' },
   Enterprise: { bg: 'rgba(16,185,129,0.18)', text: '#34d399' },
+  Trial:      { bg: 'rgba(59,130,246,0.18)',  text: '#60a5fa' },
   Free:       { bg: 'rgba(255,255,255,0.07)', text: 'rgba(255,255,255,0.35)' },
 }
 
@@ -127,8 +140,11 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     queryFn: billingApi.getMe,
     staleTime: 1000 * 60 * 5,
   })
-  const plan = billing?.plan ?? 'Free'
-  const planColor = planColors[plan] ?? planColors.Free
+  const plan = billing?.plan ?? 'Enterprise'
+  const isTrialActive = billing?.isTrialActive ?? true
+  const trialDaysLeft = billing?.trialDaysLeft ?? 14
+  const badgeLabel = isTrialActive ? `Trial · ${trialDaysLeft}d` : plan
+  const planColor = isTrialActive ? planColors.Trial : (planColors[plan] ?? planColors.Free)
   const { theme, toggleTheme } = useThemeStore()
 
   const handleLogout = async () => {
@@ -161,8 +177,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
-          if ('teamOnly' in item && item.teamOnly && plan !== 'Team' && plan !== 'Enterprise') return null
-          if ('enterpriseOnly' in item && item.enterpriseOnly && plan !== 'Enterprise') return null
+          if ('teamOnly' in item && item.teamOnly && plan !== 'Team' && plan !== 'Enterprise' && !isTrialActive) return null
+          if ('enterpriseOnly' in item && item.enterpriseOnly && plan !== 'Enterprise' && !isTrialActive) return null
           const isActive =
             item.href === '/dashboard'
               ? pathname === '/dashboard'
@@ -209,7 +225,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
                 className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wider leading-none"
                 style={{ backgroundColor: planColor.bg, color: planColor.text }}
               >
-                {plan}
+                {badgeLabel}
               </span>
             </div>
           </div>

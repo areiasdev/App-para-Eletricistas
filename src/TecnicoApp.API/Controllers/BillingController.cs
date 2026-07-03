@@ -31,9 +31,17 @@ public class BillingController(
 
         if (user is null) return Unauthorized();
 
+        var isTrialActive = user.TrialEndsAt.HasValue && user.TrialEndsAt.Value > DateTime.UtcNow;
+        var trialDaysLeft = isTrialActive
+            ? (int)Math.Ceiling((user.TrialEndsAt!.Value - DateTime.UtcNow).TotalDays)
+            : 0;
+
         return Ok(new BillingMeResponse(
             user.Plan.ToString(),
-            user.StripeCustomerId is not null));
+            user.StripeCustomerId is not null,
+            user.TrialEndsAt,
+            isTrialActive,
+            trialDaysLeft));
     }
 
     [HttpPost("checkout")]
@@ -52,9 +60,10 @@ public class BillingController(
 
         var priceId = request.Plan switch
         {
-            "Pro"  => configuration["Stripe:PriceIdPro"],
-            "Team" => configuration["Stripe:PriceIdTeam"],
-            _      => null,
+            "Pro"        => configuration["Stripe:PriceIdPro"],
+            "Team"       => configuration["Stripe:PriceIdTeam"],
+            "Enterprise" => configuration["Stripe:PriceIdEnterprise"],
+            _            => null,
         };
 
         if (string.IsNullOrWhiteSpace(priceId))
@@ -146,14 +155,41 @@ public class BillingController(
 
                 var plan = priceId switch
                 {
-                    var p when p == configuration["Stripe:PriceIdTeam"] => AppPlan.Team,
-                    var p when p == configuration["Stripe:PriceIdPro"]  => AppPlan.Pro,
+                    var p when p == configuration["Stripe:PriceIdEnterprise"] => AppPlan.Enterprise,
+                    var p when p == configuration["Stripe:PriceIdTeam"]       => AppPlan.Team,
+                    var p when p == configuration["Stripe:PriceIdPro"]        => AppPlan.Pro,
                     _ => AppPlan.Pro
                 };
 
                 user.Plan = plan;
                 user.StripeCustomerId = session.CustomerId;
                 await db.SaveChangesAsync();
+                break;
+            }
+
+            case EventTypes.CustomerSubscriptionUpdated:
+            {
+                var subscription = (Stripe.Subscription)stripeEvent.Data.Object;
+                if (subscription.Status != "active") break;
+
+                var customerId = subscription.CustomerId;
+                var user = await db.Users.FirstOrDefaultAsync(u => u.StripeCustomerId == customerId);
+                if (user is null) break;
+
+                var priceId = subscription.Items.Data.FirstOrDefault()?.Price.Id;
+                var newPlan = priceId switch
+                {
+                    var p when p == configuration["Stripe:PriceIdEnterprise"] => AppPlan.Enterprise,
+                    var p when p == configuration["Stripe:PriceIdTeam"]       => AppPlan.Team,
+                    var p when p == configuration["Stripe:PriceIdPro"]        => AppPlan.Pro,
+                    _ => (AppPlan?)null
+                };
+
+                if (newPlan.HasValue && user.Plan != newPlan.Value)
+                {
+                    user.Plan = newPlan.Value;
+                    await db.SaveChangesAsync();
+                }
                 break;
             }
 
@@ -187,7 +223,8 @@ public class BillingController(
     }
 }
 
-public record BillingMeResponse(string Plan, bool HasActiveSubscription);
+public record BillingMeResponse(string Plan, bool HasActiveSubscription, DateTime? TrialEndsAt, bool IsTrialActive, int TrialDaysLeft);
+// Plan: "Pro" | "Team" | "Enterprise"
 public record CreateCheckoutRequest(string Plan, string FrontendUrl);
 public record PortalRequest(string FrontendUrl);
 public record CheckoutResponse(string Url);

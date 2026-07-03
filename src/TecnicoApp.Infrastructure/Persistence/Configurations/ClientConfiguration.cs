@@ -23,6 +23,8 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
             a.Property(x => x.Country).HasMaxLength(100).HasDefaultValue("Portugal");
         });
 
+        builder.Property(c => c.PortalTokenHash).HasMaxLength(128);
+
         builder.HasIndex(c => new { c.UserId, c.Name });
         builder.HasQueryFilter(c => !c.IsDeleted);
 
