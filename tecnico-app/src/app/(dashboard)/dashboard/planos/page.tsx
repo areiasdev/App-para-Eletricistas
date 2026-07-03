@@ -8,24 +8,6 @@ import { getErrorMessage } from '@/lib/api/client'
 
 const plans = [
   {
-    id: 'Free' as const,
-    name: 'Free',
-    price: '€0',
-    period: '/mês',
-    description: 'Para experimentar sem compromisso.',
-    features: [
-      'Até 5 clientes',
-      'Até 10 orçamentos/mês',
-      '1 utilizador',
-      'PDF de orçamentos',
-      'Gestão de equipamentos',
-      'Dashboard básico',
-    ],
-    cta: 'Plano atual',
-    highlight: false,
-    enterprise: false,
-  },
-  {
     id: 'Pro' as const,
     name: 'Pro',
     price: '€19',
@@ -92,7 +74,7 @@ const plans = [
 function PlanosPageInner() {
   const searchParams = useSearchParams()
   const successParam = searchParams.get('success')
-  const [loadingPlan, setLoadingPlan] = useState<'Pro' | 'Team' | null>(null)
+  const [loadingPlan, setLoadingPlan] = useState<'Pro' | 'Team' | 'Enterprise' | null>(null)
   const [portalLoading, setPortalLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
@@ -116,7 +98,7 @@ function PlanosPageInner() {
     }
   }, [showSuccess])
 
-  const handleSubscribe = async (planId: 'Pro' | 'Team') => {
+  const handleSubscribe = async (planId: 'Pro' | 'Team' | 'Enterprise') => {
     setLoadingPlan(planId)
     setCheckoutError(null)
     try {
@@ -138,7 +120,10 @@ function PlanosPageInner() {
     }
   }
 
-  const currentPlan = billing?.plan ?? 'Free'
+  const currentPlan = billing?.plan ?? 'Enterprise'
+  const isTrialActive = billing?.isTrialActive ?? true
+  const trialDaysLeft = billing?.trialDaysLeft ?? 14
+  const trialExpired = !isTrialActive && currentPlan === 'Free'
 
   return (
     <div className="max-w-5xl space-y-8">
@@ -146,14 +131,40 @@ function PlanosPageInner() {
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Planos</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
-          {isLoading
-            ? 'A carregar...'
-            : `Plano atual: `}
-          {!isLoading && (
-            <span className="font-semibold" style={{ color: 'var(--color-ink)' }}>{currentPlan}</span>
-          )}
+          Escolhe o plano que se adapta à tua atividade.
         </p>
       </div>
+
+      {/* Trial banner */}
+      {isTrialActive && (
+        <div className="rounded-xl px-5 py-4 flex items-center gap-3"
+          style={{ backgroundColor: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7" stroke="#60a5fa" strokeWidth="1.5"/>
+            <path d="M8 5v4M8 10.5v.5" stroke="#60a5fa" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <p className="text-sm font-medium" style={{ color: '#60a5fa' }}>
+            Estás em período de trial com acesso Enterprise completo.{' '}
+            <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+              Termina em <strong>{trialDaysLeft} dia{trialDaysLeft !== 1 ? 's' : ''}</strong>. Subscreve agora para não perderes o acesso.
+            </span>
+          </p>
+        </div>
+      )}
+
+      {/* Expired trial banner */}
+      {trialExpired && (
+        <div className="rounded-xl px-5 py-4 flex items-center gap-3"
+          style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)' }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7" stroke="#f87171" strokeWidth="1.5"/>
+            <path d="M8 5v4M8 10.5v.5" stroke="#f87171" strokeWidth="1.5" strokeLinecap="round"/>
+          </svg>
+          <p className="text-sm font-medium" style={{ color: '#f87171' }}>
+            O teu trial expirou. Subscreve um plano para continuar a usar o TécnicoApp.
+          </p>
+        </div>
+      )}
 
       {/* Error banner */}
       {checkoutError && (
@@ -209,9 +220,9 @@ function PlanosPageInner() {
       {/* Plan cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {plans.map((plan) => {
-          const isCurrent = currentPlan === plan.id
+          const isCurrent = currentPlan === plan.id && !isTrialActive
           const isEnterprise = plan.enterprise
-          const isStripe = !isEnterprise && plan.id !== 'Free'
+          const isStripe = !isEnterprise
 
           // Enterprise card — dark premium look
           if (isEnterprise) {
@@ -271,16 +282,26 @@ function PlanosPageInner() {
                         Plano atual ✓
                       </div>
                     ) : (
-                      <a
-                        href="mailto:vendas@tecnicoapp.pt?subject=Enterprise%20%E2%80%94%20Quero%20saber%20mais"
-                        className="block w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-center transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
-                        style={{ backgroundColor: 'var(--color-brand-500)', color: '#1c1917' }}
-                      >
-                        {plan.cta} →
-                      </a>
+                      <>
+                        <button
+                          onClick={() => handleSubscribe('Enterprise')}
+                          disabled={loadingPlan !== null}
+                          className="w-full rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110 active:scale-[0.99]"
+                          style={{ backgroundColor: 'var(--color-brand-500)', color: '#1c1917' }}
+                        >
+                          {loadingPlan === 'Enterprise' ? 'A redirecionar...' : 'Subscrever Enterprise →'}
+                        </button>
+                        <a
+                          href="mailto:vendas@tecnicoapp.pt?subject=Enterprise%20%E2%80%94%20Quero%20saber%20mais"
+                          className="block w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-center transition-all duration-150"
+                          style={{ backgroundColor: 'rgba(245,158,11,0.08)', color: 'rgba(245,158,11,0.7)', border: '1px solid rgba(245,158,11,0.2)' }}
+                        >
+                          Falar com vendas
+                        </a>
+                      </>
                     )}
                     <p className="text-xs text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
-                      Resposta em 1 dia útil · Demo incluída
+                      Contrato anual · 2 meses grátis · Demo incluída
                     </p>
                   </div>
                 </div>
@@ -400,7 +421,7 @@ function PlanosPageInner() {
       </div>
 
       <p className="text-xs text-center" style={{ color: 'var(--color-subtle)' }}>
-        Preços em EUR, IVA incluído. Pro e Team: cancela a qualquer momento. Enterprise: contrato anual com 2 meses grátis.
+        Preços em EUR, IVA incluído · Pro e Team: cancela a qualquer momento · Enterprise: contrato anual, 2 meses grátis
       </p>
     </div>
   )

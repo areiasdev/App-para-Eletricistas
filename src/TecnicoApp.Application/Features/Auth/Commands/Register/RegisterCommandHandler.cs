@@ -29,7 +29,9 @@ public sealed class RegisterCommandHandler(
             FullName = command.FullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(command.Password),
             RefreshToken = tokenService.GenerateRefreshToken(),
-            RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30)
+            RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30),
+            Plan = Domain.Enums.Plan.Enterprise,
+            TrialEndsAt = DateTime.UtcNow.AddDays(14)
         };
 
         await db.Users.AddAsync(user, cancellationToken);

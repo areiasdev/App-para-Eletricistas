@@ -11,7 +11,9 @@ namespace TecnicoApp.Application.Features.Team.Commands.InviteTeamMember;
 public class InviteTeamMemberCommandHandler(
     IAppDbContext db,
     ICurrentUserService currentUser,
-    IPlanGateService planGate)
+    IPlanGateService planGate,
+    IEmailService emailService,
+    IAppSettings appSettings)
     : IRequestHandler<InviteTeamMemberCommand, Result<TeamMemberDto>>
 {
     public async Task<Result<TeamMemberDto>> Handle(
@@ -133,6 +135,47 @@ public class InviteTeamMemberCommandHandler(
 
         db.TeamMembers.Add(teamMember);
         await db.SaveChangesAsync(cancellationToken);
+
+        // Send invite email (best-effort — don't fail the invite if email fails)
+        try
+        {
+            var inviteUrl = $"{appSettings.BaseUrl}/aceitar-convite?token={rawToken}";
+            var html = $"""
+                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
+                  <div style="margin-bottom:24px">
+                    <span style="background:#f59e0b;color:#1c1917;font-size:14px;font-weight:700;
+                      padding:6px 10px;border-radius:6px">⚡ TécnicoApp</span>
+                  </div>
+                  <h1 style="font-size:22px;font-weight:700;margin-bottom:8px">
+                    Foste convidado para a equipa
+                  </h1>
+                  <p style="color:#555;margin-bottom:8px">
+                    <strong>{ownerUser!.FullName}</strong> convidou-te para se juntar à equipa no TécnicoApp.
+                  </p>
+                  <p style="color:#555;margin-bottom:24px">
+                    Clica no botão abaixo para configurar a tua conta. O link é válido por 7 dias.
+                  </p>
+                  <a href="{inviteUrl}"
+                    style="display:inline-block;background:#f59e0b;color:#1c1917;font-weight:700;
+                      font-size:15px;padding:12px 28px;border-radius:8px;text-decoration:none">
+                    Aceitar convite →
+                  </a>
+                  <p style="color:#999;font-size:12px;margin-top:32px">
+                    Se não reconheces este email, podes ignorá-lo com segurança.
+                  </p>
+                </div>
+                """;
+
+            await emailService.SendAsync(new EmailMessage(
+                To: normalizedEmail,
+                ToName: normalizedEmail,
+                Subject: $"Convite para a equipa TécnicoApp de {ownerUser.FullName}",
+                HtmlBody: html), cancellationToken);
+        }
+        catch
+        {
+            // Email failure is non-fatal; raw token still returned in response
+        }
 
         return Result.Success(new TeamMemberDto(
             teamMember.Id,

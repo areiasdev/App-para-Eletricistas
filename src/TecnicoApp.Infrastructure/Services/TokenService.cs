@@ -38,4 +38,29 @@ public sealed class TokenService(IConfiguration configuration) : ITokenService
 
     public string GenerateRefreshToken()
         => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+    public string GeneratePortalToken(Guid clientId, Guid ownerId, string clientName, string clientEmail)
+    {
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!));
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, clientId.ToString()),
+            new Claim(ClaimTypes.Role, "ClientPortal"),
+            new Claim("ownerId", ownerId.ToString()),
+            new Claim(ClaimTypes.Name, clientName),
+            new Claim(ClaimTypes.Email, clientEmail),
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: configuration["Jwt:Issuer"],
+            audience: configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddDays(7),
+            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+        );
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 }

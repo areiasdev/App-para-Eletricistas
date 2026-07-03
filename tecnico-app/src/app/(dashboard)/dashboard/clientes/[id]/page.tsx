@@ -1,16 +1,38 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useClient, useDeleteClient } from '@/hooks/useClients'
 import { formatDate } from '@/lib/utils/formatters'
+import { useQuery } from '@tanstack/react-query'
+import { billingApi } from '@/lib/api/billing'
+import { portal } from '@/lib/api/portal'
+import { getErrorMessage } from '@/lib/api/client'
 
 export default function ClienteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
   const { data: client, isLoading } = useClient(id)
   const deleteClient = useDeleteClient()
+  const [portalSending, setPortalSending] = useState(false)
+  const [portalMsg, setPortalMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+
+  const { data: billing } = useQuery({ queryKey: ['billing-me'], queryFn: billingApi.getMe, staleTime: 1000 * 60 * 5 })
+  const isEnterprise = billing?.plan === 'Enterprise'
+
+  const handleSendPortalAccess = async () => {
+    setPortalSending(true)
+    setPortalMsg(null)
+    try {
+      const res = await portal.sendAccess(id)
+      setPortalMsg({ type: 'ok', text: res.message ?? 'Email enviado com sucesso.' })
+    } catch (err) {
+      setPortalMsg({ type: 'err', text: getErrorMessage(err) })
+    } finally {
+      setPortalSending(false)
+    }
+  }
 
   const handleDelete = () => {
     if (!confirm(`Tens a certeza que queres apagar o cliente "${client?.name}"?`)) return
@@ -90,6 +112,29 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
         {client.notes && <InfoRow label="Notas" value={client.notes} />}
         <InfoRow label="Cliente desde" value={formatDate(client.createdAt)} />
       </div>
+
+      {/* Portal access (Enterprise only) */}
+      {isEnterprise && client.email && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSendPortalAccess}
+              disabled={portalSending}
+              className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+              style={{ borderColor: 'rgba(16,185,129,0.4)', color: '#34d399', backgroundColor: 'rgba(16,185,129,0.06)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.12)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.06)')}
+            >
+              {portalSending ? 'A enviar...' : 'Enviar acesso ao portal →'}
+            </button>
+          </div>
+          {portalMsg && (
+            <p className="text-xs px-1" style={{ color: portalMsg.type === 'ok' ? '#34d399' : '#f87171' }}>
+              {portalMsg.text}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Related links */}
       <div className="flex flex-wrap gap-3">

@@ -26,6 +26,7 @@ public static class DependencyInjection
         services.AddScoped<IStripeService, StripeService>();
         services.AddScoped<IAppSettings, AppSettings>();
         services.AddScoped<MaintenanceAlertJob>();
+        services.AddScoped<TrialExpirationJob>();
         services.AddSingleton<IPlanGateService, PlanGateService>();
         services.AddHttpContextAccessor();
 

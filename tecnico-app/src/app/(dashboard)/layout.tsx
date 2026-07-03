@@ -4,15 +4,38 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/lib/api/auth'
+import { billingApi } from '@/lib/api/billing'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
+import { useQuery } from '@tanstack/react-query'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const { user, accessToken, setAuth, clearAuth } = useAuthStore()
+  const { user, accessToken, _hasHydrated, setAuth, clearAuth } = useAuthStore()
   const [ready, setReady] = useState(false)
 
+  const { data: billing } = useQuery({
+    queryKey: ['billing-me'],
+    queryFn: billingApi.getMe,
+    enabled: ready,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  // Redirect expired trials to plans page (only when not already there)
   useEffect(() => {
+    if (!billing) return
+    const trialExpired = !billing.isTrialActive && billing.plan === 'Free'
+    if (trialExpired && !window.location.pathname.startsWith('/dashboard/planos')) {
+      router.replace('/dashboard/planos')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [billing])
+
+  useEffect(() => {
+    // Wait for Zustand persist to hydrate from localStorage before checking auth.
+    // Without this, user is null on first render and we'd redirect incorrectly.
+    if (!_hasHydrated) return
+
     // Case 1: fresh session — no user at all → go to login
     if (!user) {
       router.replace('/login')
@@ -38,7 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.replace('/login')
       })
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [_hasHydrated])
 
   if (!ready) {
     return (
