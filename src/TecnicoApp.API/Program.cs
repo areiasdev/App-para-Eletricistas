@@ -138,7 +138,7 @@ var allowedOrigins = builder.Configuration
 builder.Services.AddCors(options =>
     options.AddPolicy("TecnicoAppCors", policy =>
         policy.WithOrigins(allowedOrigins)
-              .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
+              .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "X-Csrf-Token")
               .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
               .SetPreflightMaxAge(TimeSpan.FromHours(2))
               .AllowCredentials()));
