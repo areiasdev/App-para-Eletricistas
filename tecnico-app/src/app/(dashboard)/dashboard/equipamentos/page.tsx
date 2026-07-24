@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useEquipmentList, useDeleteEquipment } from '@/hooks/useEquipment'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useCanManage } from '@/hooks/useCanManage'
 import { formatDate } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
 
@@ -33,6 +34,7 @@ function MaintenanceBadge({ date }: { date?: string }) {
 }
 
 function EquipamentosContent() {
+  const canManage = useCanManage()
   const searchParams = useSearchParams()
   const clientIdFilter = searchParams.get('clientId') ?? undefined
 
@@ -188,15 +190,17 @@ function EquipamentosContent() {
                     >
                       Editar
                     </Link>
-                    <button
-                      onClick={() => handleDelete(eq.id, eq.type)}
-                      className="text-xs font-medium transition-colors duration-150"
-                      style={{ color: 'var(--color-subtle)' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
-                    >
-                      Apagar
-                    </button>
+                    {canManage && (
+                      <button
+                        onClick={() => handleDelete(eq.id, eq.type)}
+                        className="text-xs font-medium transition-colors duration-150"
+                        style={{ color: 'var(--color-subtle)' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
+                      >
+                        Apagar
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

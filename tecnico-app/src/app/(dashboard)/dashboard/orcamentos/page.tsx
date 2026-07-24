@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useQuotes, useDeleteQuote } from '@/hooks/useQuotes'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useCanManage } from '@/hooks/useCanManage'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { formatDate, formatCurrency } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
@@ -20,11 +22,12 @@ const statusOptions: { value: QuoteStatus | ''; label: string }[] = [
 ]
 
 function OrcamentosContent() {
+  const canManage = useCanManage()
   const searchParams = useSearchParams()
   const clientIdFilter = searchParams.get('clientId') ?? undefined
 
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [status, setStatus] = useState<QuoteStatus | ''>('')
   const [page, setPage] = useState(1)
 
@@ -41,8 +44,6 @@ function OrcamentosContent() {
   const handleSearch = (value: string) => {
     setSearch(value)
     setPage(1)
-    const t = setTimeout(() => setDebouncedSearch(value), 300)
-    return () => clearTimeout(t)
   }
 
   const handleDelete = (id: string, number: string) => {
@@ -206,15 +207,17 @@ function OrcamentosContent() {
                         >
                           Editar
                         </Link>
-                        <button
-                          onClick={() => handleDelete(quote.id, quote.number)}
-                          className="text-xs font-medium transition-colors duration-150"
-                          style={{ color: 'var(--color-subtle)' }}
-                          onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
-                          onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
-                        >
-                          Apagar
-                        </button>
+                        {canManage && (
+                          <button
+                            onClick={() => handleDelete(quote.id, quote.number)}
+                            className="text-xs font-medium transition-colors duration-150"
+                            style={{ color: 'var(--color-subtle)' }}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
+                          >
+                            Apagar
+                          </button>
+                        )}
                       </>
                     )}
                   </div>

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useTeam, useInviteTeamMember, useUpdateTeamMemberRole, useRemoveTeamMember } from '@/hooks/useTeam'
+import { useCanManage } from '@/hooks/useCanManage'
+import { AccessDenied } from '@/components/shared/AccessDenied'
 import { getErrorMessage } from '@/lib/api/client'
 import type { UserRole, TeamMember } from '@/types'
 
@@ -21,6 +23,7 @@ const roleColors: Record<UserRole, { bg: string; text: string }> = {
 }
 
 export default function EquipaPage() {
+  const canManage = useCanManage()
   const { data: members = [], isLoading } = useTeam()
   const inviteMember = useInviteTeamMember()
   const updateRole = useUpdateTeamMemberRole()
@@ -65,6 +68,8 @@ export default function EquipaPage() {
       onError: (err) => toast.error(getErrorMessage(err)),
     })
   }
+
+  if (!canManage) return <AccessDenied />
 
   return (
     <div className="max-w-3xl space-y-6">

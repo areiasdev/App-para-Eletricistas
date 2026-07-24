@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useQuote, useUpdateQuoteStatus, useSignQuote, useDeleteQuote, useSendQuoteEmail } from '@/hooks/useQuotes'
+import { useCanManage } from '@/hooks/useCanManage'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { SignatureModal } from '@/components/features/SignatureModal'
 import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils/formatters'
@@ -111,6 +112,7 @@ const nextStatuses: Partial<Record<QuoteStatus, { status: QuoteStatus; label: st
 export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const canManage = useCanManage()
   const { data: quote, isLoading } = useQuote(id)
   const updateStatus = useUpdateQuoteStatus()
   const signQuote = useSignQuote()
@@ -307,15 +309,17 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
                 >
                   Editar
                 </Link>
-                <button
-                  onClick={handleDelete}
-                  className="rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150"
-                  style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
-                >
-                  Apagar
-                </button>
+                {canManage && (
+                  <button
+                    onClick={handleDelete}
+                    className="rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150"
+                    style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
+                  >
+                    Apagar
+                  </button>
+                )}
               </>
             )}
 

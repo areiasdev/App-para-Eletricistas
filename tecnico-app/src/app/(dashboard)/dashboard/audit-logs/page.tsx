@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { auditLogsApi, type AuditLogDto } from '@/lib/api/auditLogs'
 import { getErrorMessage } from '@/lib/api/client'
+import { useCanManage } from '@/hooks/useCanManage'
+import { AccessDenied } from '@/components/shared/AccessDenied'
 
 const ENTITY_TYPES = ['Client', 'Equipment', 'Intervention', 'Quote', 'TeamMember']
 
@@ -34,6 +36,7 @@ function formatChanges(raw: string | null): string {
 }
 
 export default function AuditLogsPage() {
+  const canManage = useCanManage()
   const today = new Date()
   const sevenDaysAgo = new Date(today)
   sevenDaysAgo.setDate(today.getDate() - 7)
@@ -53,9 +56,12 @@ export default function AuditLogsPage() {
       from: from || undefined,
       to: to || undefined,
     }),
+    enabled: canManage,
   })
 
   const inputCls = 'rounded-lg border px-3 py-2 text-sm outline-none transition-all duration-150 bg-[var(--color-canvas)] text-[var(--color-ink)] border-[var(--color-line-strong)]'
+
+  if (!canManage) return <AccessDenied />
 
   return (
     <div className="max-w-5xl space-y-6">

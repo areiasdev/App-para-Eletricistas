@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useInterventions, useDeleteIntervention } from '@/hooks/useInterventions'
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useCanManage } from '@/hooks/useCanManage'
 import { InterventionStatusBadge } from '@/components/features/InterventionStatusBadge'
 import { formatDate, formatDateTime } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
@@ -143,6 +144,7 @@ const statusOptions: { value: InterventionStatus | ''; label: string }[] = [
 ]
 
 function IntervencoesContent() {
+  const canManage = useCanManage()
   const searchParams = useSearchParams()
   const clientIdFilter = searchParams.get('clientId') ?? undefined
   const statusParam = (searchParams.get('status') ?? '') as InterventionStatus | ''
@@ -370,15 +372,17 @@ function IntervencoesContent() {
                     >
                       Editar
                     </Link>
-                    <button
-                      onClick={() => handleDelete(iv.id, iv.title)}
-                      className="text-xs font-medium transition-colors duration-150"
-                      style={{ color: 'var(--color-subtle)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = '#dc2626')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-subtle)')}
-                    >
-                      Apagar
-                    </button>
+                    {canManage && (
+                      <button
+                        onClick={() => handleDelete(iv.id, iv.title)}
+                        className="text-xs font-medium transition-colors duration-150"
+                        style={{ color: 'var(--color-subtle)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = '#dc2626')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-subtle)')}
+                      >
+                        Apagar
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

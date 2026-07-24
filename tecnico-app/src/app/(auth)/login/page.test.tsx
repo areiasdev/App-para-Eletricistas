@@ -35,7 +35,7 @@ describe('LoginPage', () => {
         HttpResponse.json({
           accessToken: 'access-token',
           csrfToken: 'csrf-token',
-          user: { id: '1', fullName: 'Ana Silva', email: 'ana@x.pt' },
+          user: { id: '1', fullName: 'Ana Silva', email: 'ana@x.pt', role: 'Owner' },
         })
       )
     )

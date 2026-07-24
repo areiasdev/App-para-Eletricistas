@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
+import { useCanManage } from '@/hooks/useCanManage'
 import { useRouter } from 'next/navigation'
 import { authApi } from '@/lib/api/auth'
 
@@ -74,6 +75,7 @@ const navItems = [
         <path d="M7 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
       </svg>
     ),
+    managerOnly: true,
   },
   {
     href: '/dashboard/relatorios',
@@ -85,6 +87,7 @@ const navItems = [
         <rect x="11" y="2" width="3" height="13" rx="1" fill="currentColor"/>
       </svg>
     ),
+    managerOnly: true,
   },
   {
     href: '/dashboard/audit-logs',
@@ -96,6 +99,7 @@ const navItems = [
         <circle cx="11.5" cy="11" r="1" fill="currentColor"/>
       </svg>
     ),
+    managerOnly: true,
   },
   {
     href: '/dashboard/perfil',
@@ -114,6 +118,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
   const { theme, toggleTheme } = useThemeStore()
+  const canManage = useCanManage()
 
   const handleLogout = async () => {
     try {
@@ -145,6 +150,8 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
+          if ('managerOnly' in item && item.managerOnly && !canManage) return null
+
           const isActive =
             item.href === '/dashboard'
               ? pathname === '/dashboard'
