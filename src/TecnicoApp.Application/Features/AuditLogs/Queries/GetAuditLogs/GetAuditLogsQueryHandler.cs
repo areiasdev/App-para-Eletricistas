@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.DTOs;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.AuditLogs.DTOs;
+using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.AuditLogs.Queries.GetAuditLogs;
 
@@ -21,6 +22,9 @@ public class GetAuditLogsQueryHandler(
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         if (callingUser is null) return Result.Unauthorized();
+
+        if (callingUser.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores têm acesso ao audit log.");
 
         var ownerId = callingUser.OwnerId ?? callingUser.Id;
 

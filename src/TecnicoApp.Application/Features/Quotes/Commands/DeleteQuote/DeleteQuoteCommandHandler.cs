@@ -13,10 +13,20 @@ public class DeleteQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         DeleteQuoteCommand request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's quotes
-        var ownerId = await db.Users.AsNoTracking()
+        var caller = await db.Users.AsNoTracking()
             .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
+            .Select(u => new { OwnerId = u.OwnerId ?? u.Id, u.Role })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (caller is null)
+            return Result.Unauthorized();
+
+        // Deletes are irreversible from the UI — restrict to Owner/Admin so a technician
+        // can't wipe out company records unsupervised.
+        if (caller.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores podem apagar orçamentos.");
+
+        var ownerId = caller.OwnerId;
 
         var quote = await db.Quotes
             .FirstOrDefaultAsync(q => q.Id == request.Id, cancellationToken);

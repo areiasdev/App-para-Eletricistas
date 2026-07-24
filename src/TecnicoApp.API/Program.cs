@@ -39,7 +39,11 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // ── Controllers ───────────────────────────────────────────────────────────────
 builder.Services.AddControllers(options =>
-    options.AddDefaultResultConvention());
+    options.AddDefaultResultConvention())
+    .AddJsonOptions(options =>
+        // Without this, enums (QuoteStatus, InterventionStatus, UserRole, ...) serialize
+        // as raw integers — the frontend types and comparisons all assume string names.
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 
 // ── JWT ───────────────────────────────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

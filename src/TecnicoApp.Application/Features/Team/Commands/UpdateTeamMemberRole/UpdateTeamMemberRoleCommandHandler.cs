@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Team.DTOs;
+using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Team.Commands.UpdateTeamMemberRole;
 
@@ -19,6 +20,9 @@ public class UpdateTeamMemberRoleCommandHandler(IAppDbContext db, ICurrentUserSe
 
         if (callingUser is null)
             return Result.Unauthorized();
+
+        if (callingUser.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores podem alterar papéis de equipa.");
 
         var ownerId = callingUser.OwnerId ?? callingUser.Id;
 

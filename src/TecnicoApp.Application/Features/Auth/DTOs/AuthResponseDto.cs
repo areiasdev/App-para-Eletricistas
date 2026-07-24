@@ -1,3 +1,5 @@
+using TecnicoApp.Domain.Enums;
+
 namespace TecnicoApp.Application.Features.Auth.DTOs;
 
 /// <summary>
@@ -22,5 +24,6 @@ public record AuthPublicResponseDto(
 public record UserDto(
     Guid Id,
     string FullName,
-    string Email
+    string Email,
+    UserRole Role
 );

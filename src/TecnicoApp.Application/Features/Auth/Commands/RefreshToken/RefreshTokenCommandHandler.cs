@@ -33,7 +33,7 @@ public sealed class RefreshTokenCommandHandler(
             accessToken,
             user.RefreshToken!,
             user.RefreshTokenExpiresAt!.Value,
-            new UserDto(user.Id, user.FullName, user.Email)
+            new UserDto(user.Id, user.FullName, user.Email, user.Role)
         ));
     }
 }
