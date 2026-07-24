@@ -7,10 +7,12 @@ import { authApi } from '@/lib/api/auth'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { generateBrandShades } from '@/lib/utils/color'
+import { useCanManage } from '@/hooks/useCanManage'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { user, accessToken, _hasHydrated, setAuth, clearAuth } = useAuthStore()
+  const canManage = useCanManage()
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -45,6 +47,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_hasHydrated])
 
+  // First-run onboarding: an Owner/Admin with no company set up yet has nothing
+  // meaningful to see on the dashboard, so send them through the wizard first.
+  // Technician/Commercial are never redirected here — company setup is Owner/Admin-only
+  // and useCanManage() already gates that, so this can't ever trap a non-manager.
+  useEffect(() => {
+    if (!ready) return
+    if (canManage && !user?.companyName) {
+      router.replace('/onboarding')
+    }
+  }, [ready, canManage, user?.companyName, router])
+
   // Per-install rebranding: a company's chosen brand color overrides the default amber
   // token set at runtime, so a fresh install just needs Perfil filled in, not a rebuild.
   const brandStyle = useMemo(() => {
@@ -57,7 +70,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return `:root { ${vars} }`
   }, [user?.brandColor])
 
-  if (!ready) {
+  const needsOnboarding = canManage && !user?.companyName
+
+  if (!ready || needsOnboarding) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-canvas)' }}>
         <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--color-brand-500)', borderTopColor: 'transparent' }} />
