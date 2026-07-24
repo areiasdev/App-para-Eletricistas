@@ -35,39 +35,51 @@ public class QuotePdfService : IPdfService
     // ── Header ────────────────────────────────────────────────────────────────
     private static Action<IContainer> ComposeHeader(QuotePdfData d) => container =>
     {
+        var brandHex = string.IsNullOrWhiteSpace(d.IssuerBrandColorHex) ? AmberHex : d.IssuerBrandColorHex;
+
         container.PaddingBottom(24).Row(row =>
         {
-            // Left: issuer info
-            row.RelativeItem().Column(col =>
+            // Left: logo (if set) + issuer info
+            row.RelativeItem().Row(inner =>
             {
-                col.Item().Text(d.IssuerCompany ?? d.IssuerName)
-                    .FontSize(16).Bold().FontColor(InkHex);
-
-                if (d.IssuerCompany is not null)
-                    col.Item().Text(d.IssuerName).FontSize(10).FontColor(MutedHex);
-
-                col.Item().PaddingTop(4).Text(t =>
+                if (d.IssuerLogoBytes is { Length: > 0 })
                 {
-                    if (d.IssuerNif is not null)
-                    {
-                        t.Span("NIF: ").FontColor(MutedHex);
-                        t.Span(d.IssuerNif);
-                        t.Span("   ");
-                    }
-                    if (d.IssuerPhone is not null)
-                    {
-                        t.Span(d.IssuerPhone).FontColor(MutedHex);
-                    }
-                });
+                    inner.ConstantItem(48).Height(48).AlignMiddle()
+                        .Image(d.IssuerLogoBytes).FitArea();
+                    inner.ConstantItem(12);
+                }
 
-                if (d.IssuerEmail is not null)
-                    col.Item().Text(d.IssuerEmail).FontColor(MutedHex);
+                inner.RelativeItem().Column(col =>
+                {
+                    col.Item().Text(d.IssuerCompany ?? d.IssuerName)
+                        .FontSize(16).Bold().FontColor(InkHex);
+
+                    if (d.IssuerCompany is not null)
+                        col.Item().Text(d.IssuerName).FontSize(10).FontColor(MutedHex);
+
+                    col.Item().PaddingTop(4).Text(t =>
+                    {
+                        if (d.IssuerNif is not null)
+                        {
+                            t.Span("NIF: ").FontColor(MutedHex);
+                            t.Span(d.IssuerNif);
+                            t.Span("   ");
+                        }
+                        if (d.IssuerPhone is not null)
+                        {
+                            t.Span(d.IssuerPhone).FontColor(MutedHex);
+                        }
+                    });
+
+                    if (d.IssuerEmail is not null)
+                        col.Item().Text(d.IssuerEmail).FontColor(MutedHex);
+                });
             });
 
             // Right: "ORÇAMENTO" badge + number
             row.ConstantItem(160).AlignRight().Column(col =>
             {
-                col.Item().Background(AmberHex).Padding(8).AlignCenter()
+                col.Item().Background(brandHex).Padding(8).AlignCenter()
                     .Text("ORÇAMENTO").Bold().FontSize(13).FontColor("#ffffff");
 
                 col.Item().PaddingTop(6).AlignRight()
@@ -86,10 +98,12 @@ public class QuotePdfService : IPdfService
     // ── Content ───────────────────────────────────────────────────────────────
     private static Action<IContainer> ComposeContent(QuotePdfData d) => container =>
     {
+        var brandHex = string.IsNullOrWhiteSpace(d.IssuerBrandColorHex) ? AmberHex : d.IssuerBrandColorHex;
+
         container.Column(col =>
         {
             // Divider
-            col.Item().BorderBottom(1).BorderColor(AmberHex).PaddingBottom(0);
+            col.Item().BorderBottom(1).BorderColor(brandHex).PaddingBottom(0);
 
             // Client block
             col.Item().PaddingTop(20).PaddingBottom(20).Row(row =>

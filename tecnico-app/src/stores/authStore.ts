@@ -9,6 +9,7 @@ interface AuthState {
   _hasHydrated: boolean
   setAuth: (user: User, accessToken: string, csrfToken: string) => void
   setAccessToken: (accessToken: string, csrfToken: string) => void
+  updateUser: (patch: Partial<User>) => void
   clearAuth: () => void
   setHasHydrated: (v: boolean) => void
 }
@@ -22,6 +23,9 @@ export const useAuthStore = create<AuthState>()(
       _hasHydrated: false,
       setAuth: (user, accessToken, csrfToken) => set({ user, accessToken, csrfToken }),
       setAccessToken: (accessToken, csrfToken) => set({ accessToken, csrfToken }),
+      // Patches fields on the current user (e.g. after uploading a logo or changing
+      // brand color) without needing a full re-login or waiting for a token refresh.
+      updateUser: (patch) => set((state) => (state.user ? { user: { ...state.user, ...patch } } : {})),
       clearAuth: () => set({ user: null, accessToken: null, csrfToken: null }),
       setHasHydrated: (v) => set({ _hasHydrated: v }),
     }),

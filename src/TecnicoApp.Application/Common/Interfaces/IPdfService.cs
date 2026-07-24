@@ -18,6 +18,8 @@ public record QuotePdfData(
     string? IssuerEmail,
     string? IssuerPhone,
     string? IssuerNif,
+    byte[]? IssuerLogoBytes,
+    string? IssuerBrandColorHex,
     // Lines & totals
     IReadOnlyList<QuoteLineDto> Lines,
     decimal SubTotal,

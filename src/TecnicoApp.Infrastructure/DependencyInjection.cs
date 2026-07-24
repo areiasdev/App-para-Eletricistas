@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<IPdfService, QuotePdfService>();
         services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IAppSettings, AppSettings>();
         services.AddScoped<MaintenanceAlertJob>();
         services.AddHttpContextAccessor();

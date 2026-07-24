@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Users.DTOs;
+using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Users.Commands.UpdateProfile;
 
@@ -19,11 +20,26 @@ public sealed class UpdateProfileCommandHandler(IAppDbContext db, ICurrentUserSe
         if (user is null)
             return Result.NotFound("Utilizador não encontrado.");
 
+        // Full name is always the acting user's own — but company branding belongs to
+        // the team owner, and only Owner/Admin can change it (matches the useCanManage
+        // gate used everywhere else this session).
         user.FullName = command.FullName;
-        user.CompanyName = string.IsNullOrWhiteSpace(command.CompanyName) ? null : command.CompanyName;
-        user.Nif = string.IsNullOrWhiteSpace(command.Nif) ? null : command.Nif;
-        user.Phone = string.IsNullOrWhiteSpace(command.Phone) ? null : command.Phone;
-        user.LogoUrl = string.IsNullOrWhiteSpace(command.LogoUrl) ? null : command.LogoUrl;
+
+        var ownerId = user.OwnerId ?? user.Id;
+        var owner = ownerId == user.Id
+            ? user
+            : await db.Users.FirstOrDefaultAsync(u => u.Id == ownerId, cancellationToken);
+
+        if (owner is null)
+            return Result.Unauthorized();
+
+        if (user.Role is UserRole.Owner or UserRole.Admin)
+        {
+            owner.CompanyName = string.IsNullOrWhiteSpace(command.CompanyName) ? null : command.CompanyName;
+            owner.Nif = string.IsNullOrWhiteSpace(command.Nif) ? null : command.Nif;
+            owner.Phone = string.IsNullOrWhiteSpace(command.Phone) ? null : command.Phone;
+            owner.BrandColor = string.IsNullOrWhiteSpace(command.BrandColor) ? null : command.BrandColor;
+        }
 
         await db.SaveChangesAsync(cancellationToken);
 
@@ -31,10 +47,11 @@ public sealed class UpdateProfileCommandHandler(IAppDbContext db, ICurrentUserSe
             user.Id,
             user.FullName,
             user.Email,
-            user.CompanyName,
-            user.Nif,
-            user.Phone,
-            user.LogoUrl
+            owner.CompanyName,
+            owner.Nif,
+            owner.Phone,
+            owner.LogoUrl,
+            owner.BrandColor
         ));
     }
 }

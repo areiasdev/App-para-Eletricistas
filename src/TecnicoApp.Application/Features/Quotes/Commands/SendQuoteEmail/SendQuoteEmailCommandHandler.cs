@@ -12,6 +12,7 @@ public class SendQuoteEmailCommandHandler(
     ICurrentUserService currentUser,
     IPdfService pdfService,
     IEmailService emailService,
+    IFileStorageService fileStorage,
     ILogger<SendQuoteEmailCommandHandler> logger)
     : IRequestHandler<SendQuoteEmailCommand, Result>
 {
@@ -48,6 +49,8 @@ public class SendQuoteEmailCommandHandler(
             l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
             Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero))).ToList();
 
+        var logoBytes = await fileStorage.ReadLogoBytesAsync(user.LogoUrl, cancellationToken);
+
         var pdfData = new QuotePdfData(
             Number: quote.Number,
             CreatedAt: quote.CreatedAt,
@@ -62,6 +65,8 @@ public class SendQuoteEmailCommandHandler(
             IssuerEmail: user.Email,
             IssuerPhone: user.Phone,
             IssuerNif: user.Nif,
+            IssuerLogoBytes: logoBytes,
+            IssuerBrandColorHex: user.BrandColor,
             Lines: lineDtos,
             SubTotal: quote.SubTotal,
             VatTotal: quote.VatTotal,

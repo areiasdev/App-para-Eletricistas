@@ -189,6 +189,9 @@ app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 
 app.UseHttpsRedirection();
+// Serves uploaded company logos (wwwroot/uploads/logos) — publicly readable by design,
+// same as a downloaded quote PDF; nothing sensitive lives under wwwroot.
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 

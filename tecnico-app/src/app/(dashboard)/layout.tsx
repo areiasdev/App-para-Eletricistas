@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/lib/api/auth'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
+import { generateBrandShades } from '@/lib/utils/color'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -44,6 +45,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_hasHydrated])
 
+  // Per-install rebranding: a company's chosen brand color overrides the default amber
+  // token set at runtime, so a fresh install just needs Perfil filled in, not a rebuild.
+  const brandStyle = useMemo(() => {
+    if (!user?.brandColor) return null
+    const shades = generateBrandShades(user.brandColor)
+    if (Object.keys(shades).length === 0) return null
+    const vars = Object.entries(shades)
+      .map(([shade, hex]) => `--color-brand-${shade}: ${hex};`)
+      .join(' ')
+    return `:root { ${vars} }`
+  }, [user?.brandColor])
+
   if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-canvas)' }}>
@@ -54,6 +67,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'var(--color-canvas)' }}>
+      {brandStyle && <style>{brandStyle}</style>}
       <Sidebar />
       {/* pt-14 on mobile to clear the fixed top bar; lg:pt-0 since sidebar is inline */}
       <main className="flex-1 overflow-y-auto relative pt-14 lg:pt-0">

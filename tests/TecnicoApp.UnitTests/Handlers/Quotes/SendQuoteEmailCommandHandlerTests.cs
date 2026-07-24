@@ -42,9 +42,10 @@ public class SendQuoteEmailCommandHandlerTests
         pdfService.GenerateQuotePdf(Arg.Any<QuotePdfData>()).Returns([1, 2, 3]);
 
         var emailService = Substitute.For<IEmailService>();
+        var fileStorage = Substitute.For<IFileStorageService>();
         var logger = Substitute.For<ILogger<SendQuoteEmailCommandHandler>>();
 
-        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, logger);
+        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, logger);
 
         var result = await handler.Handle(new SendQuoteEmailCommand(quote.Id), CancellationToken.None);
 
@@ -74,9 +75,10 @@ public class SendQuoteEmailCommandHandlerTests
 
         var pdfService = Substitute.For<IPdfService>();
         var emailService = Substitute.For<IEmailService>();
+        var fileStorage = Substitute.For<IFileStorageService>();
         var logger = Substitute.For<ILogger<SendQuoteEmailCommandHandler>>();
 
-        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, logger);
+        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, logger);
 
         var result = await handler.Handle(new SendQuoteEmailCommand(foreignQuote.Id), CancellationToken.None);
 

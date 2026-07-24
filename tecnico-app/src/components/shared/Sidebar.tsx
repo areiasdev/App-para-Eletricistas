@@ -10,6 +10,38 @@ import { useCanManage } from '@/hooks/useCanManage'
 import { useRouter } from 'next/navigation'
 import { authApi } from '@/lib/api/auth'
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
+
+// Shown in the desktop sidebar, mobile top bar, and mobile drawer — falls back to the
+// generic "T" mark + "TécnicoApp" until a company uploads its own logo/name in Perfil.
+function SidebarBrand({ onClick }: { onClick?: () => void }) {
+  const user = useAuthStore((s) => s.user)
+
+  return (
+    <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0" onClick={onClick}>
+      {user?.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`${API_BASE}${user.logoUrl}`}
+          alt={user.companyName ?? 'Logótipo'}
+          className="w-7 h-7 rounded-md object-contain shrink-0"
+          style={{ backgroundColor: 'white' }}
+        />
+      ) : (
+        <span
+          className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold shrink-0"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+        >
+          T
+        </span>
+      )}
+      <span className="text-sm font-semibold tracking-tight text-white/90 truncate">
+        {user?.companyName || 'TécnicoApp'}
+      </span>
+    </Link>
+  )
+}
+
 const navItems = [
   {
     href: '/dashboard',
@@ -134,17 +166,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--color-sidebar)' }}>
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/8">
-        <Link href="/dashboard" className="flex items-center gap-2.5" onClick={onNavClick}>
-          <span
-            className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-          >
-            T
-          </span>
-          <span className="text-sm font-semibold tracking-tight text-white/90">
-            TécnicoApp
-          </span>
-        </Link>
+        <SidebarBrand onClick={onNavClick} />
       </div>
 
       {/* Nav */}
@@ -243,15 +265,7 @@ export function Sidebar() {
         className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 h-14 border-b"
         style={{ backgroundColor: 'var(--color-sidebar)', borderColor: 'rgba(255,255,255,0.08)' }}
       >
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <span
-            className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-          >
-            T
-          </span>
-          <span className="text-sm font-semibold tracking-tight text-white/90">TécnicoApp</span>
-        </Link>
+        <SidebarBrand />
         <button
           onClick={() => setMobileOpen(true)}
           className="w-9 h-9 flex items-center justify-center rounded-md transition-colors duration-150"
@@ -276,15 +290,7 @@ export function Sidebar() {
             style={{ backgroundColor: 'var(--color-sidebar)' }}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
-              <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
-                <span
-                  className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
-                  style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-                >
-                  T
-                </span>
-                <span className="text-sm font-semibold tracking-tight text-white/90">TécnicoApp</span>
-              </Link>
+              <SidebarBrand onClick={() => setMobileOpen(false)} />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-md"

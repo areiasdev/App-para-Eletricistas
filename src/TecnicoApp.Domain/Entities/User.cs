@@ -11,6 +11,7 @@ public class User : BaseEntity
     public string? Nif { get; set; }
     public string? Phone { get; set; }
     public string? LogoUrl { get; set; }
+    public string? BrandColor { get; set; }
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiresAt { get; set; }
     public string? PasswordResetTokenHash { get; set; }

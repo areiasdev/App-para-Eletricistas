@@ -51,6 +51,9 @@ export interface User {
   fullName: string
   email: string
   role: UserRole
+  companyName?: string
+  logoUrl?: string
+  brandColor?: string
 }
 
 export interface AuthResponse {

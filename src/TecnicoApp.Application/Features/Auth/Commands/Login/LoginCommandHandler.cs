@@ -30,11 +30,16 @@ public sealed class LoginCommandHandler(
 
         var accessToken = tokenService.GenerateAccessToken(user);
 
+        // Branding always reflects the team owner, not whoever is logging in.
+        var owner = user.OwnerId is null
+            ? user
+            : await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == user.OwnerId, cancellationToken);
+
         return Result.Success(new AuthResponseDto(
             accessToken,
             user.RefreshToken!,
             user.RefreshTokenExpiresAt!.Value,
-            new UserDto(user.Id, user.FullName, user.Email, user.Role)
+            new UserDto(user.Id, user.FullName, user.Email, user.Role, owner?.CompanyName, owner?.LogoUrl, owner?.BrandColor)
         ));
     }
 }

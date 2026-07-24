@@ -9,7 +9,8 @@ namespace TecnicoApp.Application.Features.Quotes.Queries.GenerateQuotePdf;
 public class GenerateQuotePdfQueryHandler(
     IAppDbContext db,
     ICurrentUserService currentUser,
-    IPdfService pdfService)
+    IPdfService pdfService,
+    IFileStorageService fileStorage)
     : IRequestHandler<GenerateQuotePdfQuery, Result<QuotePdfResult>>
 {
     public async Task<Result<QuotePdfResult>> Handle(
@@ -45,6 +46,8 @@ public class GenerateQuotePdfQueryHandler(
                 Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
             .ToList();
 
+        var logoBytes = await fileStorage.ReadLogoBytesAsync(quote.User.LogoUrl, cancellationToken);
+
         var pdfData = new QuotePdfData(
             Number: quote.Number,
             CreatedAt: quote.CreatedAt,
@@ -59,6 +62,8 @@ public class GenerateQuotePdfQueryHandler(
             IssuerEmail: quote.User.Email,
             IssuerPhone: quote.User.Phone,
             IssuerNif: quote.User.Nif,
+            IssuerLogoBytes: logoBytes,
+            IssuerBrandColorHex: quote.User.BrandColor,
             Lines: lines,
             SubTotal: quote.SubTotal,
             VatTotal: quote.VatTotal,

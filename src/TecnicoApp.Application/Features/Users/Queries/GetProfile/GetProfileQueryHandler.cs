@@ -20,14 +20,21 @@ public sealed class GetProfileQueryHandler(IAppDbContext db, ICurrentUserService
         if (user is null)
             return Result.NotFound("Utilizador não encontrado.");
 
+        // Company branding always reflects the team owner — a technician's own row has
+        // no company identity of its own, only the account fields (name/email) are theirs.
+        var owner = user.OwnerId is null
+            ? user
+            : await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == user.OwnerId, cancellationToken);
+
         return Result.Success(new ProfileDto(
             user.Id,
             user.FullName,
             user.Email,
-            user.CompanyName,
-            user.Nif,
-            user.Phone,
-            user.LogoUrl
+            owner?.CompanyName,
+            owner?.Nif,
+            owner?.Phone,
+            owner?.LogoUrl,
+            owner?.BrandColor
         ));
     }
 }

@@ -25,5 +25,8 @@ public record UserDto(
     Guid Id,
     string FullName,
     string Email,
-    UserRole Role
+    UserRole Role,
+    string? CompanyName,
+    string? LogoUrl,
+    string? BrandColor
 );

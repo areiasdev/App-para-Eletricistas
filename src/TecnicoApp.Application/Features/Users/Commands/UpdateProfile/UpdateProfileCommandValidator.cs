@@ -22,8 +22,8 @@ public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileComm
             .MaximumLength(20).WithMessage("O telemóvel não pode ter mais de 20 caracteres.")
             .When(x => x.Phone is not null);
 
-        RuleFor(x => x.LogoUrl)
-            .MaximumLength(500).WithMessage("URL do logótipo demasiado longo.")
-            .When(x => x.LogoUrl is not null);
+        RuleFor(x => x.BrandColor)
+            .Matches(@"^#[0-9a-fA-F]{6}$").WithMessage("A cor deve ser um código hexadecimal (ex: #f59e0b).")
+            .When(x => !string.IsNullOrEmpty(x.BrandColor));
     }
 }

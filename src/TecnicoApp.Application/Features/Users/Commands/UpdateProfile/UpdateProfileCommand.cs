@@ -9,5 +9,5 @@ public record UpdateProfileCommand(
     string? CompanyName,
     string? Nif,
     string? Phone,
-    string? LogoUrl
+    string? BrandColor
 ) : IRequest<Result<ProfileDto>>;
