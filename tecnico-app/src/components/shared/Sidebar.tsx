@@ -7,8 +7,6 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
-import { billingApi } from '@/lib/api/billing'
 import { authApi } from '@/lib/api/auth'
 
 const navItems = [
@@ -76,7 +74,6 @@ const navItems = [
         <path d="M7 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
       </svg>
     ),
-    teamOnly: true,
   },
   {
     href: '/dashboard/relatorios',
@@ -88,7 +85,6 @@ const navItems = [
         <rect x="11" y="2" width="3" height="13" rx="1" fill="currentColor"/>
       </svg>
     ),
-    enterpriseOnly: true,
   },
   {
     href: '/dashboard/audit-logs',
@@ -98,16 +94,6 @@ const navItems = [
         <path d="M3 2h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.3"/>
         <path d="M5 5h6M5 8h4M5 11h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
         <circle cx="11.5" cy="11" r="1" fill="currentColor"/>
-      </svg>
-    ),
-    enterpriseOnly: true,
-  },
-  {
-    href: '/dashboard/planos',
-    label: 'Plano',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M8 1l1.8 3.6L14 5.6l-3 2.9.7 4.1L8 10.4l-3.7 2.2.7-4.1L2 5.6l4.2-.9L8 1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
       </svg>
     ),
   },
@@ -123,28 +109,10 @@ const navItems = [
   },
 ]
 
-const planColors: Record<string, { bg: string; text: string }> = {
-  Pro:        { bg: 'rgba(245,158,11,0.18)', text: 'var(--color-brand-400)' },
-  Team:       { bg: 'rgba(124,58,237,0.18)', text: '#a78bfa' },
-  Enterprise: { bg: 'rgba(16,185,129,0.18)', text: '#34d399' },
-  Trial:      { bg: 'rgba(59,130,246,0.18)',  text: '#60a5fa' },
-  Free:       { bg: 'rgba(255,255,255,0.07)', text: 'rgba(255,255,255,0.35)' },
-}
-
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
-  const { data: billing } = useQuery({
-    queryKey: ['billing-me'],
-    queryFn: billingApi.getMe,
-    staleTime: 1000 * 60 * 5,
-  })
-  const plan = billing?.plan ?? 'Enterprise'
-  const isTrialActive = billing?.isTrialActive ?? true
-  const trialDaysLeft = billing?.trialDaysLeft ?? 14
-  const badgeLabel = isTrialActive ? `Trial · ${trialDaysLeft}d` : plan
-  const planColor = isTrialActive ? planColors.Trial : (planColors[plan] ?? planColors.Free)
   const { theme, toggleTheme } = useThemeStore()
 
   const handleLogout = async () => {
@@ -166,7 +134,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            ⚡
+            T
           </span>
           <span className="text-sm font-semibold tracking-tight text-white/90">
             TécnicoApp
@@ -177,8 +145,6 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
-          if ('teamOnly' in item && item.teamOnly && plan !== 'Team' && plan !== 'Enterprise' && !isTrialActive) return null
-          if ('enterpriseOnly' in item && item.enterpriseOnly && plan !== 'Enterprise' && !isTrialActive) return null
           const isActive =
             item.href === '/dashboard'
               ? pathname === '/dashboard'
@@ -219,15 +185,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-medium text-white/80 truncate leading-tight">{user?.fullName}</p>
-            <div className="flex items-center gap-1.5">
-              <p className="text-xs text-white/35 truncate leading-tight">{user?.email}</p>
-              <span
-                className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wider leading-none"
-                style={{ backgroundColor: planColor.bg, color: planColor.text }}
-              >
-                {badgeLabel}
-              </span>
-            </div>
+            <p className="text-xs text-white/35 truncate leading-tight">{user?.email}</p>
           </div>
         </div>
         <div className="flex items-center justify-between">
@@ -283,7 +241,7 @@ export function Sidebar() {
             className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            ⚡
+            T
           </span>
           <span className="text-sm font-semibold tracking-tight text-white/90">TécnicoApp</span>
         </Link>
@@ -316,7 +274,7 @@ export function Sidebar() {
                   className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
                   style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
                 >
-                  ⚡
+                  T
                 </span>
                 <span className="text-sm font-semibold tracking-tight text-white/90">TécnicoApp</span>
               </Link>

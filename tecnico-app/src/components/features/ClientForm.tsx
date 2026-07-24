@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { validateNif } from '@/lib/utils/formatters'
 
 const addressSchema = z.object({
   street: z.string().min(1, 'Obrigatório'),
@@ -11,11 +12,12 @@ const addressSchema = z.object({
   country: z.string().optional(),
 })
 
-const clientSchema = z.object({
+export const clientSchema = z.object({
   name: z.string().min(1, 'O nome é obrigatório.').max(200),
   nif: z
     .string()
     .regex(/^\d{9}$/, 'O NIF deve ter 9 dígitos.')
+    .refine((v) => validateNif(v), 'NIF inválido.')
     .optional()
     .or(z.literal('')),
   email: z.string().email('Email inválido.').optional().or(z.literal('')),

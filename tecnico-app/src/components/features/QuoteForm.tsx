@@ -23,6 +23,16 @@ const quoteSchema = z.object({
 
 export type QuoteFormValues = z.infer<typeof quoteSchema>
 
+export function calculateQuoteTotals(
+  lines: { quantity: number; unitPrice: number; vatRate: number }[] | undefined,
+  discount: number | undefined
+) {
+  const subTotal = lines?.reduce((sum, l) => sum + (Number(l.quantity) * Number(l.unitPrice)), 0) ?? 0
+  const vatTotal = lines?.reduce((sum, l) => sum + (Number(l.quantity) * Number(l.unitPrice) * (Number(l.vatRate) / 100)), 0) ?? 0
+  const total = subTotal + vatTotal - (Number(discount) || 0)
+  return { subTotal, vatTotal, total }
+}
+
 interface QuoteFormProps {
   defaultValues?: Partial<QuoteFormValues>
   onSubmit: (values: QuoteFormValues) => void
@@ -52,9 +62,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
   const lines = watch('lines')
   const discount = watch('discount')
 
-  const subTotal = lines?.reduce((sum, l) => sum + (Number(l.quantity) * Number(l.unitPrice)), 0) ?? 0
-  const vatTotal = lines?.reduce((sum, l) => sum + (Number(l.quantity) * Number(l.unitPrice) * (Number(l.vatRate) / 100)), 0) ?? 0
-  const total = subTotal + vatTotal - (Number(discount) || 0)
+  const { subTotal, vatTotal, total } = calculateQuoteTotals(lines, discount)
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -102,7 +110,11 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
               step="0.01"
               min="0"
               placeholder="0.00"
-              {...register('discount', { valueAsNumber: true })}
+              {...register('discount', {
+                // valueAsNumber turns an emptied input into NaN, which z.number().optional()
+                // rejects with a confusing error — coerce empty string to undefined instead.
+                setValueAs: (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+              })}
               className="form-input"
               style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
             />

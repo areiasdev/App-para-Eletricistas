@@ -5,8 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useClient, useDeleteClient } from '@/hooks/useClients'
 import { formatDate } from '@/lib/utils/formatters'
-import { useQuery } from '@tanstack/react-query'
-import { billingApi } from '@/lib/api/billing'
 import { portal } from '@/lib/api/portal'
 import { getErrorMessage } from '@/lib/api/client'
 
@@ -17,9 +15,6 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
   const deleteClient = useDeleteClient()
   const [portalSending, setPortalSending] = useState(false)
   const [portalMsg, setPortalMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
-
-  const { data: billing } = useQuery({ queryKey: ['billing-me'], queryFn: billingApi.getMe, staleTime: 1000 * 60 * 5 })
-  const isEnterprise = billing?.plan === 'Enterprise'
 
   const handleSendPortalAccess = async () => {
     setPortalSending(true)
@@ -113,8 +108,8 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
         <InfoRow label="Cliente desde" value={formatDate(client.createdAt)} />
       </div>
 
-      {/* Portal access (Enterprise only) */}
-      {isEnterprise && client.email && (
+      {/* Portal access */}
+      {client.email && (
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <button

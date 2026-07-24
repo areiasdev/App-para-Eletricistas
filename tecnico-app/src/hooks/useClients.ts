@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { clientsApi, type CreateClientRequest } from '@/lib/api/clients'
-import { getErrorMessage } from '@/lib/api/client'
 
 export function useClients(params?: { search?: string; page?: number; pageSize?: number }) {
   return useQuery({

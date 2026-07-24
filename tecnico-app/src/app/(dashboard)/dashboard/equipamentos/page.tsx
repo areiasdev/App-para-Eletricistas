@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useEquipmentList, useDeleteEquipment } from '@/hooks/useEquipment'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { formatDate } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
 
@@ -36,7 +37,7 @@ function EquipamentosContent() {
   const clientIdFilter = searchParams.get('clientId') ?? undefined
 
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [page, setPage] = useState(1)
 
   const { data, isLoading, isError, error } = useEquipmentList({
@@ -51,8 +52,6 @@ function EquipamentosContent() {
   const handleSearch = (value: string) => {
     setSearch(value)
     setPage(1)
-    const t = setTimeout(() => setDebouncedSearch(value), 300)
-    return () => clearTimeout(t)
   }
 
   const handleDelete = (id: string, type: string) => {

@@ -81,6 +81,8 @@ export const portal = {
 
   quotes: () => portalApi.get<PortalQuoteDto[]>('/quotes').then((r) => r.data),
 
+  logout: () => portalApi.post('/logout').then((r) => r.data),
+
   // Uses regular authenticated api (tech-side action)
   sendAccess: (clientId: string) =>
     api.post('/portal/send-access', { clientId }).then((r) => r.data),

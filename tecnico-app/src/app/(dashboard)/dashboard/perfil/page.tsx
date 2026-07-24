@@ -7,11 +7,12 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
 import { getErrorMessage } from '@/lib/api/client'
+import { validateNif } from '@/lib/utils/formatters'
 
 const profileSchema = z.object({
   fullName: z.string().min(1, 'O nome é obrigatório.').max(200),
   companyName: z.string().max(200).optional().or(z.literal('')),
-  nif: z.string().regex(/^\d{9}$/, 'O NIF deve ter 9 dígitos.').optional().or(z.literal('')),
+  nif: z.string().regex(/^\d{9}$/, 'O NIF deve ter 9 dígitos.').refine((v) => validateNif(v), 'NIF inválido.').optional().or(z.literal('')),
   phone: z.string().max(20).optional().or(z.literal('')),
   logoUrl: z.string().url('URL inválido.').optional().or(z.literal('')),
 })
@@ -132,7 +133,7 @@ export default function PerfilPage() {
             <FormField label="Nome da empresa" error={errors.companyName?.message}>
               <input
                 {...register('companyName')}
-                placeholder="Ex: Eletricidade Silva Lda."
+                placeholder="Ex: Construções Silva Lda."
                 className="form-input"
                 style={{ borderColor: 'var(--color-line-strong)' }}
               />
@@ -171,36 +172,6 @@ export default function PerfilPage() {
                 style={{ borderColor: errors.logoUrl ? '#fca5a5' : 'var(--color-line-strong)' }}
               />
             </FormField>
-          </div>
-        </section>
-
-        {/* Plano */}
-        <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
-          <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
-            <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
-              Plano
-            </h2>
-          </div>
-          <div className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
-                {profile?.plan === 'Free' ? 'Plano Free' : `Plano ${profile?.plan}`}
-              </p>
-              {profile?.plan === 'Free' && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
-                  Faz upgrade para aceder a PDF, histórico ilimitado e mais.
-                </p>
-              )}
-            </div>
-            {profile?.plan === 'Free' && (
-              <a
-                href="/dashboard/planos"
-                className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
-                style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-              >
-                Fazer upgrade
-              </a>
-            )}
           </div>
         </section>
 

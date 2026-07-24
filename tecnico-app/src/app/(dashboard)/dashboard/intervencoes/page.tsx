@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useInterventions, useDeleteIntervention } from '@/hooks/useInterventions'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { InterventionStatusBadge } from '@/components/features/InterventionStatusBadge'
 import { formatDate, formatDateTime } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
@@ -148,9 +149,15 @@ function IntervencoesContent() {
 
   const [view, setView] = useState<'list' | 'calendar'>('list')
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [status, setStatus] = useState<InterventionStatus | ''>(statusParam)
   const [page, setPage] = useState(1)
+
+  // Re-sync when the URL's ?status= changes (e.g. clicking a status-filtered dashboard
+  // link while already on this page) — a plain useState initializer only runs once on mount.
+  useEffect(() => {
+    setStatus(statusParam)
+  }, [statusParam])
 
   const { data, isLoading, isError, error } = useInterventions({
     search: debouncedSearch || undefined,
@@ -165,8 +172,6 @@ function IntervencoesContent() {
   const handleSearch = (value: string) => {
     setSearch(value)
     setPage(1)
-    const t = setTimeout(() => setDebouncedSearch(value), 300)
-    return () => clearTimeout(t)
   }
 
   const handleDelete = (id: string, title: string) => {

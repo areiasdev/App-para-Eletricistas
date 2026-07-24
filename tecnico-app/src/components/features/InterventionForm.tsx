@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,8 +8,6 @@ import { cn } from '@/lib/utils'
 import { useClients } from '@/hooks/useClients'
 import { useEquipmentList } from '@/hooks/useEquipment'
 import { useTeam } from '@/hooks/useTeam'
-import { useQuery } from '@tanstack/react-query'
-import { billingApi } from '@/lib/api/billing'
 import type { InterventionMaterial } from '@/types'
 
 const interventionSchema = z.object({
@@ -86,18 +84,31 @@ export function InterventionForm({
   }
 
   const { data: clientsData } = useClients({ pageSize: 200 })
-  const { data: billing } = useQuery({ queryKey: ['billing-me'], queryFn: billingApi.getMe, staleTime: 1000 * 60 * 5 })
-  const isTeamPlan = billing?.plan === 'Team' || billing?.plan === 'Enterprise'
   const { data: teamMembers = [] } = useTeam()
 
-  // When editing, clientsData loads after mount — re-apply the default clientId so
+  // When editing, clientsData loads after mount — re-apply the default clientId once so
   // the uncontrolled select picks up the correct option once the options are in the DOM.
+  // Guarded to run only once: without the ref, this fired on every clientsData refetch
+  // (window refocus, unrelated cache invalidation), silently reverting an in-progress edit.
+  const appliedDefaultClientRef = useRef(false)
   useEffect(() => {
-    if (defaultValues?.clientId) {
+    if (appliedDefaultClientRef.current) return
+    if (defaultValues?.clientId && clientsData) {
       setValue('clientId', defaultValues.clientId, { shouldValidate: false })
+      appliedDefaultClientRef.current = true
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientsData])
+  }, [clientsData, defaultValues?.clientId, setValue])
+
+  // Clear equipment selection when the client actually changes (not on the initial
+  // defaultValues application above) — otherwise switching clients can leave another
+  // client's equipment IDs in the submitted payload.
+  const previousClientIdRef = useRef(clientId)
+  useEffect(() => {
+    if (previousClientIdRef.current !== clientId) {
+      setValue('equipmentIds', [])
+      previousClientIdRef.current = clientId
+    }
+  }, [clientId, setValue])
 
   const { data: equipmentData } = useEquipmentList({
     clientId: clientId || undefined,
@@ -144,7 +155,7 @@ export function InterventionForm({
           </Field>
         </div>
 
-        {isTeamPlan && teamMembers.length > 0 && (
+        {teamMembers.length > 0 && (
           <Field label="Atribuir a" error={undefined}>
             <select {...register('assignedToUserId')} className={inputCls(false)}>
               <option value="">— Não atribuído —</option>
@@ -242,7 +253,7 @@ export function InterventionForm({
             type="text"
             value={matName}
             onChange={e => setMatName(e.target.value)}
-            placeholder="Descrição (ex: Cabo elétrico 2.5mm²)"
+            placeholder="Descrição (ex: Tubo PVC 32mm)"
             className={cn(inputCls(false), 'col-span-12 sm:col-span-6')}
           />
           <input

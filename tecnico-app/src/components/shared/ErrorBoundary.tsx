@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<Props, State> {
               Algo correu mal
             </p>
             <p className="text-xs mt-1" style={{ color: 'var(--color-muted)' }}>
-              {this.state.error?.message ?? 'Erro inesperado. Tenta recarregar a página.'}
+              Ocorreu um erro inesperado. Tenta novamente ou recarrega a página.
             </p>
           </div>
           <button

@@ -4,32 +4,13 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/lib/api/auth'
-import { billingApi } from '@/lib/api/billing'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-import { useQuery } from '@tanstack/react-query'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { user, accessToken, _hasHydrated, setAuth, clearAuth } = useAuthStore()
   const [ready, setReady] = useState(false)
-
-  const { data: billing } = useQuery({
-    queryKey: ['billing-me'],
-    queryFn: billingApi.getMe,
-    enabled: ready,
-    staleTime: 1000 * 60 * 5,
-  })
-
-  // Redirect expired trials to plans page (only when not already there)
-  useEffect(() => {
-    if (!billing) return
-    const trialExpired = !billing.isTrialActive && billing.plan === 'Free'
-    if (trialExpired && !window.location.pathname.startsWith('/dashboard/planos')) {
-      router.replace('/dashboard/planos')
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [billing])
 
   useEffect(() => {
     // Wait for Zustand persist to hydrate from localStorage before checking auth.
@@ -53,7 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     authApi
       .refresh()
       .then((data) => {
-        setAuth(data.user, data.accessToken)
+        setAuth(data.user, data.accessToken, data.csrfToken)
         setReady(true)
       })
       .catch(() => {

@@ -7,10 +7,9 @@ import { useRouter } from 'next/navigation'
 import { useQuote, useUpdateQuoteStatus, useSignQuote, useDeleteQuote, useSendQuoteEmail } from '@/hooks/useQuotes'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { SignatureModal } from '@/components/features/SignatureModal'
-import { UpgradeModal } from '@/components/features/UpgradeModal'
 import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils/formatters'
 import { quotesApi } from '@/lib/api/quotes'
-import { getErrorMessage, isPlanLimitError } from '@/lib/api/client'
+import { getErrorMessage } from '@/lib/api/client'
 import type { QuoteStatus } from '@/types'
 
 // ── Status pipeline ──────────────────────────────────────────────────────────
@@ -119,8 +118,8 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   const sendEmail = useSendQuoteEmail()
   const [pdfLoading, setPdfLoading] = useState(false)
   const [showSignModal, setShowSignModal] = useState(false)
-  const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null)
-  const [emailSent, setEmailSent] = useState(false)
+  // Server-derived — survives a page reload, unlike local component state.
+  const emailSent = !!quote?.emailSentAt
 
   const handleStatusChange = (status: QuoteStatus) => {
     updateStatus.mutate({ id, status }, {
@@ -147,7 +146,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
         onSuccess: () => setShowSignModal(false),
         onError: (err) => {
           setShowSignModal(false)
-          if (isPlanLimitError(err)) setUpgradeMessage(getErrorMessage(err))
+          toast.error(getErrorMessage(err))
         },
       }
     )
@@ -156,7 +155,6 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   const handleSendEmail = () => {
     sendEmail.mutate(id, {
       onSuccess: () => {
-        setEmailSent(true)
         // Auto-advance status Draft → Sent — the client received the quote
         if (quote?.status === 'Draft') {
           updateStatus.mutate({ id, status: 'Sent' })
@@ -209,13 +207,6 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
           isLoading={signQuote.isPending}
         />
       )}
-      {upgradeMessage && (
-        <UpgradeModal
-          message={upgradeMessage}
-          onClose={() => setUpgradeMessage(null)}
-        />
-      )}
-
       <div className="max-w-3xl space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-muted)' }}>

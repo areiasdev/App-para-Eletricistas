@@ -1,6 +1,5 @@
 export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected' | 'Invoiced'
 export type InterventionStatus = 'Scheduled' | 'InProgress' | 'Completed'
-export type Plan = 'Free' | 'Pro' | 'Team' | 'Enterprise'
 export type UserRole = 'Owner' | 'Admin' | 'Technician' | 'Commercial'
 
 export interface InterventionMaterial {
@@ -51,11 +50,11 @@ export interface User {
   id: string
   fullName: string
   email: string
-  plan: Plan
 }
 
 export interface AuthResponse {
   accessToken: string
+  csrfToken: string
   user: User
 }
 
@@ -94,6 +93,7 @@ export interface Quote {
   clientName: string
   lines: QuoteLine[]
   createdAt: string
+  emailSentAt?: string
 }
 
 export interface QuoteLine {

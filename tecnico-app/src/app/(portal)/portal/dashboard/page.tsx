@@ -77,9 +77,11 @@ export default function PortalDashboardPage() {
   if (!accessToken) return null
 
   const handleLogout = () => {
-    setPortalToken(null)
-    clearPortal()
-    router.push('/portal/login')
+    portal.logout().catch(() => {}).finally(() => {
+      setPortalToken(null)
+      clearPortal()
+      router.push('/portal/login')
+    })
   }
 
   return (
@@ -90,7 +92,7 @@ export default function PortalDashboardPage() {
         <div className="flex items-center gap-2.5">
           <span className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: '#1c1917' }}>
-            ⚡
+            T
           </span>
           <span className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>Portal do cliente</span>
         </div>

@@ -4,13 +4,14 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useClients, useDeleteClient } from '@/hooks/useClients'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { formatDate } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
 
 export default function ClientesPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 300)
 
   const { data, isLoading, isError, error } = useClients({
     search: debouncedSearch || undefined,
@@ -23,8 +24,6 @@ export default function ClientesPage() {
   const handleSearch = (value: string) => {
     setSearch(value)
     setPage(1)
-    const t = setTimeout(() => setDebouncedSearch(value), 300)
-    return () => clearTimeout(t)
   }
 
   const handleDelete = (id: string, name: string) => {

@@ -41,7 +41,10 @@ api.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    // Exclude all /auth/* endpoints — a failed login/register attempt returns 401/409
+    // for its own reasons (wrong password, etc.) and must never trigger a silent-refresh
+    // attempt, which would swallow the real error behind a refresh failure instead.
+    if (error.response?.status !== 401 || originalRequest._retry || originalRequest.url?.includes('/auth/')) {
       return Promise.reject(error)
     }
 
@@ -58,13 +61,17 @@ api.interceptors.response.use(
     isRefreshing = true
 
     try {
-      // POST to /auth/refresh — no body, refresh token comes from httpOnly cookie
+      // POST to /auth/refresh — no body, refresh token comes from httpOnly cookie.
+      // X-Csrf-Token proves this request came from our own JS (double-submit CSRF check).
       const { data } = await axios.post(
         `${BASE_URL}/api/v1/auth/refresh`,
         {},
-        { withCredentials: true }
+        {
+          withCredentials: true,
+          headers: { 'X-Csrf-Token': useAuthStore.getState().csrfToken ?? '' },
+        }
       )
-      useAuthStore.getState().setAccessToken(data.accessToken)
+      useAuthStore.getState().setAccessToken(data.accessToken, data.csrfToken)
       processQueue(null, data.accessToken)
       originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
       return api(originalRequest)
@@ -93,11 +100,4 @@ export const getErrorMessage = (error: unknown): string => {
     if (typeof data === 'string') return data
   }
   return 'Ocorreu um erro inesperado. Tenta novamente.'
-}
-
-export const isPlanLimitError = (error: unknown): boolean => {
-  if (!axios.isAxiosError(error)) return false
-  const data = error.response?.data
-  if (!data?.errors) return false
-  return 'PlanLimit' in data.errors
 }
