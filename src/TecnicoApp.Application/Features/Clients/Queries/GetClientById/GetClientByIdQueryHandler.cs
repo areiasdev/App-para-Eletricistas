@@ -15,9 +15,15 @@ public sealed class GetClientByIdQueryHandler(
         GetClientByIdQuery query,
         CancellationToken cancellationToken)
     {
+        // Resolve ownerId: team members share their owner's clients
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var client = await db.Clients
             .AsNoTracking()
-            .Where(c => c.Id == query.ClientId && c.UserId == currentUser.UserId)
+            .Where(c => c.Id == query.ClientId && c.UserId == ownerId)
             .Select(c => new ClientDto(
                 c.Id,
                 c.Name,

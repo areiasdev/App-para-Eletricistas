@@ -18,12 +18,17 @@ public sealed class ForgotPasswordCommandHandler(
         var user = await db.Users
             .FirstOrDefaultAsync(u => u.Email == command.Email.ToLowerInvariant(), cancellationToken);
 
+        var token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+
+        // Always run BCrypt — whether or not the user exists — so response timing doesn't
+        // reveal which emails are registered (same reasoning as ResetPasswordCommandHandler).
+        var tokenHash = BCrypt.Net.BCrypt.HashPassword(token);
+
         // Always return success to avoid user enumeration
         if (user is null)
             return Result.Success();
 
-        var token = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
-        user.PasswordResetTokenHash = BCrypt.Net.BCrypt.HashPassword(token);
+        user.PasswordResetTokenHash = tokenHash;
         user.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddHours(1);
 
         await db.SaveChangesAsync(cancellationToken);

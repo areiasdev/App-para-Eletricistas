@@ -17,24 +17,29 @@ public class SendQuoteEmailCommandHandler(
 {
     public async Task<Result> Handle(SendQuoteEmailCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's quotes
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var quote = await db.Quotes
             .Include(q => q.Lines)
             .Include(q => q.Client)
-            .AsNoTracking()
             .FirstOrDefaultAsync(q => q.Id == request.QuoteId, cancellationToken);
 
         if (quote is null) return Result.NotFound();
-        if (quote.UserId != userId) return Result.Forbidden();
+        if (quote.UserId != ownerId) return Result.Forbidden();
 
         if (string.IsNullOrWhiteSpace(quote.Client?.Email))
             return Result.Invalid(new ValidationError(
                 "ClientEmail",
                 "O cliente não tem email registado. Adiciona um email ao cliente para poder enviar o orçamento."));
 
+        // Issuer details always come from the team owner, not whoever sent the email —
+        // a technician's own profile is usually blank and isn't the company's identity.
         var user = await db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == ownerId, cancellationToken);
 
         if (user is null) return Result.Unauthorized();
 
@@ -90,7 +95,7 @@ public class SendQuoteEmailCommandHandler(
                   <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
                     <tr>
                       <td style="background:#17171a;padding:24px 32px;text-align:center;">
-                        <span style="color:#f59e0b;font-size:20px;font-weight:700;">⚡ TécnicoApp</span>
+                        <span style="color:#f59e0b;font-size:20px;font-weight:700;">T TécnicoApp</span>
                       </td>
                     </tr>
                     <tr><td style="padding:32px;">
@@ -145,6 +150,11 @@ public class SendQuoteEmailCommandHandler(
             HtmlBody: html,
             Attachments: [attachment]
         ), cancellationToken);
+
+        // Persisted so the "sent" state survives a page reload — previously this was
+        // tracked only in frontend component state and reset on every remount.
+        quote.EmailSentAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
     }

@@ -38,7 +38,9 @@ public class AppDbContext : DbContext, IAppDbContext
             nameof(Quote), nameof(TeamMember)
         };
 
-        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        // Snapshot first — AuditLogs.Add() below registers a new tracked entity, which would
+        // otherwise mutate the ChangeTracker while this same loop is still enumerating it.
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>().ToList())
         {
             if (entry.State == EntityState.Modified)
                 entry.Entity.ModifiedAt = DateTime.UtcNow;

@@ -15,6 +15,7 @@ public class Client : BaseEntity
 
     public string? PortalTokenHash { get; set; }
     public DateTime? PortalTokenExpiresAt { get; set; }
+    public int PortalTokenVersion { get; set; }
 
     public ICollection<Equipment> Equipment { get; set; } = [];
     public ICollection<Quote> Quotes { get; set; } = [];

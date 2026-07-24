@@ -12,7 +12,11 @@ public class DeleteQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
     public async Task<Result> Handle(
         DeleteQuoteCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's quotes
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var quote = await db.Quotes
             .FirstOrDefaultAsync(q => q.Id == request.Id, cancellationToken);
@@ -20,7 +24,7 @@ public class DeleteQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         if (quote is null)
             return Result.NotFound();
 
-        if (quote.UserId != userId)
+        if (quote.UserId != ownerId)
             return Result.Forbidden();
 
         if (quote.Status != QuoteStatus.Draft)

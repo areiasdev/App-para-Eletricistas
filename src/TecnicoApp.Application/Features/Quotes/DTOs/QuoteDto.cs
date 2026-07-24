@@ -26,7 +26,8 @@ public record QuoteDto(
     decimal VatTotal,
     decimal Total,
     IReadOnlyList<QuoteLineDto> Lines,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    DateTime? EmailSentAt
 );
 
 public record QuoteListItemDto(

@@ -11,7 +11,11 @@ public class DeleteInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
     public async Task<Result> Handle(
         DeleteInterventionCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's interventions
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var intervention = await db.Interventions
             .FirstOrDefaultAsync(i => i.Id == request.Id, cancellationToken);
@@ -19,7 +23,7 @@ public class DeleteInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
         if (intervention is null)
             return Result.NotFound();
 
-        if (intervention.UserId != userId)
+        if (intervention.UserId != ownerId)
             return Result.Forbidden();
 
         intervention.IsDeleted = true;

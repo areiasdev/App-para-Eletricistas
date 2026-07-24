@@ -15,12 +15,12 @@ public record AuthResponseDto(
 /// <summary>Public response body — no refresh token exposed to JavaScript.</summary>
 public record AuthPublicResponseDto(
     string AccessToken,
+    string CsrfToken,
     UserDto User
 );
 
 public record UserDto(
     Guid Id,
     string FullName,
-    string Email,
-    string Plan
+    string Email
 );

@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Clients.DTOs;
 using TecnicoApp.Domain.Entities;
-using TecnicoApp.Domain.Enums;
 using TecnicoApp.Domain.ValueObjects;
 
 namespace TecnicoApp.Application.Features.Clients.Commands.CreateClient;
@@ -20,23 +19,18 @@ public sealed class CreateClientCommandHandler(
     {
         var userId = currentUser.UserId;
 
-        var user = await db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        // Resolve ownerId: team members share their owner's clients
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (user is null) return Result.Unauthorized();
+        if (ownerId == Guid.Empty) return Result.Unauthorized();
 
-        if (user.Plan == Plan.Free)
-        {
-            var count = await db.Clients
-                .CountAsync(c => c.UserId == userId, cancellationToken);
+        var ownerExists = await db.Users.AsNoTracking()
+            .AnyAsync(u => u.Id == ownerId, cancellationToken);
 
-            if (count >= 5)
-                return Result.Invalid(new ValidationError(
-                    "PlanLimit",
-                    "Atingiste o limite de 5 clientes do plano Free. Faz upgrade para Pro para clientes ilimitados.",
-                    "PLAN_LIMIT_CLIENTS",
-                    ValidationSeverity.Error));
-        }
+        if (!ownerExists) return Result.Unauthorized();
 
         var client = new Client
         {
@@ -45,7 +39,7 @@ public sealed class CreateClientCommandHandler(
             Email = command.Email?.ToLowerInvariant(),
             Phone = command.Phone,
             Notes = command.Notes,
-            UserId = userId,
+            UserId = ownerId,
             ModifiedBy = currentUser.Email,
             Address = command.Address is null ? null : new Address(
                 command.Address.Street,

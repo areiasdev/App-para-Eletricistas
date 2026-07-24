@@ -4,7 +4,6 @@ using Ardalis.Result.AspNetCore;
 using Hangfire;
 using Hangfire.PostgreSql;
 using TecnicoApp.Infrastructure.Jobs;
-// TrialExpirationJob is in the same namespace
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -206,12 +205,6 @@ RecurringJob.AddOrUpdate<MaintenanceAlertJob>(
     "maintenance-alerts",
     job => job.RunAsync(),
     "0 8 * * *");
-
-// Trial expiration check — runs daily at 09:00
-RecurringJob.AddOrUpdate<TrialExpirationJob>(
-    "trial-expiration",
-    job => job.RunAsync(),
-    "0 9 * * *");
 
 app.Run();
 

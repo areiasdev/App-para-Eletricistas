@@ -16,9 +16,15 @@ public sealed class UpdateClientCommandHandler(
         UpdateClientCommand command,
         CancellationToken cancellationToken)
     {
+        // Resolve ownerId: team members share their owner's clients
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var client = await db.Clients
             .FirstOrDefaultAsync(
-                c => c.Id == command.ClientId && c.UserId == currentUser.UserId,
+                c => c.Id == command.ClientId && c.UserId == ownerId,
                 cancellationToken);
 
         if (client is null)

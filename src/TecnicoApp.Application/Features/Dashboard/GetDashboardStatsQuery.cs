@@ -48,15 +48,19 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
     public async Task<Result<DashboardStatsDto>> Handle(
         GetDashboardStatsQuery request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members see their owner's team-wide stats
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         // All counts and aggregates done in SQL — no in-memory loading
         var clientsCount = await db.Clients
-            .CountAsync(c => c.UserId == userId, cancellationToken);
+            .CountAsync(c => c.UserId == ownerId, cancellationToken);
 
         var quoteCounts = await db.Quotes
             .AsNoTracking()
-            .Where(q => q.UserId == userId)
+            .Where(q => q.UserId == ownerId)
             .GroupBy(_ => 1)
             .Select(g => new
             {
@@ -75,7 +79,7 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
 
         var recentQuotes = await db.Quotes
             .AsNoTracking()
-            .Where(q => q.UserId == userId)
+            .Where(q => q.UserId == ownerId)
             .OrderByDescending(q => q.CreatedAt)
             .Take(5)
             .Select(q => new RecentQuoteDto(
@@ -89,7 +93,7 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
 
         var interventionCounts = await db.Interventions
             .AsNoTracking()
-            .Where(i => i.UserId == userId)
+            .Where(i => i.UserId == ownerId)
             .GroupBy(_ => 1)
             .Select(g => new
             {
@@ -105,7 +109,7 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
         var upcomingMaintenance = await db.Equipment
             .AsNoTracking()
             .Where(e =>
-                e.Client.UserId == userId &&
+                e.Client.UserId == ownerId &&
                 e.NextMaintenance.HasValue &&
                 e.NextMaintenance.Value >= today &&
                 e.NextMaintenance.Value <= limit)

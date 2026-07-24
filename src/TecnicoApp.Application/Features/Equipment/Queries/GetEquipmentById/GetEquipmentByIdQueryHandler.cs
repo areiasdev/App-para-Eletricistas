@@ -12,7 +12,11 @@ public class GetEquipmentByIdQueryHandler(IAppDbContext db, ICurrentUserService 
     public async Task<Result<EquipmentDto>> Handle(
         GetEquipmentByIdQuery request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's clients/equipment
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var equipment = await db.Equipment
             .AsNoTracking()
@@ -22,7 +26,7 @@ public class GetEquipmentByIdQueryHandler(IAppDbContext db, ICurrentUserService 
         if (equipment is null)
             return Result.NotFound();
 
-        if (equipment.Client.UserId != userId)
+        if (equipment.Client.UserId != ownerId)
             return Result.Forbidden();
 
         return Result.Success(new EquipmentDto(

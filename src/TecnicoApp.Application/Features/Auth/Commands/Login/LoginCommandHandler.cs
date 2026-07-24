@@ -34,7 +34,7 @@ public sealed class LoginCommandHandler(
             accessToken,
             user.RefreshToken!,
             user.RefreshTokenExpiresAt!.Value,
-            new UserDto(user.Id, user.FullName, user.Email, user.Plan.ToString())
+            new UserDto(user.Id, user.FullName, user.Email)
         ));
     }
 }

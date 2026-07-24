@@ -27,8 +27,7 @@ public sealed class GetProfileQueryHandler(IAppDbContext db, ICurrentUserService
             user.CompanyName,
             user.Nif,
             user.Phone,
-            user.LogoUrl,
-            user.Plan.ToString()
+            user.LogoUrl
         ));
     }
 }

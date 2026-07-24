@@ -30,8 +30,6 @@ public sealed class RegisterCommandHandler(
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(command.Password),
             RefreshToken = tokenService.GenerateRefreshToken(),
             RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30),
-            Plan = Domain.Enums.Plan.Enterprise,
-            TrialEndsAt = DateTime.UtcNow.AddDays(14)
         };
 
         await db.Users.AddAsync(user, cancellationToken);
@@ -43,7 +41,7 @@ public sealed class RegisterCommandHandler(
             accessToken,
             user.RefreshToken!,
             user.RefreshTokenExpiresAt!.Value,
-            new UserDto(user.Id, user.FullName, user.Email, user.Plan.ToString())
+            new UserDto(user.Id, user.FullName, user.Email)
         ));
     }
 }

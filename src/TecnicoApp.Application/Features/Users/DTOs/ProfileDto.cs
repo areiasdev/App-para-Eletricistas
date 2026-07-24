@@ -7,6 +7,5 @@ public record ProfileDto(
     string? CompanyName,
     string? Nif,
     string? Phone,
-    string? LogoUrl,
-    string Plan
+    string? LogoUrl
 );

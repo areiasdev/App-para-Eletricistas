@@ -34,8 +34,7 @@ public sealed class UpdateProfileCommandHandler(IAppDbContext db, ICurrentUserSe
             user.CompanyName,
             user.Nif,
             user.Phone,
-            user.LogoUrl,
-            user.Plan.ToString()
+            user.LogoUrl
         ));
     }
 }

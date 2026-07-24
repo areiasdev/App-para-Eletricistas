@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TecnicoApp.Infrastructure.Persistence;
@@ -11,13 +12,15 @@ using TecnicoApp.Infrastructure.Persistence;
 namespace TecnicoApp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260724075008_AddClientPortalTokenVersion")]
+    partial class AddClientPortalTokenVersion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.29")
+                .HasAnnotation("ProductVersion", "8.0.26")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -290,9 +293,6 @@ namespace TecnicoApp.Infrastructure.Migrations
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(10,2)");
 
-                    b.Property<DateTime?>("EmailSentAt")
-                        .HasColumnType("timestamp without time zone");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -495,6 +495,10 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("RefreshToken")
                         .HasColumnType("text");
 
@@ -504,6 +508,12 @@ namespace TecnicoApp.Infrastructure.Migrations
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("StripeCustomerId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("TrialEndsAt")
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 

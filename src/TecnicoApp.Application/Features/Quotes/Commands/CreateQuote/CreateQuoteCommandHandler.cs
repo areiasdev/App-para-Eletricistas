@@ -17,27 +17,18 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
     {
         var userId = currentUser.UserId;
 
-        var user = await db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        // Resolve ownerId: team members share their owner's clients/quotes
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (user is null) return Result.Unauthorized();
+        var ownerExists = await db.Users.AsNoTracking()
+            .AnyAsync(u => u.Id == ownerId, cancellationToken);
 
-        if (user.Plan == Plan.Free)
-        {
-            var now = DateTime.UtcNow;
-            var monthStart = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-            var monthlyCount = await db.Quotes
-                .CountAsync(q => q.UserId == userId && q.CreatedAt >= monthStart, cancellationToken);
+        if (!ownerExists) return Result.Unauthorized();
 
-            if (monthlyCount >= 10)
-                return Result.Invalid(new ValidationError(
-                    "PlanLimit",
-                    "Atingiste o limite de 10 orçamentos por mês do plano Free. Faz upgrade para Pro para orçamentos ilimitados.",
-                    "PLAN_LIMIT_QUOTES",
-                    ValidationSeverity.Error));
-        }
-
-        // Verify client belongs to current user
+        // Verify client belongs to the owner's team
         var client = await db.Clients
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == request.ClientId, cancellationToken);
@@ -45,20 +36,20 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         if (client is null)
             return Result.NotFound("Cliente não encontrado.");
 
-        if (client.UserId != userId)
+        if (client.UserId != ownerId)
             return Result.Forbidden();
 
         // Generate quote number: ORC-YYYY-NNNN
         var year = DateTime.UtcNow.Year;
         var count = await db.Quotes
-            .CountAsync(q => q.UserId == userId && q.CreatedAt.Year == year, cancellationToken);
+            .CountAsync(q => q.UserId == ownerId && q.CreatedAt.Year == year, cancellationToken);
         var number = $"ORC-{year}-{(count + 1):D4}";
 
         var quote = new Quote
         {
             Number = number,
             ClientId = request.ClientId,
-            UserId = userId,
+            UserId = ownerId,
             Discount = request.Discount,
             Notes = request.Notes,
             ValidUntil = request.ValidUntil,
@@ -82,7 +73,7 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
             logger.LogWarning("Quote number conflict for {Number}, retrying.", number);
             db.Quotes.Remove(quote);
             var retryCount = await db.Quotes
-                .CountAsync(q => q.UserId == userId && q.CreatedAt.Year == year, cancellationToken);
+                .CountAsync(q => q.UserId == ownerId && q.CreatedAt.Year == year, cancellationToken);
             quote.Number = $"ORC-{year}-{(retryCount + 1):D4}";
             db.Quotes.Add(quote);
             await db.SaveChangesAsync(cancellationToken);
@@ -107,7 +98,8 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
                     l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
                     Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
                 .ToList(),
-            quote.CreatedAt
+            quote.CreatedAt,
+            quote.EmailSentAt
         );
 
         return Result.Success(dto);

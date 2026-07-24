@@ -83,7 +83,7 @@ public class MaintenanceAlertJob(
             <body style="font-family:Arial,sans-serif;background:#f7f7f4;margin:0;padding:20px">
               <div style="max-width:560px;margin:0 auto;background:white;border-radius:12px;overflow:hidden">
                 <div style="background:#f59e0b;padding:24px 32px">
-                  <h1 style="margin:0;color:white;font-size:20px">⚡ TécnicoApp</h1>
+                  <h1 style="margin:0;color:white;font-size:20px">T TécnicoApp</h1>
                 </div>
                 <div style="padding:32px">
                   <p style="color:#6b7280;margin:0 0 8px">Olá, <strong style="color:#1a1a1a">{userName}</strong></p>

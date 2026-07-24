@@ -12,7 +12,11 @@ public class GetQuoteByIdQueryHandler(IAppDbContext db, ICurrentUserService curr
     public async Task<Result<QuoteDto>> Handle(
         GetQuoteByIdQuery request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's quotes
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var quote = await db.Quotes
             .AsNoTracking()
@@ -23,7 +27,7 @@ public class GetQuoteByIdQueryHandler(IAppDbContext db, ICurrentUserService curr
         if (quote is null)
             return Result.NotFound();
 
-        if (quote.UserId != userId)
+        if (quote.UserId != ownerId)
             return Result.Forbidden();
 
         var dto = new QuoteDto(
@@ -50,7 +54,8 @@ public class GetQuoteByIdQueryHandler(IAppDbContext db, ICurrentUserService curr
                     l.VatRate,
                     Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
                 .ToList(),
-            quote.CreatedAt
+            quote.CreatedAt,
+            quote.EmailSentAt
         );
 
         return Result.Success(dto);

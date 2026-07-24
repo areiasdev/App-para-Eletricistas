@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
-using Plan = TecnicoApp.Domain.Enums.Plan;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.SignQuote;
 
@@ -12,19 +11,16 @@ public class SignQuoteCommandHandler(IAppDbContext db, ICurrentUserService curre
 {
     public async Task<Result> Handle(SignQuoteCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's quotes
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        var user = await db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+        var ownerExists = await db.Users.AsNoTracking()
+            .AnyAsync(u => u.Id == ownerId, cancellationToken);
 
-        if (user is null) return Result.Unauthorized();
-
-        if (user.Plan == Plan.Free)
-            return Result.Invalid(new ValidationError(
-                "PlanLimit",
-                "A assinatura digital está disponível nos planos Pro e Team. Faz upgrade para desbloquear.",
-                "PLAN_LIMIT_SIGNATURE",
-                ValidationSeverity.Error));
+        if (!ownerExists) return Result.Unauthorized();
 
         var quote = await db.Quotes
             .FirstOrDefaultAsync(q => q.Id == request.QuoteId, cancellationToken);
@@ -32,7 +28,7 @@ public class SignQuoteCommandHandler(IAppDbContext db, ICurrentUserService curre
         if (quote is null)
             return Result.NotFound();
 
-        if (quote.UserId != userId)
+        if (quote.UserId != ownerId)
             return Result.Forbidden();
 
         if (quote.Status is not (QuoteStatus.Sent or QuoteStatus.Accepted))

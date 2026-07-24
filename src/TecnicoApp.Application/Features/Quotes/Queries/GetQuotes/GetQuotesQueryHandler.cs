@@ -13,11 +13,15 @@ public class GetQuotesQueryHandler(IAppDbContext db, ICurrentUserService current
     public async Task<Result<PaginatedResult<QuoteListItemDto>>> Handle(
         GetQuotesQuery request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's quotes
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var query = db.Quotes
             .AsNoTracking()
-            .Where(q => q.UserId == userId);
+            .Where(q => q.UserId == ownerId);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

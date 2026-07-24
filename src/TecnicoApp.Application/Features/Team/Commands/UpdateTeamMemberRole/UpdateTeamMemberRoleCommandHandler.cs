@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Team.DTOs;
-using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Team.Commands.UpdateTeamMemberRole;
 
@@ -37,10 +36,8 @@ public class UpdateTeamMemberRoleCommandHandler(IAppDbContext db, ICurrentUserSe
         if (teamMember.MemberId == userId)
             return Result.Forbidden("Não podes alterar o teu próprio papel.");
 
-        // Only Owner can assign the Owner role; Admins cannot
-        if (request.Role == UserRole.Owner && callingUser.Role != UserRole.Owner)
-            return Result.Forbidden("Apenas o proprietário pode atribuir o papel de Owner.");
-
+        // Note: the Owner role can never reach here — the validator already rejects it
+        // outright, since ownership transfer isn't supported through this operation.
         teamMember.Role = request.Role;
         teamMember.Member.Role = request.Role;
         teamMember.ModifiedAt = DateTime.UtcNow;
