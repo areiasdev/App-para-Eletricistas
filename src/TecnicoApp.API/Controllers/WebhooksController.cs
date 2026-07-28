@@ -1,15 +1,14 @@
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Stripe;
-using TecnicoApp.Application.Common.Interfaces;
-using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Features.Invoices.Commands.MarkInvoicePaidFromWebhook;
 
 namespace TecnicoApp.API.Controllers;
 
 [ApiController]
 [Route("api/v1/webhooks")]
-public class WebhooksController(IAppDbContext db, IConfiguration configuration) : ControllerBase
+public class WebhooksController(ISender sender, IConfiguration configuration) : ControllerBase
 {
     [HttpPost("stripe")]
     [AllowAnonymous]
@@ -50,30 +49,14 @@ public class WebhooksController(IAppDbContext db, IConfiguration configuration) 
         if (stripeEvent.Type == EventTypes.CheckoutSessionCompleted)
         {
             if (stripeEvent.Data.Object is Stripe.Checkout.Session { PaymentStatus: "paid" } session)
-                await MarkInvoicePaidAsync(session.Id, ct);
+                await sender.Send(new MarkInvoicePaidFromWebhookCommand(session.Id), ct);
         }
         else if (stripeEvent.Type == EventTypes.CheckoutSessionAsyncPaymentSucceeded)
         {
             if (stripeEvent.Data.Object is Stripe.Checkout.Session session)
-                await MarkInvoicePaidAsync(session.Id, ct);
+                await sender.Send(new MarkInvoicePaidFromWebhookCommand(session.Id), ct);
         }
 
         return Ok();
-    }
-
-    private async Task MarkInvoicePaidAsync(string sessionId, CancellationToken ct)
-    {
-        var invoice = await db.Invoices
-            .FirstOrDefaultAsync(i => i.StripeCheckoutSessionId == sessionId, ct);
-
-        // Idempotent — Stripe retries webhook deliveries, and an invoice already marked Paid
-        // (e.g. by the technician manually, or a previous delivery of this same event) must not
-        // be touched again.
-        if (invoice is null || invoice.Status == InvoiceStatus.Paid)
-            return;
-
-        invoice.Status = InvoiceStatus.Paid;
-        invoice.PaidAt = DateTime.UtcNow;
-        await db.SaveChangesAsync(ct);
     }
 }
