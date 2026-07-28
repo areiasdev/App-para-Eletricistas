@@ -65,6 +65,16 @@ export interface PortalQuoteDto {
   createdAt: string
 }
 
+export interface PortalInvoiceDto {
+  id: string
+  number: string
+  status: string
+  total: number
+  dueDate: string
+  createdAt: string
+  payUrl: string | null
+}
+
 export const portal = {
   login: (token: string) =>
     axios
@@ -80,6 +90,10 @@ export const portal = {
     portalApi.get<PortalInterventionDto[]>('/interventions').then((r) => r.data),
 
   quotes: () => portalApi.get<PortalQuoteDto[]>('/quotes').then((r) => r.data),
+
+  invoices: () => portalApi.get<PortalInvoiceDto[]>('/invoices').then((r) => r.data),
+
+  logout: () => portalApi.post('/logout').then((r) => r.data),
 
   // Uses regular authenticated api (tech-side action)
   sendAccess: (clientId: string) =>

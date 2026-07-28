@@ -11,6 +11,7 @@ public class TeamMember : BaseEntity
     public UserRole Role { get; set; } = UserRole.Technician;
     public required string InviteEmail { get; set; }
     public string? InviteTokenHash { get; set; }
+    public DateTime? InviteTokenExpiresAt { get; set; }
     public bool IsAccepted { get; set; }
     public DateTime? AcceptedAt { get; set; }
 }

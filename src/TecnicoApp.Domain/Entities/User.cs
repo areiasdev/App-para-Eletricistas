@@ -11,9 +11,9 @@ public class User : BaseEntity
     public string? Nif { get; set; }
     public string? Phone { get; set; }
     public string? LogoUrl { get; set; }
-    public Plan Plan { get; set; } = Plan.Enterprise;
-    public DateTime? TrialEndsAt { get; set; }
-    public string? StripeCustomerId { get; set; }
+    public string? BrandColor { get; set; }
+    public string? Iban { get; set; }
+    public string? BankName { get; set; }
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiresAt { get; set; }
     public string? PasswordResetTokenHash { get; set; }
@@ -27,4 +27,5 @@ public class User : BaseEntity
 
     public ICollection<Client> Clients { get; set; } = [];
     public ICollection<Quote> Quotes { get; set; } = [];
+    public ICollection<Invoice> Invoices { get; set; } = [];
 }

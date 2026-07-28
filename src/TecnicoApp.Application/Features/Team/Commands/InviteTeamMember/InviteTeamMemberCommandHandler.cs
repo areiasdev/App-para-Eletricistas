@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Team.DTOs;
 using TecnicoApp.Domain.Entities;
@@ -11,9 +12,9 @@ namespace TecnicoApp.Application.Features.Team.Commands.InviteTeamMember;
 public class InviteTeamMemberCommandHandler(
     IAppDbContext db,
     ICurrentUserService currentUser,
-    IPlanGateService planGate,
     IEmailService emailService,
-    IAppSettings appSettings)
+    IAppSettings appSettings,
+    ILogger<InviteTeamMemberCommandHandler> logger)
     : IRequestHandler<InviteTeamMemberCommand, Result<TeamMemberDto>>
 {
     public async Task<Result<TeamMemberDto>> Handle(
@@ -41,21 +42,6 @@ public class InviteTeamMemberCommandHandler(
 
         if (ownerUser is null)
             return Result.Error("Conta de proprietário não encontrada.");
-
-        // Check plan allows team
-        if (!planGate.CanUseTeam(ownerUser.Plan))
-            return Result.Error("O seu plano não permite gestão de equipa. Actualize para o plano Team ou Enterprise.");
-
-        // Check max team members not exceeded
-        var maxMembers = planGate.MaxTeamMembers(ownerUser.Plan);
-        if (maxMembers >= 0)
-        {
-            var currentCount = await db.TeamMembers
-                .CountAsync(t => t.OwnerId == ownerId, cancellationToken);
-
-            if (currentCount >= maxMembers)
-                return Result.Error($"Limite de {maxMembers} membros de equipa atingido para o seu plano.");
-        }
 
         // B1 — Self-invite guard
         if (request.Email.Equals(callingUser.Email, StringComparison.OrdinalIgnoreCase))
@@ -110,8 +96,7 @@ public class InviteTeamMemberCommandHandler(
                 FullName = normalizedEmail, // placeholder until they accept
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword),
                 OwnerId = ownerId,
-                Role = request.Role,
-                Plan = Plan.Free
+                Role = request.Role
             };
             db.Users.Add(memberUser);
         }
@@ -130,6 +115,7 @@ public class InviteTeamMemberCommandHandler(
             Role = request.Role,
             InviteEmail = normalizedEmail,
             InviteTokenHash = tokenHash,
+            InviteTokenExpiresAt = DateTime.UtcNow.AddDays(7),
             IsAccepted = false
         };
 
@@ -144,7 +130,7 @@ public class InviteTeamMemberCommandHandler(
                 <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
                   <div style="margin-bottom:24px">
                     <span style="background:#f59e0b;color:#1c1917;font-size:14px;font-weight:700;
-                      padding:6px 10px;border-radius:6px">⚡ TécnicoApp</span>
+                      padding:6px 10px;border-radius:6px">T TécnicoApp</span>
                   </div>
                   <h1 style="font-size:22px;font-weight:700;margin-bottom:8px">
                     Foste convidado para a equipa
@@ -172,9 +158,10 @@ public class InviteTeamMemberCommandHandler(
                 Subject: $"Convite para a equipa TécnicoApp de {ownerUser.FullName}",
                 HtmlBody: html), cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
             // Email failure is non-fatal; raw token still returned in response
+            logger.LogError(ex, "Failed to send team invite email to {Email}", normalizedEmail);
         }
 
         return Result.Success(new TeamMemberDto(

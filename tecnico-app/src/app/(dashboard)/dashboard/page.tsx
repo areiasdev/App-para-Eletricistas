@@ -164,6 +164,7 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-line)' }}>
@@ -204,6 +205,7 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>
@@ -220,6 +222,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+            <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-line)' }}>
@@ -267,6 +270,7 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}

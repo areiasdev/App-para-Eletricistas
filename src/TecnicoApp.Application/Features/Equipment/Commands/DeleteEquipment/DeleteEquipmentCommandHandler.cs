@@ -2,6 +2,7 @@ using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Equipment.Commands.DeleteEquipment;
 
@@ -11,7 +12,21 @@ public class DeleteEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
     public async Task<Result> Handle(
         DeleteEquipmentCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's clients/equipment
+        var caller = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => new { OwnerId = u.OwnerId ?? u.Id, u.Role })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (caller is null)
+            return Result.Unauthorized();
+
+        // Deletes are irreversible from the UI — restrict to Owner/Admin so a technician
+        // can't wipe out company records unsupervised.
+        if (caller.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores podem apagar equipamentos.");
+
+        var ownerId = caller.OwnerId;
 
         var equipment = await db.Equipment
             .Include(e => e.Client)
@@ -20,7 +35,7 @@ public class DeleteEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
         if (equipment is null)
             return Result.NotFound();
 
-        if (equipment.Client.UserId != userId)
+        if (equipment.Client.UserId != ownerId)
             return Result.Forbidden();
 
         equipment.IsDeleted = true;

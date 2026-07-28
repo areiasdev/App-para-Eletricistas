@@ -35,25 +35,29 @@ public record ProfitabilityReportDto(
 
 public record GetProfitabilityReportQuery(DateTime? From, DateTime? To) : IRequest<Result<ProfitabilityReportDto>>;
 
-public class GetProfitabilityReportQueryHandler(IAppDbContext db, ICurrentUserService currentUser, IPlanGateService planGate)
+public class GetProfitabilityReportQueryHandler(IAppDbContext db, ICurrentUserService currentUser)
     : IRequestHandler<GetProfitabilityReportQuery, Result<ProfitabilityReportDto>>
 {
     public async Task<Result<ProfitabilityReportDto>> Handle(
         GetProfitabilityReportQuery request, CancellationToken cancellationToken)
     {
         var userId = currentUser.UserId;
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
 
-        var ownerUser = await db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == ownerId, cancellationToken);
+        var callingUser = await db.Users.AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+
+        if (callingUser is null) return Result.Unauthorized();
+
+        if (callingUser.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores têm acesso aos relatórios de rentabilidade.");
+
+        var ownerId = callingUser.OwnerId ?? callingUser.Id;
+
+        var ownerUser = ownerId == callingUser.Id
+            ? callingUser
+            : await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == ownerId, cancellationToken);
 
         if (ownerUser is null) return Result.Unauthorized();
-
-        if (!planGate.CanUseAdvancedReports(ownerUser.Plan))
-            return Result.Error("Os relatórios de rentabilidade requerem o plano Enterprise.");
 
         var from = request.From ?? DateTime.UtcNow.AddMonths(-3);
         var to = request.To?.AddDays(1) ?? DateTime.UtcNow;

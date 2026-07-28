@@ -4,11 +4,13 @@ import { use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEquipment, useDeleteEquipment } from '@/hooks/useEquipment'
+import { useCanManage } from '@/hooks/useCanManage'
 import { formatDate } from '@/lib/utils/formatters'
 
 export default function EquipamentoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const canManage = useCanManage()
   const { data: equipment, isLoading } = useEquipment(id)
   const deleteEquipment = useDeleteEquipment()
 
@@ -73,15 +75,17 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
           >
             Editar
           </Link>
-          <button
-            onClick={handleDelete}
-            className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
-            style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
-          >
-            Apagar
-          </button>
+          {canManage && (
+            <button
+              onClick={handleDelete}
+              className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
+              style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
+            >
+              Apagar
+            </button>
+          )}
         </div>
       </div>
 

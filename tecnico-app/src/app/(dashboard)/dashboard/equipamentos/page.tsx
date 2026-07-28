@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useEquipmentList, useDeleteEquipment } from '@/hooks/useEquipment'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useCanManage } from '@/hooks/useCanManage'
 import { formatDate } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
 
@@ -32,11 +34,12 @@ function MaintenanceBadge({ date }: { date?: string }) {
 }
 
 function EquipamentosContent() {
+  const canManage = useCanManage()
   const searchParams = useSearchParams()
   const clientIdFilter = searchParams.get('clientId') ?? undefined
 
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 300)
   const [page, setPage] = useState(1)
 
   const { data, isLoading, isError, error } = useEquipmentList({
@@ -51,8 +54,6 @@ function EquipamentosContent() {
   const handleSearch = (value: string) => {
     setSearch(value)
     setPage(1)
-    const t = setTimeout(() => setDebouncedSearch(value), 300)
-    return () => clearTimeout(t)
   }
 
   const handleDelete = (id: string, type: string) => {
@@ -110,6 +111,7 @@ function EquipamentosContent() {
       )}
 
       <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+        <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
@@ -189,21 +191,24 @@ function EquipamentosContent() {
                     >
                       Editar
                     </Link>
-                    <button
-                      onClick={() => handleDelete(eq.id, eq.type)}
-                      className="text-xs font-medium transition-colors duration-150"
-                      style={{ color: 'var(--color-subtle)' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
-                    >
-                      Apagar
-                    </button>
+                    {canManage && (
+                      <button
+                        onClick={() => handleDelete(eq.id, eq.type)}
+                        className="text-xs font-medium transition-colors duration-150"
+                        style={{ color: 'var(--color-subtle)' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
+                      >
+                        Apagar
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {data && data.totalPages > 1 && (

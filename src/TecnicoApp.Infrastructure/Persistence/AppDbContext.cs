@@ -19,6 +19,8 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Quote> Quotes => Set<Quote>();
     public DbSet<QuoteLine> QuoteLines => Set<QuoteLine>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
     public DbSet<Equipment> Equipment => Set<Equipment>();
     public DbSet<Intervention> Interventions => Set<Intervention>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
@@ -35,10 +37,12 @@ public class AppDbContext : DbContext, IAppDbContext
         var auditableTypes = new HashSet<string>
         {
             nameof(Client), nameof(Equipment), nameof(Intervention),
-            nameof(Quote), nameof(TeamMember)
+            nameof(Quote), nameof(Invoice), nameof(TeamMember)
         };
 
-        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        // Snapshot first — AuditLogs.Add() below registers a new tracked entity, which would
+        // otherwise mutate the ChangeTracker while this same loop is still enumerating it.
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>().ToList())
         {
             if (entry.State == EntityState.Modified)
                 entry.Entity.ModifiedAt = DateTime.UtcNow;

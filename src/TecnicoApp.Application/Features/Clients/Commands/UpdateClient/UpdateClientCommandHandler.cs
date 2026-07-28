@@ -16,9 +16,15 @@ public sealed class UpdateClientCommandHandler(
         UpdateClientCommand command,
         CancellationToken cancellationToken)
     {
+        // Resolve ownerId: team members share their owner's clients
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
         var client = await db.Clients
             .FirstOrDefaultAsync(
-                c => c.Id == command.ClientId && c.UserId == currentUser.UserId,
+                c => c.Id == command.ClientId && c.UserId == ownerId,
                 cancellationToken);
 
         if (client is null)
@@ -30,6 +36,8 @@ public sealed class UpdateClientCommandHandler(
         client.Phone = command.Phone;
         client.Notes = command.Notes;
         client.ModifiedBy = currentUser.Email;
+        client.WhatsAppOptIn = command.WhatsAppOptIn;
+        client.PhoneVerified = command.PhoneVerified;
         client.Address = command.Address is null ? null : new Address(
             command.Address.Street,
             command.Address.City,
@@ -50,6 +58,8 @@ public sealed class UpdateClientCommandHandler(
                 client.Address.PostalCode,
                 client.Address.Country),
             client.Notes,
-            client.CreatedAt));
+            client.CreatedAt,
+            client.WhatsAppOptIn,
+            client.PhoneVerified));
     }
 }

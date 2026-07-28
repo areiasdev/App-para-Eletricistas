@@ -37,7 +37,7 @@ export default function EsqueciPasswordPage() {
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            ⚡
+            T
           </span>
           <span className="text-sm font-semibold text-white/90 tracking-tight">TécnicoApp</span>
         </div>
@@ -45,7 +45,7 @@ export default function EsqueciPasswordPage() {
           Envia-te um email para redefires a tua password em segurança.
         </p>
         <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-          © 2026 TécnicoApp · Para eletricistas e técnicos de AVAC
+          © 2026 TécnicoApp
         </p>
       </div>
 
@@ -58,7 +58,7 @@ export default function EsqueciPasswordPage() {
               className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
               style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
             >
-              ⚡
+              T
             </span>
             <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-ink)' }}>
               TécnicoApp

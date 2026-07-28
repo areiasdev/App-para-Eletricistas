@@ -4,22 +4,19 @@ import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useClient, useDeleteClient } from '@/hooks/useClients'
+import { useCanManage } from '@/hooks/useCanManage'
 import { formatDate } from '@/lib/utils/formatters'
-import { useQuery } from '@tanstack/react-query'
-import { billingApi } from '@/lib/api/billing'
 import { portal } from '@/lib/api/portal'
 import { getErrorMessage } from '@/lib/api/client'
 
 export default function ClienteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const canManage = useCanManage()
   const { data: client, isLoading } = useClient(id)
   const deleteClient = useDeleteClient()
   const [portalSending, setPortalSending] = useState(false)
   const [portalMsg, setPortalMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
-
-  const { data: billing } = useQuery({ queryKey: ['billing-me'], queryFn: billingApi.getMe, staleTime: 1000 * 60 * 5 })
-  const isEnterprise = billing?.plan === 'Enterprise'
 
   const handleSendPortalAccess = async () => {
     setPortalSending(true)
@@ -87,15 +84,17 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
           >
             Editar
           </Link>
-          <button
-            onClick={handleDelete}
-            className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
-            style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
-          >
-            Apagar
-          </button>
+          {canManage && (
+            <button
+              onClick={handleDelete}
+              className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
+              style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
+            >
+              Apagar
+            </button>
+          )}
         </div>
       </div>
 
@@ -113,8 +112,8 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
         <InfoRow label="Cliente desde" value={formatDate(client.createdAt)} />
       </div>
 
-      {/* Portal access (Enterprise only) */}
-      {isEnterprise && client.email && (
+      {/* Portal access */}
+      {client.email && (
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <button

@@ -25,6 +25,9 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
 
         builder.Property(c => c.PortalTokenHash).HasMaxLength(128);
 
+        builder.Property(c => c.WhatsAppOptIn).HasDefaultValue(false);
+        builder.Property(c => c.PhoneVerified).HasDefaultValue(false);
+
         builder.HasIndex(c => new { c.UserId, c.Name });
         builder.HasQueryFilter(c => !c.IsDeleted);
 

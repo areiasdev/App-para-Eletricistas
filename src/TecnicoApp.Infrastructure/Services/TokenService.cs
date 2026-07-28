@@ -21,7 +21,6 @@ public sealed class TokenService(IConfiguration configuration) : ITokenService
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.FullName),
-            new Claim("plan", user.Plan.ToString())
         };
 
         var token = new JwtSecurityToken(
@@ -39,7 +38,7 @@ public sealed class TokenService(IConfiguration configuration) : ITokenService
     public string GenerateRefreshToken()
         => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
-    public string GeneratePortalToken(Guid clientId, Guid ownerId, string clientName, string clientEmail)
+    public string GeneratePortalToken(Guid clientId, Guid ownerId, string clientName, string clientEmail, int tokenVersion)
     {
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!));
@@ -51,6 +50,7 @@ public sealed class TokenService(IConfiguration configuration) : ITokenService
             new Claim("ownerId", ownerId.ToString()),
             new Claim(ClaimTypes.Name, clientName),
             new Claim(ClaimTypes.Email, clientEmail),
+            new Claim("portalTokenVersion", tokenVersion.ToString()),
         };
 
         var token = new JwtSecurityToken(

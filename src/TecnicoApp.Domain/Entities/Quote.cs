@@ -12,6 +12,7 @@ public class Quote : BaseEntity
     public DateTime? SignedAt { get; set; }
     public string? SignatureUrl { get; set; }
     public string? PdfUrl { get; set; }
+    public DateTime? EmailSentAt { get; set; }
 
     public Guid ClientId { get; set; }
     public Client Client { get; set; } = null!;

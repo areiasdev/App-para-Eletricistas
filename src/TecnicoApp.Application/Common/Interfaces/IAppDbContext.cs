@@ -9,6 +9,8 @@ public interface IAppDbContext
     DbSet<Client> Clients { get; }
     DbSet<Quote> Quotes { get; }
     DbSet<QuoteLine> QuoteLines { get; }
+    DbSet<Invoice> Invoices { get; }
+    DbSet<InvoiceLine> InvoiceLines { get; }
     DbSet<Equipment> Equipment { get; }
     DbSet<Intervention> Interventions { get; }
     DbSet<TeamMember> TeamMembers { get; }

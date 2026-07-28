@@ -8,7 +8,9 @@ public record ClientDto(
     string? Phone,
     AddressDto? Address,
     string? Notes,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    bool WhatsAppOptIn = false,
+    bool PhoneVerified = false
 );
 
 public record ClientListItemDto(

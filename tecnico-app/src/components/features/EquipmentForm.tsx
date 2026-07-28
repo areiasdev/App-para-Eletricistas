@@ -93,7 +93,7 @@ export function EquipmentForm({
             <FormField label="Tipo *" error={errors.type?.message}>
               <input
                 {...register('type')}
-                placeholder="Ex: Ar condicionado, Quadro elétrico"
+                placeholder="Ex: Ar condicionado, Caldeira, Elevador"
                 className="form-input"
                 style={{ borderColor: errors.type ? '#fca5a5' : 'var(--color-line-strong)' }}
               />
@@ -101,7 +101,7 @@ export function EquipmentForm({
             <FormField label="Marca" error={errors.brand?.message}>
               <input
                 {...register('brand')}
-                placeholder="Ex: Daikin, Schneider"
+                placeholder="Ex: Daikin, Bosch"
                 className="form-input"
                 style={{ borderColor: 'var(--color-line-strong)' }}
               />

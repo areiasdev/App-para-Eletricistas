@@ -10,8 +10,7 @@ namespace TecnicoApp.Application.Features.AuditLogs.Queries.GetAuditLogs;
 
 public class GetAuditLogsQueryHandler(
     IAppDbContext db,
-    ICurrentUserService currentUser,
-    IPlanGateService planGate)
+    ICurrentUserService currentUser)
     : IRequestHandler<GetAuditLogsQuery, Result<PaginatedResult<AuditLogDto>>>
 {
     public async Task<Result<PaginatedResult<AuditLogDto>>> Handle(
@@ -24,17 +23,10 @@ public class GetAuditLogsQueryHandler(
 
         if (callingUser is null) return Result.Unauthorized();
 
+        if (callingUser.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores têm acesso ao audit log.");
+
         var ownerId = callingUser.OwnerId ?? callingUser.Id;
-
-        var ownerPlan = callingUser.OwnerId.HasValue
-            ? await db.Users.AsNoTracking()
-                .Where(u => u.Id == ownerId)
-                .Select(u => u.Plan)
-                .FirstOrDefaultAsync(cancellationToken)
-            : callingUser.Plan;
-
-        if (!planGate.CanUseAdvancedReports(ownerPlan))
-            return Result.Forbidden();
 
         // Collect all user IDs belonging to this tenant
         var teamUserIds = await db.TeamMembers.AsNoTracking()
@@ -43,8 +35,11 @@ public class GetAuditLogsQueryHandler(
             .ToListAsync(cancellationToken);
         teamUserIds.Add(ownerId);
 
+        // Rows with a null UserId aren't attributable to any tenant, so they must never be
+        // shown to any tenant's audit log — treating null as "visible to everyone" would leak
+        // any such row across every team. Only explicitly team-owned rows are returned.
         var query = db.AuditLogs.AsNoTracking()
-            .Where(a => a.UserId == null || teamUserIds.Contains(a.UserId.Value));
+            .Where(a => a.UserId != null && teamUserIds.Contains(a.UserId.Value));
 
         if (!string.IsNullOrWhiteSpace(request.EntityType))
             query = query.Where(a => a.EntityType == request.EntityType);

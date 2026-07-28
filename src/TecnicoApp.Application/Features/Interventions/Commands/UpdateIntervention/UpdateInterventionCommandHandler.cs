@@ -7,7 +7,7 @@ using TecnicoApp.Domain.ValueObjects;
 
 namespace TecnicoApp.Application.Features.Interventions.Commands.UpdateIntervention;
 
-public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserService currentUser, IPlanGateService planGate)
+public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserService currentUser)
     : IRequestHandler<UpdateInterventionCommand, Result<InterventionDto>>
 {
     public async Task<Result<InterventionDto>> Handle(
@@ -21,16 +21,11 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
             .Select(u => u.OwnerId ?? u.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
-        // Load owner user to check plan gates
-        var ownerUser = await db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == ownerId, cancellationToken);
+        var ownerExists = await db.Users.AsNoTracking()
+            .AnyAsync(u => u.Id == ownerId, cancellationToken);
 
-        if (ownerUser is null)
+        if (!ownerExists)
             return Result.Unauthorized();
-
-        // C1 — Plan gate: materials require Pro/Team/Enterprise
-        if (request.Materials is { Count: > 0 } && !planGate.CanUseMaterials(ownerUser.Plan))
-            return Result.Error("O seu plano não suporta materiais em intervenções. Actualize para o plano Pro ou superior.");
 
         // C2/H6 — AssignedToUserId must belong to owner's team AND have accepted the invite
         if (request.AssignedToUserId.HasValue && request.AssignedToUserId.Value != ownerId)
@@ -101,7 +96,9 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
             .Select(m => new InterventionMaterial(m.Name, m.Quantity, m.UnitCost))
             .ToList() ?? intervention.Materials;
         intervention.QuoteId = request.QuoteId;
-        intervention.AssignedToUserId = request.AssignedToUserId;
+        // Only the owner/admin can (re)assign work to someone else — a technician can only
+        // ever assign to themselves. Matches CreateInterventionCommandHandler's rule.
+        intervention.AssignedToUserId = userId != ownerId ? userId : request.AssignedToUserId;
         intervention.ModifiedBy = currentUser.Email;
 
         await db.SaveChangesAsync(cancellationToken);

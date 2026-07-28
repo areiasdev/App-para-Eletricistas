@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'TécnicoApp',
-  description: 'Gestão de orçamentos, clientes e manutenções para eletricistas',
+  description: 'BackOffice para empresas de construção e manutenção — clientes, orçamentos, equipamentos e intervenções.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

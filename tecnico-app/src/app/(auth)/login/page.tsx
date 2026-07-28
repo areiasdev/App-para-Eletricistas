@@ -21,7 +21,7 @@ export default function LoginPage() {
   const login = useMutation({
     mutationFn: authApi.login,
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken)
+      setAuth(data.user, data.accessToken, data.csrfToken)
       router.push('/dashboard')
     },
   })
@@ -41,26 +41,22 @@ export default function LoginPage() {
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            ⚡
+            T
           </span>
           <span className="text-sm font-semibold text-white/90 tracking-tight">TécnicoApp</span>
         </div>
 
-        <div className="space-y-6">
-          {[
-            { n: '340+', l: 'orçamentos gerados' },
-            { n: '98%',  l: 'aprovação dos clientes' },
-            { n: '2×',   l: 'mais rápido a faturar' },
-          ].map(({ n, l }) => (
-            <div key={l}>
-              <p className="text-3xl font-bold text-white" style={{ fontFamily: 'var(--font-outfit)' }}>{n}</p>
-              <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>{l}</p>
-            </div>
-          ))}
+        <div className="space-y-3">
+          <p className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-outfit)' }}>
+            Clientes, orçamentos e intervenções — numa só ferramenta.
+          </p>
+          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            BackOffice interno para a tua equipa.
+          </p>
         </div>
 
         <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-          © 2026 TécnicoApp · Para eletricistas e técnicos de AVAC
+          © 2026 TécnicoApp
         </p>
       </div>
 
@@ -74,7 +70,7 @@ export default function LoginPage() {
               className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
               style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
             >
-              ⚡
+              T
             </span>
             <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-ink)' }}>
               TécnicoApp
@@ -144,7 +140,7 @@ export default function LoginPage() {
               className="font-semibold transition-colors"
               style={{ color: 'var(--color-brand-600)' }}
             >
-              Regista-te gratuitamente
+              Regista-te
             </Link>
           </p>
         </div>

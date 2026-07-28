@@ -7,11 +7,17 @@ namespace TecnicoApp.Infrastructure.Services;
 
 public class QuotePdfService : IPdfService
 {
-    private static readonly string AmberHex  = "#f59e0b";
-    private static readonly string InkHex    = "#1a1a1a";
-    private static readonly string MutedHex  = "#6b7280";
-    private static readonly string LineHex   = "#e5e7eb";
-    private static readonly string CanvasHex = "#f7f7f4";
+    private static readonly string AmberHex  = PdfStyle.AmberHex;
+    private static readonly string InkHex    = PdfStyle.InkHex;
+    private static readonly string MutedHex  = PdfStyle.MutedHex;
+    private static readonly string LineHex   = PdfStyle.LineHex;
+    private static readonly string CanvasHex = PdfStyle.CanvasHex;
+
+    // IPdfService is registered as a single scoped service, so this class is the one
+    // resolved for both document kinds — GenerateInvoicePdf just hands off to the sibling
+    // service that owns the invoice-specific composition. See PdfStyle's doc comment for
+    // why the composition logic itself isn't merged into one method.
+    public byte[] GenerateInvoicePdf(InvoicePdfData data) => new InvoicePdfService().Generate(data);
 
     public byte[] GenerateQuotePdf(QuotePdfData d)
     {
@@ -27,7 +33,7 @@ public class QuotePdfService : IPdfService
 
                 page.Header().Element(ComposeHeader(d));
                 page.Content().Element(ComposeContent(d));
-                page.Footer().Element(ComposeFooter());
+                page.Footer().Element(PdfStyle.ComposeFooter());
             });
         }).GeneratePdf();
     }
@@ -35,39 +41,51 @@ public class QuotePdfService : IPdfService
     // ── Header ────────────────────────────────────────────────────────────────
     private static Action<IContainer> ComposeHeader(QuotePdfData d) => container =>
     {
+        var brandHex = string.IsNullOrWhiteSpace(d.IssuerBrandColorHex) ? AmberHex : d.IssuerBrandColorHex;
+
         container.PaddingBottom(24).Row(row =>
         {
-            // Left: issuer info
-            row.RelativeItem().Column(col =>
+            // Left: logo (if set) + issuer info
+            row.RelativeItem().Row(inner =>
             {
-                col.Item().Text(d.IssuerCompany ?? d.IssuerName)
-                    .FontSize(16).Bold().FontColor(InkHex);
-
-                if (d.IssuerCompany is not null)
-                    col.Item().Text(d.IssuerName).FontSize(10).FontColor(MutedHex);
-
-                col.Item().PaddingTop(4).Text(t =>
+                if (d.IssuerLogoBytes is { Length: > 0 })
                 {
-                    if (d.IssuerNif is not null)
-                    {
-                        t.Span("NIF: ").FontColor(MutedHex);
-                        t.Span(d.IssuerNif);
-                        t.Span("   ");
-                    }
-                    if (d.IssuerPhone is not null)
-                    {
-                        t.Span(d.IssuerPhone).FontColor(MutedHex);
-                    }
-                });
+                    inner.ConstantItem(48).Height(48).AlignMiddle()
+                        .Image(d.IssuerLogoBytes).FitArea();
+                    inner.ConstantItem(12);
+                }
 
-                if (d.IssuerEmail is not null)
-                    col.Item().Text(d.IssuerEmail).FontColor(MutedHex);
+                inner.RelativeItem().Column(col =>
+                {
+                    col.Item().Text(d.IssuerCompany ?? d.IssuerName)
+                        .FontSize(16).Bold().FontColor(InkHex);
+
+                    if (d.IssuerCompany is not null)
+                        col.Item().Text(d.IssuerName).FontSize(10).FontColor(MutedHex);
+
+                    col.Item().PaddingTop(4).Text(t =>
+                    {
+                        if (d.IssuerNif is not null)
+                        {
+                            t.Span("NIF: ").FontColor(MutedHex);
+                            t.Span(d.IssuerNif);
+                            t.Span("   ");
+                        }
+                        if (d.IssuerPhone is not null)
+                        {
+                            t.Span(d.IssuerPhone).FontColor(MutedHex);
+                        }
+                    });
+
+                    if (d.IssuerEmail is not null)
+                        col.Item().Text(d.IssuerEmail).FontColor(MutedHex);
+                });
             });
 
             // Right: "ORÇAMENTO" badge + number
             row.ConstantItem(160).AlignRight().Column(col =>
             {
-                col.Item().Background(AmberHex).Padding(8).AlignCenter()
+                col.Item().Background(brandHex).Padding(8).AlignCenter()
                     .Text("ORÇAMENTO").Bold().FontSize(13).FontColor("#ffffff");
 
                 col.Item().PaddingTop(6).AlignRight()
@@ -86,10 +104,12 @@ public class QuotePdfService : IPdfService
     // ── Content ───────────────────────────────────────────────────────────────
     private static Action<IContainer> ComposeContent(QuotePdfData d) => container =>
     {
+        var brandHex = string.IsNullOrWhiteSpace(d.IssuerBrandColorHex) ? AmberHex : d.IssuerBrandColorHex;
+
         container.Column(col =>
         {
             // Divider
-            col.Item().BorderBottom(1).BorderColor(AmberHex).PaddingBottom(0);
+            col.Item().BorderBottom(1).BorderColor(brandHex).PaddingBottom(0);
 
             // Client block
             col.Item().PaddingTop(20).PaddingBottom(20).Row(row =>
@@ -199,21 +219,4 @@ public class QuotePdfService : IPdfService
         });
     };
 
-    // ── Footer ────────────────────────────────────────────────────────────────
-    private static Action<IContainer> ComposeFooter() => container =>
-    {
-        container.BorderTop(1).BorderColor(LineHex).PaddingTop(8)
-            .Row(row =>
-            {
-                row.RelativeItem().Text("Documento gerado por TécnicoApp").FontColor(MutedHex).FontSize(8);
-                row.RelativeItem().AlignRight()
-                    .Text(t =>
-                    {
-                        t.Span("Página ").FontColor(MutedHex).FontSize(8);
-                        t.CurrentPageNumber().FontColor(MutedHex).FontSize(8);
-                        t.Span(" de ").FontColor(MutedHex).FontSize(8);
-                        t.TotalPages().FontColor(MutedHex).FontSize(8);
-                    });
-            });
-    };
 }

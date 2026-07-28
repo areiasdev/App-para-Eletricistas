@@ -16,7 +16,8 @@ public class ClientPortalController(
     ICurrentUserService currentUser,
     ITokenService tokenService,
     IEmailService emailService,
-    IAppSettings appSettings) : ControllerBase
+    IAppSettings appSettings,
+    IInvoicePayLinkService payLinkService) : ControllerBase
 {
     // ── Tech-side: send magic link to client ─────────────────────────────────
 
@@ -38,19 +39,6 @@ public class ClientPortalController(
 
         var ownerId = callingUser.OwnerId ?? callingUser.Id;
 
-        // Verify plan allows client portal
-        var ownerPlan = callingUser.OwnerId.HasValue
-            ? await db.Users.AsNoTracking()
-                .Where(u => u.Id == ownerId)
-                .Select(u => u.Plan)
-                .FirstOrDefaultAsync(ct)
-            : callingUser.Plan;
-
-        if (ownerPlan != Plan.Enterprise)
-            return Problem(
-                detail: "O portal do cliente está disponível no plano Enterprise.",
-                statusCode: StatusCodes.Status403Forbidden);
-
         // Find client (must belong to this tenant)
         var client = await db.Clients
             .FirstOrDefaultAsync(c => c.Id == request.ClientId && c.UserId == ownerId, ct);
@@ -71,6 +59,7 @@ public class ClientPortalController(
 
         client.PortalTokenHash = tokenHash;
         client.PortalTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+        client.PortalTokenVersion++; // invalidates any previously issued portal JWTs for this client
         await db.SaveChangesAsync(ct);
 
         // Send email
@@ -79,7 +68,7 @@ public class ClientPortalController(
             <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
               <div style="margin-bottom:24px">
                 <span style="background:#f59e0b;color:#1c1917;font-size:14px;font-weight:700;
-                  padding:6px 10px;border-radius:6px">⚡ TécnicoApp</span>
+                  padding:6px 10px;border-radius:6px">T TécnicoApp</span>
               </div>
               <h1 style="font-size:22px;font-weight:700;margin-bottom:8px">
                 O seu portal de cliente está disponível
@@ -133,9 +122,30 @@ public class ClientPortalController(
                 statusCode: StatusCodes.Status400BadRequest);
 
         var accessToken = tokenService.GeneratePortalToken(
-            client.Id, client.UserId, client.Name, client.Email ?? string.Empty);
+            client.Id, client.UserId, client.Name, client.Email ?? string.Empty, client.PortalTokenVersion);
 
         return Ok(new PortalLoginResponse(accessToken, client.Name, client.Email));
+    }
+
+    // ── Client-side: revoke the current session ──────────────────────────────
+
+    [HttpPost("logout")]
+    [Authorize(Roles = "ClientPortal")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Logout(CancellationToken ct)
+    {
+        var (clientId, _, _) = GetPortalClaims();
+
+        var client = await db.Clients.FirstOrDefaultAsync(c => c.Id == clientId, ct);
+        if (client is not null)
+        {
+            // Bumping the version immediately invalidates this (and any other outstanding) portal JWT,
+            // since the token is otherwise stateless and has no server-side session to delete.
+            client.PortalTokenVersion++;
+            await db.SaveChangesAsync(ct);
+        }
+
+        return Ok();
     }
 
     // ── Portal endpoints (ClientPortal JWT required) ───────────────────────────
@@ -145,7 +155,8 @@ public class ClientPortalController(
     [ProducesResponseType(typeof(PortalClientDto), StatusCodes.Status200OK)]
     public async Task<IActionResult> Me(CancellationToken ct)
     {
-        var (clientId, _) = GetPortalClaims();
+        var (clientId, _, tokenVersion) = GetPortalClaims();
+        if (!await IsPortalTokenValidAsync(clientId, tokenVersion, ct)) return Unauthorized();
 
         var client = await db.Clients.AsNoTracking()
             .Where(c => c.Id == clientId)
@@ -164,7 +175,8 @@ public class ClientPortalController(
     [ProducesResponseType(typeof(IReadOnlyList<PortalEquipmentDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Equipment(CancellationToken ct)
     {
-        var (clientId, _) = GetPortalClaims();
+        var (clientId, _, tokenVersion) = GetPortalClaims();
+        if (!await IsPortalTokenValidAsync(clientId, tokenVersion, ct)) return Unauthorized();
 
         var items = await db.Equipment.AsNoTracking()
             .Where(e => e.ClientId == clientId)
@@ -182,7 +194,8 @@ public class ClientPortalController(
     [ProducesResponseType(typeof(IReadOnlyList<PortalInterventionDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Interventions(CancellationToken ct)
     {
-        var (clientId, _) = GetPortalClaims();
+        var (clientId, _, tokenVersion) = GetPortalClaims();
+        if (!await IsPortalTokenValidAsync(clientId, tokenVersion, ct)) return Unauthorized();
 
         var assignedIds = await db.Interventions.AsNoTracking()
             .Where(i => i.ClientId == clientId && i.AssignedToUserId != null)
@@ -220,7 +233,8 @@ public class ClientPortalController(
     [ProducesResponseType(typeof(IReadOnlyList<PortalQuoteDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> Quotes(CancellationToken ct)
     {
-        var (clientId, _) = GetPortalClaims();
+        var (clientId, _, tokenVersion) = GetPortalClaims();
+        if (!await IsPortalTokenValidAsync(clientId, tokenVersion, ct)) return Unauthorized();
 
         var items = await db.Quotes.AsNoTracking()
             .Where(q => q.ClientId == clientId)
@@ -234,11 +248,65 @@ public class ClientPortalController(
         return Ok(items);
     }
 
-    private (Guid ClientId, Guid OwnerId) GetPortalClaims()
+    [HttpGet("invoices")]
+    [Authorize(Roles = "ClientPortal")]
+    [ProducesResponseType(typeof(IReadOnlyList<PortalInvoiceDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Invoices(CancellationToken ct)
+    {
+        var (clientId, _, tokenVersion) = GetPortalClaims();
+        if (!await IsPortalTokenValidAsync(clientId, tokenVersion, ct)) return Unauthorized();
+
+        var invoices = await db.Invoices
+            .Include(i => i.Lines)
+            .Where(i => i.ClientId == clientId)
+            .OrderByDescending(i => i.CreatedAt)
+            .Take(50)
+            .ToListAsync(ct);
+
+        // Auto-generates a pay token server-side for any invoice that doesn't have one yet
+        // (or has an expired one) — the same reused logic as GetOrCreateInvoicePayLinkCommand,
+        // so a link a technician already sent for this invoice keeps working.
+        var items = new List<PortalInvoiceDto>(invoices.Count);
+        var changed = false;
+        foreach (var invoice in invoices)
+        {
+            string? payUrl = null;
+            if (invoice.Status is not (InvoiceStatus.Paid or InvoiceStatus.Cancelled))
+            {
+                var rawToken = payLinkService.GetOrCreateToken(invoice);
+                payUrl = $"{appSettings.BaseUrl}/pay/{rawToken}";
+                changed = true;
+            }
+
+            items.Add(new PortalInvoiceDto(
+                invoice.Id, invoice.Number, invoice.Status.ToString(),
+                invoice.Total, invoice.DueDate, invoice.CreatedAt, payUrl));
+        }
+
+        if (changed) await db.SaveChangesAsync(ct);
+
+        return Ok(items);
+    }
+
+    private (Guid ClientId, Guid OwnerId, int TokenVersion) GetPortalClaims()
     {
         var clientId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var ownerId  = Guid.Parse(User.FindFirstValue("ownerId")!);
-        return (clientId, ownerId);
+        var tokenVersion = int.Parse(User.FindFirstValue("portalTokenVersion") ?? "0");
+        return (clientId, ownerId, tokenVersion);
+    }
+
+    // Portal JWTs are stateless, so a rotated/revoked link (SendAccess or Logout) can't be
+    // deleted server-side — instead every request checks the JWT's version claim against the
+    // client's live PortalTokenVersion, which is bumped on both rotation and logout.
+    private async Task<bool> IsPortalTokenValidAsync(Guid clientId, int tokenVersion, CancellationToken ct)
+    {
+        var currentVersion = await db.Clients.AsNoTracking()
+            .Where(c => c.Id == clientId)
+            .Select(c => c.PortalTokenVersion)
+            .FirstOrDefaultAsync(ct);
+
+        return currentVersion == tokenVersion;
     }
 }
 
@@ -249,3 +317,4 @@ public record PortalClientDto(Guid Id, string Name, string? Email, string? Phone
 public record PortalEquipmentDto(Guid Id, string Type, string? Brand, string? Model, string? SerialNumber, DateTime? InstalledAt, DateTime? NextMaintenance, string? Notes);
 public record PortalInterventionDto(Guid Id, string Title, string Status, string? Description, DateTime? ScheduledAt, DateTime? CompletedAt, string? TechnicianName);
 public record PortalQuoteDto(Guid Id, string Number, string Status, decimal Total, DateTime? ValidUntil, DateTime CreatedAt);
+public record PortalInvoiceDto(Guid Id, string Number, string Status, decimal Total, DateTime DueDate, DateTime CreatedAt, string? PayUrl);

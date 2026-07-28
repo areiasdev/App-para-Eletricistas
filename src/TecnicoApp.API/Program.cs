@@ -4,7 +4,6 @@ using Ardalis.Result.AspNetCore;
 using Hangfire;
 using Hangfire.PostgreSql;
 using TecnicoApp.Infrastructure.Jobs;
-// TrialExpirationJob is in the same namespace
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -40,7 +39,11 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // ── Controllers ───────────────────────────────────────────────────────────────
 builder.Services.AddControllers(options =>
-    options.AddDefaultResultConvention());
+    options.AddDefaultResultConvention())
+    .AddJsonOptions(options =>
+        // Without this, enums (QuoteStatus, InterventionStatus, UserRole, ...) serialize
+        // as raw integers — the frontend types and comparisons all assume string names.
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 
 // ── JWT ───────────────────────────────────────────────────────────────────────
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -135,7 +138,7 @@ var allowedOrigins = builder.Configuration
 builder.Services.AddCors(options =>
     options.AddPolicy("TecnicoAppCors", policy =>
         policy.WithOrigins(allowedOrigins)
-              .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
+              .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "X-Csrf-Token")
               .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
               .SetPreflightMaxAge(TimeSpan.FromHours(2))
               .AllowCredentials()));
@@ -186,6 +189,9 @@ app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 
 app.UseHttpsRedirection();
+// Serves uploaded company logos (wwwroot/uploads/logos) — publicly readable by design,
+// same as a downloaded quote PDF; nothing sensitive lives under wwwroot.
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -201,17 +207,30 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Stale trigger cleanup: TrialExpirationJob's class was deleted when SaaS-billing was removed,
+// but Hangfire persists recurring job schedules in its own Postgres tables (not in code), so the
+// old "trial-expiration" trigger kept firing daily, failing to resolve the type, and logging a
+// JobLoadException warning every cycle. RemoveIfExists is idempotent — safe to call on every startup.
+RecurringJob.RemoveIfExists("trial-expiration");
+
 // Register recurring job — runs daily at 08:00
 RecurringJob.AddOrUpdate<MaintenanceAlertJob>(
     "maintenance-alerts",
     job => job.RunAsync(),
     "0 8 * * *");
 
-// Trial expiration check — runs daily at 09:00
-RecurringJob.AddOrUpdate<TrialExpirationJob>(
-    "trial-expiration",
+// Reminds clients their invoice is due in ~3 days — staggered a few minutes after the
+// maintenance-alerts job so they don't all hit the DB at once.
+RecurringJob.AddOrUpdate<InvoiceDueReminderJob>(
+    "invoice-due-reminders",
     job => job.RunAsync(),
-    "0 9 * * *");
+    "15 8 * * *");
+
+// Reminds clients (not the technician) about tomorrow's scheduled intervention.
+RecurringJob.AddOrUpdate<AppointmentReminderJob>(
+    "appointment-reminders",
+    job => job.RunAsync(),
+    "30 8 * * *");
 
 app.Run();
 

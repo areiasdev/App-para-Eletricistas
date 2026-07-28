@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi, type ProfitabilityByTechnician, type ProfitabilityByClient } from '@/lib/api/reports'
 import { getErrorMessage } from '@/lib/api/client'
+import { useCanManage } from '@/hooks/useCanManage'
+import { AccessDenied } from '@/components/shared/AccessDenied'
 
 function fmt(n: number) {
   return n.toFixed(2).replace('.', ',') + ' €'
@@ -16,6 +18,7 @@ function margin(revenue: number, cost: number) {
 }
 
 export default function RelatoriosPage() {
+  const canManage = useCanManage()
   const today = new Date()
   const threeMonthsAgo = new Date(today)
   threeMonthsAgo.setMonth(today.getMonth() - 3)
@@ -27,9 +30,12 @@ export default function RelatoriosPage() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['profitability', from, to],
     queryFn: () => reportsApi.getProfitability({ from, to }),
+    enabled: canManage,
   })
 
   const inputCls = 'rounded-lg border px-3 py-2 text-sm outline-none transition-all duration-150 bg-[var(--color-canvas)] text-[var(--color-ink)] border-[var(--color-line-strong)]'
+
+  if (!canManage) return <AccessDenied />
 
   return (
     <div className="max-w-5xl space-y-6">
@@ -119,6 +125,7 @@ export default function RelatoriosPage() {
         </div>
       ) : data && (
         <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
@@ -157,6 +164,7 @@ export default function RelatoriosPage() {
               }
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

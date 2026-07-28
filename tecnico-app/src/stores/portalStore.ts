@@ -19,18 +19,12 @@ export const usePortalStore = create<PortalState>()(
         set({ accessToken, clientName, clientEmail }),
       clearPortal: () => set({ accessToken: null, clientName: null, clientEmail: null }),
     }),
-    { name: 'tecnicoapp-portal', storage: typeof window !== 'undefined' ? sessionStorageWrapper() : undefined }
+    {
+      name: 'tecnicoapp-portal',
+      // Only persist display info — the access token lives in memory only (XSS mitigation),
+      // matching authStore. The portal magic link is reusable, so a client can simply
+      // re-click the emailed link to re-authenticate after a reload or closed tab.
+      partialize: (state) => ({ clientName: state.clientName, clientEmail: state.clientEmail }),
+    }
   )
 )
-
-function sessionStorageWrapper() {
-  return {
-    getItem: (key: string) => {
-      try { return JSON.parse(sessionStorage.getItem(key) ?? 'null') } catch { return null }
-    },
-    setItem: (key: string, value: unknown) => {
-      sessionStorage.setItem(key, JSON.stringify(value))
-    },
-    removeItem: (key: string) => sessionStorage.removeItem(key),
-  }
-}

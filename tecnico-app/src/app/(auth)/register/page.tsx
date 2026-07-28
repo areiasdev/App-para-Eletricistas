@@ -22,7 +22,7 @@ export default function RegisterPage() {
     mutationFn: (data: RegisterFormValues) =>
       authApi.register({ fullName: data.fullName, email: data.email, password: data.password }),
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken)
+      setAuth(data.user, data.accessToken, data.csrfToken)
       router.push('/dashboard')
     },
   })
@@ -36,7 +36,7 @@ export default function RegisterPage() {
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            ⚡
+            T
           </span>
           <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-ink)' }}>
             TécnicoApp
@@ -48,13 +48,13 @@ export default function RegisterPage() {
             Cria a tua conta
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--color-muted)' }}>
-            Gratuito para começar · Sem cartão de crédito
+            Configura o teu BackOffice em poucos minutos
           </p>
         </div>
 
         <div
           className="rounded-2xl p-6 border"
-          style={{ backgroundColor: 'white', borderColor: 'var(--color-line)' }}
+          style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}
         >
           <form onSubmit={handleSubmit((d) => registerMutation.mutate(d))} className="space-y-4">
             <Field label="Nome completo" error={errors.fullName?.message}>
@@ -109,7 +109,7 @@ export default function RegisterPage() {
               className="w-full rounded-lg py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99] mt-2"
               style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
             >
-              {registerMutation.isPending ? 'A criar conta...' : 'Criar conta gratuita'}
+              {registerMutation.isPending ? 'A criar conta...' : 'Criar conta'}
             </button>
           </form>
         </div>
@@ -142,7 +142,6 @@ export default function RegisterPage() {
         .auth-input:focus {
           border-color: var(--color-brand-500);
           box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
-          background-color: white;
         }
         .auth-input::placeholder { color: var(--color-subtle); }
       `}</style>

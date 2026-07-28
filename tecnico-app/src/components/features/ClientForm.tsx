@@ -3,6 +3,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { validateNif } from '@/lib/utils/formatters'
 
 const addressSchema = z.object({
   street: z.string().min(1, 'Obrigatório'),
@@ -11,11 +12,12 @@ const addressSchema = z.object({
   country: z.string().optional(),
 })
 
-const clientSchema = z.object({
+export const clientSchema = z.object({
   name: z.string().min(1, 'O nome é obrigatório.').max(200),
   nif: z
     .string()
     .regex(/^\d{9}$/, 'O NIF deve ter 9 dígitos.')
+    .refine((v) => validateNif(v), 'NIF inválido.')
     .optional()
     .or(z.literal('')),
   email: z.string().email('Email inválido.').optional().or(z.literal('')),
@@ -23,6 +25,8 @@ const clientSchema = z.object({
   notes: z.string().optional(),
   hasAddress: z.boolean(),
   address: addressSchema.optional(),
+  whatsAppOptIn: z.boolean(),
+  phoneVerified: z.boolean(),
 })
 
 export type ClientFormValues = z.infer<typeof clientSchema>
@@ -47,7 +51,7 @@ export function ClientForm({
     formState: { errors },
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
-    defaultValues: { hasAddress: false, ...defaultValues },
+    defaultValues: { hasAddress: false, whatsAppOptIn: false, phoneVerified: false, ...defaultValues },
   })
 
   const hasAddress = watch('hasAddress')
@@ -94,6 +98,33 @@ export function ClientForm({
                 style={{ borderColor: 'var(--color-line-strong)' }}
               />
             </FormField>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="whatsAppOptIn" className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                id="whatsAppOptIn"
+                {...register('whatsAppOptIn')}
+                className="w-4 h-4 rounded"
+                style={{ accentColor: 'var(--color-brand-500)' }}
+              />
+              <span className="text-sm" style={{ color: 'var(--color-ink)' }}>
+                Aceita receber notificações por WhatsApp
+              </span>
+            </label>
+            <label htmlFor="phoneVerified" className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                id="phoneVerified"
+                {...register('phoneVerified')}
+                className="w-4 h-4 rounded"
+                style={{ accentColor: 'var(--color-brand-500)' }}
+              />
+              <span className="text-sm" style={{ color: 'var(--color-ink)' }}>
+                Número de telefone confirmado
+              </span>
+            </label>
           </div>
 
           <FormField label="Email" id="cf-email" error={errors.email?.message}>

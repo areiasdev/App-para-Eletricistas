@@ -12,7 +12,11 @@ public class CreateEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
     public async Task<Result<EquipmentDto>> Handle(
         CreateEquipmentCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's clients/equipment
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var client = await db.Clients
             .AsNoTracking()
@@ -21,7 +25,7 @@ public class CreateEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
         if (client is null)
             return Result.NotFound("Cliente não encontrado.");
 
-        if (client.UserId != userId)
+        if (client.UserId != ownerId)
             return Result.Forbidden();
 
         var equipment = new Domain.Entities.Equipment

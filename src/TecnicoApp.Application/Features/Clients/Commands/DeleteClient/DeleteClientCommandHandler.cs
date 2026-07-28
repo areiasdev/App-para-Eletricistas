@@ -2,6 +2,7 @@ using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Clients.Commands.DeleteClient;
 
@@ -14,9 +15,25 @@ public sealed class DeleteClientCommandHandler(
         DeleteClientCommand command,
         CancellationToken cancellationToken)
     {
+        // Resolve ownerId: team members share their owner's clients
+        var caller = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => new { OwnerId = u.OwnerId ?? u.Id, u.Role })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (caller is null)
+            return Result.Unauthorized();
+
+        // Deletes cascade and are irreversible from the UI — restrict to Owner/Admin so a
+        // technician can't wipe out company records unsupervised.
+        if (caller.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores podem apagar clientes.");
+
+        var ownerId = caller.OwnerId;
+
         var client = await db.Clients
             .FirstOrDefaultAsync(
-                c => c.Id == command.ClientId && c.UserId == currentUser.UserId,
+                c => c.Id == command.ClientId && c.UserId == ownerId,
                 cancellationToken);
 
         if (client is null)

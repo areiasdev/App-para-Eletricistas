@@ -1,35 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/lib/api/auth'
-import { billingApi } from '@/lib/api/billing'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-import { useQuery } from '@tanstack/react-query'
+import { generateBrandShades } from '@/lib/utils/color'
+import { useCanManage } from '@/hooks/useCanManage'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { user, accessToken, _hasHydrated, setAuth, clearAuth } = useAuthStore()
+  const canManage = useCanManage()
   const [ready, setReady] = useState(false)
-
-  const { data: billing } = useQuery({
-    queryKey: ['billing-me'],
-    queryFn: billingApi.getMe,
-    enabled: ready,
-    staleTime: 1000 * 60 * 5,
-  })
-
-  // Redirect expired trials to plans page (only when not already there)
-  useEffect(() => {
-    if (!billing) return
-    const trialExpired = !billing.isTrialActive && billing.plan === 'Free'
-    if (trialExpired && !window.location.pathname.startsWith('/dashboard/planos')) {
-      router.replace('/dashboard/planos')
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [billing])
 
   useEffect(() => {
     // Wait for Zustand persist to hydrate from localStorage before checking auth.
@@ -53,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     authApi
       .refresh()
       .then((data) => {
-        setAuth(data.user, data.accessToken)
+        setAuth(data.user, data.accessToken, data.csrfToken)
         setReady(true)
       })
       .catch(() => {
@@ -63,7 +47,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_hasHydrated])
 
-  if (!ready) {
+  // First-run onboarding: an Owner/Admin with no company set up yet has nothing
+  // meaningful to see on the dashboard, so send them through the wizard first.
+  // Technician/Commercial are never redirected here — company setup is Owner/Admin-only
+  // and useCanManage() already gates that, so this can't ever trap a non-manager.
+  useEffect(() => {
+    if (!ready) return
+    if (canManage && !user?.companyName) {
+      router.replace('/onboarding')
+    }
+  }, [ready, canManage, user?.companyName, router])
+
+  // Per-install rebranding: a company's chosen brand color overrides the default amber
+  // token set at runtime, so a fresh install just needs Perfil filled in, not a rebuild.
+  const brandStyle = useMemo(() => {
+    if (!user?.brandColor) return null
+    const shades = generateBrandShades(user.brandColor)
+    if (Object.keys(shades).length === 0) return null
+    const vars = Object.entries(shades)
+      .map(([shade, hex]) => `--color-brand-${shade}: ${hex};`)
+      .join(' ')
+    return `:root { ${vars} }`
+  }, [user?.brandColor])
+
+  const needsOnboarding = canManage && !user?.companyName
+
+  if (!ready || needsOnboarding) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-canvas)' }}>
         <div className="w-5 h-5 rounded-full border-2 animate-spin" style={{ borderColor: 'var(--color-brand-500)', borderTopColor: 'transparent' }} />
@@ -73,6 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'var(--color-canvas)' }}>
+      {brandStyle && <style>{brandStyle}</style>}
       <Sidebar />
       {/* pt-14 on mobile to clear the fixed top bar; lg:pt-0 since sidebar is inline */}
       <main className="flex-1 overflow-y-auto relative pt-14 lg:pt-0">

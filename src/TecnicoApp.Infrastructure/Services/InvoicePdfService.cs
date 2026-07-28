@@ -1,0 +1,247 @@
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+using TecnicoApp.Application.Common.Interfaces;
+
+namespace TecnicoApp.Infrastructure.Services;
+
+/// <summary>
+/// Composes the invoice PDF. Not itself an IPdfService — QuotePdfService is the single
+/// concrete class registered for that interface (see its GenerateInvoicePdf) and delegates
+/// here. See PdfStyle's doc comment for why the composition logic isn't merged with
+/// QuotePdfService's despite the visual similarity.
+/// </summary>
+public class InvoicePdfService
+{
+    private const string InkHex    = PdfStyle.InkHex;
+    private const string MutedHex  = PdfStyle.MutedHex;
+    private const string LineHex   = PdfStyle.LineHex;
+    private const string CanvasHex = PdfStyle.CanvasHex;
+
+    private const string NonCertifiedDisclaimer =
+        "Documento emitido para fins de gestão interna. Não constitui fatura certificada pela Autoridade Tributária.";
+
+    public byte[] Generate(InvoicePdfData d)
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+
+        return Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(40);
+                page.DefaultTextStyle(t => t.FontFamily("Arial").FontSize(10).FontColor(InkHex));
+
+                page.Header().Element(ComposeHeader(d));
+                page.Content().Element(ComposeContent(d));
+                page.Footer().Element(PdfStyle.ComposeFooter(NonCertifiedDisclaimer));
+            });
+        }).GeneratePdf();
+    }
+
+    // ── Header ────────────────────────────────────────────────────────────────
+    private static Action<IContainer> ComposeHeader(InvoicePdfData d) => container =>
+    {
+        var brandHex = PdfStyle.ResolveBrandColor(d.IssuerBrandColorHex);
+
+        container.PaddingBottom(24).Row(row =>
+        {
+            // Left: logo (if set) + issuer info
+            row.RelativeItem().Row(inner =>
+            {
+                if (d.IssuerLogoBytes is { Length: > 0 })
+                {
+                    inner.ConstantItem(48).Height(48).AlignMiddle()
+                        .Image(d.IssuerLogoBytes).FitArea();
+                    inner.ConstantItem(12);
+                }
+
+                inner.RelativeItem().Column(col =>
+                {
+                    col.Item().Text(d.IssuerCompany ?? d.IssuerName)
+                        .FontSize(16).Bold().FontColor(InkHex);
+
+                    if (d.IssuerCompany is not null)
+                        col.Item().Text(d.IssuerName).FontSize(10).FontColor(MutedHex);
+
+                    col.Item().PaddingTop(4).Text(t =>
+                    {
+                        if (d.IssuerNif is not null)
+                        {
+                            t.Span("NIF: ").FontColor(MutedHex);
+                            t.Span(d.IssuerNif);
+                            t.Span("   ");
+                        }
+                        if (d.IssuerPhone is not null)
+                        {
+                            t.Span(d.IssuerPhone).FontColor(MutedHex);
+                        }
+                    });
+
+                    if (d.IssuerEmail is not null)
+                        col.Item().Text(d.IssuerEmail).FontColor(MutedHex);
+                });
+            });
+
+            // Right: "FATURA" badge + number
+            row.ConstantItem(160).AlignRight().Column(col =>
+            {
+                col.Item().Background(brandHex).Padding(8).AlignCenter()
+                    .Text("FATURA").Bold().FontSize(13).FontColor("#ffffff");
+
+                col.Item().PaddingTop(6).AlignRight()
+                    .Text(d.Number).Bold().FontSize(14).FontColor(InkHex);
+
+                col.Item().AlignRight()
+                    .Text($"Data: {d.IssuedAt:dd/MM/yyyy}").FontColor(MutedHex);
+
+                col.Item().AlignRight()
+                    .Text($"Vencimento: {d.DueDate:dd/MM/yyyy}").FontColor(MutedHex);
+            });
+        });
+    };
+
+    // ── Content ───────────────────────────────────────────────────────────────
+    private static Action<IContainer> ComposeContent(InvoicePdfData d) => container =>
+    {
+        var brandHex = PdfStyle.ResolveBrandColor(d.IssuerBrandColorHex);
+
+        container.Column(col =>
+        {
+            // Divider
+            col.Item().BorderBottom(1).BorderColor(brandHex).PaddingBottom(0);
+
+            // Client block
+            col.Item().PaddingTop(20).PaddingBottom(20).Row(row =>
+            {
+                row.RelativeItem().Column(c =>
+                {
+                    c.Item().Text("CLIENTE").FontSize(8).Bold()
+                        .LetterSpacing(0.08f).FontColor(MutedHex);
+                    c.Item().PaddingTop(4).Text(d.ClientName).Bold().FontSize(12);
+                    if (d.ClientNif is not null)
+                        c.Item().Text($"NIF: {d.ClientNif}").FontColor(MutedHex);
+                    if (d.ClientEmail is not null)
+                        c.Item().Text(d.ClientEmail).FontColor(MutedHex);
+                    if (d.ClientPhone is not null)
+                        c.Item().Text(d.ClientPhone).FontColor(MutedHex);
+                });
+            });
+
+            // Lines table
+            col.Item().Table(table =>
+            {
+                table.ColumnsDefinition(cols =>
+                {
+                    cols.RelativeColumn(5);   // Descrição
+                    cols.RelativeColumn(1);   // Qtd
+                    cols.RelativeColumn(2);   // Preço unit.
+                    cols.RelativeColumn(1);   // IVA
+                    cols.RelativeColumn(2);   // Total
+                });
+
+                // Header row
+                static void HeaderCell(IContainer c, string text) =>
+                    c.Background(CanvasHex).Padding(8)
+                     .Text(text).FontSize(8).Bold().LetterSpacing(0.06f).FontColor(MutedHex);
+
+                table.Header(h =>
+                {
+                    h.Cell().Element(c => HeaderCell(c, "DESCRIÇÃO"));
+                    h.Cell().Element(c => HeaderCell(c, "QTD"));
+                    h.Cell().Element(c => HeaderCell(c, "PREÇO UNIT."));
+                    h.Cell().Element(c => HeaderCell(c, "IVA"));
+                    h.Cell().Element(c => HeaderCell(c, "TOTAL"));
+                });
+
+                // Data rows
+                foreach (var line in d.Lines)
+                {
+                    static void Cell(IContainer c, string text) =>
+                        c.BorderBottom(1).BorderColor(LineHex).Padding(8)
+                         .AlignLeft().Text(text);
+
+                    static void CellRight(IContainer c, string text) =>
+                        c.BorderBottom(1).BorderColor(LineHex).Padding(8)
+                         .AlignRight().Text(text);
+
+                    table.Cell().Element(c => Cell(c, line.Description));
+                    table.Cell().Element(c => CellRight(c, line.Quantity.ToString("G")));
+                    table.Cell().Element(c => CellRight(c, line.UnitPrice.ToString("C", new System.Globalization.CultureInfo("pt-PT"))));
+                    table.Cell().Element(c => CellRight(c, $"{line.VatRate}%"));
+                    table.Cell().Element(c => CellRight(c, line.LineTotal.ToString("C", new System.Globalization.CultureInfo("pt-PT"))));
+                }
+            });
+
+            // Totals
+            var ptCulture = new System.Globalization.CultureInfo("pt-PT");
+            col.Item().PaddingTop(12).AlignRight().Width(200).Column(totals =>
+            {
+                void TotalRow(string label, string value, bool bold = false)
+                {
+                    totals.Item().Row(r =>
+                    {
+                        if (bold)
+                        {
+                            r.RelativeItem().Text(label).Bold().FontColor(InkHex);
+                            r.ConstantItem(80).AlignRight().Text(value).Bold().FontColor(InkHex);
+                        }
+                        else
+                        {
+                            r.RelativeItem().Text(label).FontColor(MutedHex);
+                            r.ConstantItem(80).AlignRight().Text(value).FontColor(MutedHex);
+                        }
+                    });
+                }
+
+                TotalRow("Subtotal", d.SubTotal.ToString("C", ptCulture));
+                TotalRow("IVA", d.VatTotal.ToString("C", ptCulture));
+
+                if (d.Discount.HasValue && d.Discount > 0)
+                    TotalRow("Desconto", $"-{d.Discount.Value.ToString("C", ptCulture)}");
+
+                totals.Item().PaddingTop(6).BorderTop(1).BorderColor(LineHex).PaddingBottom(0);
+                totals.Item().PaddingTop(6);
+                TotalRow("TOTAL", d.Total.ToString("C", ptCulture), bold: true);
+            });
+
+            // Bank details — only rendered if at least one of IBAN/bank name is set
+            if (!string.IsNullOrWhiteSpace(d.IssuerIban) || !string.IsNullOrWhiteSpace(d.IssuerBankName))
+            {
+                col.Item().PaddingTop(20).Column(b =>
+                {
+                    b.Item().Text("DADOS BANCÁRIOS").FontSize(8).Bold()
+                        .LetterSpacing(0.08f).FontColor(MutedHex);
+                    b.Item().PaddingTop(4).Background(CanvasHex).Padding(12).Column(inner =>
+                    {
+                        if (!string.IsNullOrWhiteSpace(d.IssuerIban))
+                            inner.Item().Text(t =>
+                            {
+                                t.Span("IBAN: ").FontColor(MutedHex);
+                                t.Span(d.IssuerIban).FontColor(InkHex);
+                            });
+                        if (!string.IsNullOrWhiteSpace(d.IssuerBankName))
+                            inner.Item().Text(t =>
+                            {
+                                t.Span("Banco: ").FontColor(MutedHex);
+                                t.Span(d.IssuerBankName).FontColor(InkHex);
+                            });
+                    });
+                });
+            }
+
+            // Notes
+            if (!string.IsNullOrWhiteSpace(d.Notes))
+            {
+                col.Item().PaddingTop(24).Column(n =>
+                {
+                    n.Item().Text("NOTAS").FontSize(8).Bold()
+                        .LetterSpacing(0.08f).FontColor(MutedHex);
+                    n.Item().PaddingTop(4).Background(CanvasHex).Padding(12)
+                        .Text(d.Notes).FontColor(InkHex);
+                });
+            }
+        });
+    };
+}

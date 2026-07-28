@@ -4,13 +4,16 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useClients, useDeleteClient } from '@/hooks/useClients'
+import { useDebouncedValue } from '@/hooks/useDebouncedValue'
+import { useCanManage } from '@/hooks/useCanManage'
 import { formatDate } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
 
 export default function ClientesPage() {
+  const canManage = useCanManage()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search, 300)
 
   const { data, isLoading, isError, error } = useClients({
     search: debouncedSearch || undefined,
@@ -23,8 +26,6 @@ export default function ClientesPage() {
   const handleSearch = (value: string) => {
     setSearch(value)
     setPage(1)
-    const t = setTimeout(() => setDebouncedSearch(value), 300)
-    return () => clearTimeout(t)
   }
 
   const handleDelete = (id: string, name: string) => {
@@ -79,6 +80,7 @@ export default function ClientesPage() {
 
       {/* Table */}
       <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+        <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
@@ -147,21 +149,24 @@ export default function ClientesPage() {
                     >
                       Editar
                     </Link>
-                    <button
-                      onClick={() => handleDelete(client.id, client.name)}
-                      className="text-xs font-medium transition-colors duration-150"
-                      style={{ color: 'var(--color-subtle)' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
-                    >
-                      Apagar
-                    </button>
+                    {canManage && (
+                      <button
+                        onClick={() => handleDelete(client.id, client.name)}
+                        className="text-xs font-medium transition-colors duration-150"
+                        style={{ color: 'var(--color-subtle)' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
+                      >
+                        Apagar
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Pagination */}

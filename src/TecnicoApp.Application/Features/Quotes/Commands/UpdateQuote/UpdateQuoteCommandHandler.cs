@@ -14,7 +14,11 @@ public class UpdateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
     public async Task<Result<QuoteDto>> Handle(
         UpdateQuoteCommand request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's clients/quotes
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var quote = await db.Quotes
             .Include(q => q.Lines)
@@ -24,7 +28,7 @@ public class UpdateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         if (quote is null)
             return Result.NotFound();
 
-        if (quote.UserId != userId)
+        if (quote.UserId != ownerId)
             return Result.Forbidden();
 
         if (quote.Status != QuoteStatus.Draft)
@@ -40,7 +44,7 @@ public class UpdateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
             if (client is null)
                 return Result.NotFound("Cliente não encontrado.");
 
-            if (client.UserId != userId)
+            if (client.UserId != ownerId)
                 return Result.Forbidden();
 
             quote.ClientId = request.ClientId;
@@ -87,7 +91,8 @@ public class UpdateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
                     l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
                     Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
                 .ToList(),
-            quote.CreatedAt
+            quote.CreatedAt,
+            quote.EmailSentAt
         );
 
         return Result.Success(dto);

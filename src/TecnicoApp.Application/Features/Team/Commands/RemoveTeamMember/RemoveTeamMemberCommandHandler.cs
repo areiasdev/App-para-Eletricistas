@@ -2,6 +2,7 @@ using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Team.Commands.RemoveTeamMember;
 
@@ -13,10 +14,18 @@ public class RemoveTeamMemberCommandHandler(IAppDbContext db, ICurrentUserServic
     {
         var userId = currentUser.UserId;
 
-        var ownerId = await db.Users.AsNoTracking()
+        var caller = await db.Users.AsNoTracking()
             .Where(u => u.Id == userId)
-            .Select(u => u.OwnerId ?? u.Id)
+            .Select(u => new { OwnerId = u.OwnerId ?? u.Id, u.Role })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (caller is null)
+            return Result.Unauthorized();
+
+        if (caller.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores podem remover membros da equipa.");
+
+        var ownerId = caller.OwnerId;
 
         var teamMember = await db.TeamMembers
             .Include(t => t.Member)

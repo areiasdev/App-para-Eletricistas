@@ -13,11 +13,15 @@ public class GetEquipmentQueryHandler(IAppDbContext db, ICurrentUserService curr
     public async Task<Result<PaginatedResult<EquipmentListItemDto>>> Handle(
         GetEquipmentQuery request, CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId;
+        // Resolve ownerId: team members share their owner's clients/equipment
+        var ownerId = await db.Users.AsNoTracking()
+            .Where(u => u.Id == currentUser.UserId)
+            .Select(u => u.OwnerId ?? u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
         var query = db.Equipment
             .AsNoTracking()
-            .Where(e => e.Client.UserId == userId);
+            .Where(e => e.Client.UserId == ownerId);
 
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

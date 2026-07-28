@@ -1,19 +1,27 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { useProfile, useUpdateProfile } from '@/hooks/useProfile'
+import { useProfile, useUpdateProfile, useUploadLogo } from '@/hooks/useProfile'
+import { useCanManage } from '@/hooks/useCanManage'
 import { getErrorMessage } from '@/lib/api/client'
+import { validateNif } from '@/lib/utils/formatters'
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000')
+
+const DEFAULT_BRAND_COLOR = '#f59e0b'
 
 const profileSchema = z.object({
   fullName: z.string().min(1, 'O nome é obrigatório.').max(200),
   companyName: z.string().max(200).optional().or(z.literal('')),
-  nif: z.string().regex(/^\d{9}$/, 'O NIF deve ter 9 dígitos.').optional().or(z.literal('')),
+  nif: z.string().regex(/^\d{9}$/, 'O NIF deve ter 9 dígitos.').refine((v) => validateNif(v), 'NIF inválido.').optional().or(z.literal('')),
   phone: z.string().max(20).optional().or(z.literal('')),
-  logoUrl: z.string().url('URL inválido.').optional().or(z.literal('')),
+  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Cor inválida.'),
+  iban: z.string().regex(/^PT50\d{21}$/, 'IBAN inválido. Deve começar por PT50 seguido de 21 dígitos.').optional().or(z.literal('')),
+  bankName: z.string().max(100).optional().or(z.literal('')),
 })
 
 type ProfileFormValues = z.infer<typeof profileSchema>
@@ -37,18 +45,26 @@ function FormField({ label, hint, error, children }: {
 }
 
 export default function PerfilPage() {
+  const canManage = useCanManage()
   const { data: profile, isLoading } = useProfile()
   const updateProfile = useUpdateProfile()
+  const uploadLogo = useUploadLogo()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [logoError, setLogoError] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { fullName: '', companyName: '', nif: '', phone: '', logoUrl: '' },
+    defaultValues: { fullName: '', companyName: '', nif: '', phone: '', brandColor: DEFAULT_BRAND_COLOR, iban: '', bankName: '' },
   })
+
+  const brandColor = watch('brandColor')
 
   useEffect(() => {
     if (profile) {
@@ -57,7 +73,9 @@ export default function PerfilPage() {
         companyName: profile.companyName ?? '',
         nif: profile.nif ?? '',
         phone: profile.phone ?? '',
-        logoUrl: profile.logoUrl ?? '',
+        brandColor: profile.brandColor ?? DEFAULT_BRAND_COLOR,
+        iban: profile.iban ?? '',
+        bankName: profile.bankName ?? '',
       })
     }
   }, [profile, reset])
@@ -66,6 +84,25 @@ export default function PerfilPage() {
     updateProfile.mutate(values, {
       onSuccess: () => toast.success('Perfil atualizado.'),
       onError: (err) => toast.error(getErrorMessage(err)),
+    })
+  }
+
+  const handleLogoSelect = (file: File | undefined) => {
+    setLogoError(null)
+    if (!file) return
+
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setLogoError('O logótipo deve ser uma imagem PNG, JPEG ou WEBP.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('O logótipo não pode exceder 2MB.')
+      return
+    }
+
+    uploadLogo.mutate(file, {
+      onSuccess: () => toast.success('Logótipo atualizado.'),
+      onError: (err) => setLogoError(getErrorMessage(err)),
     })
   }
 
@@ -128,82 +165,124 @@ export default function PerfilPage() {
               Empresa
             </h2>
           </div>
-          <div className="p-5 space-y-4">
-            <FormField label="Nome da empresa" error={errors.companyName?.message}>
-              <input
-                {...register('companyName')}
-                placeholder="Ex: Eletricidade Silva Lda."
-                className="form-input"
-                style={{ borderColor: 'var(--color-line-strong)' }}
-              />
-            </FormField>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField label="NIF" error={errors.nif?.message}>
-                <input
-                  {...register('nif')}
-                  maxLength={9}
-                  placeholder="123456789"
-                  className="form-input"
-                  style={{ borderColor: errors.nif ? '#fca5a5' : 'var(--color-line-strong)' }}
-                />
+          {!canManage ? (
+            <div className="p-5">
+              <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+                Só o proprietário ou administradores podem alterar os dados da empresa.
+              </p>
+            </div>
+          ) : (
+            <div className="p-5 space-y-5">
+              {/* Logo */}
+              <FormField label="Logótipo" hint="PNG, JPEG ou WEBP, até 2MB. Usado nos PDFs de orçamento.">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-16 h-16 rounded-lg border flex items-center justify-center overflow-hidden shrink-0"
+                    style={{ borderColor: 'var(--color-line-strong)', backgroundColor: 'var(--color-canvas)' }}
+                  >
+                    {profile?.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={`${API_BASE}${profile.logoUrl}?v=${Date.now()}`} alt="Logótipo" className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-xs" style={{ color: 'var(--color-subtle)' }}>Sem logo</span>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      onChange={(e) => handleLogoSelect(e.target.files?.[0])}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadLogo.isPending}
+                      className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+                      style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
+                    >
+                      {uploadLogo.isPending ? 'A enviar...' : 'Carregar logótipo'}
+                    </button>
+                    {logoError && <p className="mt-1.5 text-xs" style={{ color: '#dc2626' }}>{logoError}</p>}
+                  </div>
+                </div>
               </FormField>
-              <FormField label="Telefone" error={errors.phone?.message}>
+
+              {/* Brand color */}
+              <FormField label="Cor da marca" error={errors.brandColor?.message} hint="Aplica-se à interface e aos PDFs de orçamento.">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={brandColor}
+                    onChange={(e) => setValue('brandColor', e.target.value, { shouldDirty: true })}
+                    className="w-11 h-9 rounded-md border cursor-pointer"
+                    style={{ borderColor: 'var(--color-line-strong)' }}
+                  />
+                  <input
+                    {...register('brandColor')}
+                    placeholder="#f59e0b"
+                    className="form-input"
+                    style={{ maxWidth: 140, borderColor: errors.brandColor ? '#fca5a5' : 'var(--color-line-strong)' }}
+                  />
+                </div>
+              </FormField>
+
+              <FormField label="Nome da empresa" error={errors.companyName?.message}>
                 <input
-                  {...register('phone')}
-                  placeholder="+351 912 345 678"
+                  {...register('companyName')}
+                  placeholder="Ex: Construções Silva Lda."
                   className="form-input"
                   style={{ borderColor: 'var(--color-line-strong)' }}
                 />
               </FormField>
-            </div>
 
-            <FormField
-              label="URL do logótipo"
-              error={errors.logoUrl?.message}
-              hint="Usado nos PDFs de orçamento. Deve ser uma URL pública de imagem."
-            >
-              <input
-                {...register('logoUrl')}
-                type="url"
-                placeholder="https://..."
-                className="form-input"
-                style={{ borderColor: errors.logoUrl ? '#fca5a5' : 'var(--color-line-strong)' }}
-              />
-            </FormField>
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="NIF" error={errors.nif?.message}>
+                  <input
+                    {...register('nif')}
+                    maxLength={9}
+                    placeholder="123456789"
+                    className="form-input"
+                    style={{ borderColor: errors.nif ? '#fca5a5' : 'var(--color-line-strong)' }}
+                  />
+                </FormField>
+                <FormField label="Telefone" error={errors.phone?.message}>
+                  <input
+                    {...register('phone')}
+                    placeholder="+351 912 345 678"
+                    className="form-input"
+                    style={{ borderColor: 'var(--color-line-strong)' }}
+                  />
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="IBAN" error={errors.iban?.message} hint="Usado nos dados bancários das faturas.">
+                  <input
+                    {...register('iban')}
+                    maxLength={25}
+                    placeholder="PT50000000000000000000000"
+                    className="form-input"
+                    style={{ borderColor: errors.iban ? '#fca5a5' : 'var(--color-line-strong)' }}
+                  />
+                </FormField>
+                <FormField label="Banco" error={errors.bankName?.message}>
+                  <input
+                    {...register('bankName')}
+                    placeholder="Ex: Banco Silva"
+                    className="form-input"
+                    style={{ borderColor: 'var(--color-line-strong)' }}
+                  />
+                </FormField>
+              </div>
+            </div>
+          )}
         </section>
 
-        {/* Plano */}
-        <section className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
-          <div className="px-5 py-3.5 border-b" style={{ backgroundColor: 'var(--color-canvas)', borderColor: 'var(--color-line)' }}>
-            <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-muted)' }}>
-              Plano
-            </h2>
-          </div>
-          <div className="p-5 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
-                {profile?.plan === 'Free' ? 'Plano Free' : `Plano ${profile?.plan}`}
-              </p>
-              {profile?.plan === 'Free' && (
-                <p className="text-xs mt-0.5" style={{ color: 'var(--color-muted)' }}>
-                  Faz upgrade para aceder a PDF, histórico ilimitado e mais.
-                </p>
-              )}
-            </div>
-            {profile?.plan === 'Free' && (
-              <a
-                href="/dashboard/planos"
-                className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
-                style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-              >
-                Fazer upgrade
-              </a>
-            )}
-          </div>
-        </section>
-
+        {/* Always visible — a technician can still rename themselves even though the
+            company section above is read-only for them; the backend applies the same split. */}
         <div className="flex justify-end">
           <button
             type="submit"

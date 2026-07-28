@@ -23,7 +23,7 @@ export default function Home() {
           className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
           style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
         >
-          ⚡
+          T
         </span>
         <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-ink)' }}>
           TécnicoApp

@@ -4,7 +4,7 @@
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-jetbrains);
 
-  /* Brand — electric amber */
+  /* Brand — industrial amber */
   --color-brand-50:  #fffbeb;
   --color-brand-100: #fef3c7;
   --color-brand-200: #fde68a;
@@ -57,12 +57,6 @@
   --color-subtle:       #71717a;
   --color-line:         #2d2d33;
   --color-line-strong:  #3f3f46;
-}
-
-/* Dark mode: override inline white backgrounds on cards/tables */
-.dark [style*="background-color: white"],
-.dark [style*="backgroundColor: white"] {
-  background-color: var(--color-card) !important;
 }
 
 * { box-sizing: border-box; }

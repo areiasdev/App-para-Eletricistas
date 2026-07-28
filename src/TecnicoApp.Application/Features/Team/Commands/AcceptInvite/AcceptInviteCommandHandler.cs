@@ -24,6 +24,9 @@ public class AcceptInviteCommandHandler(IAppDbContext db)
         if (teamMember.IsAccepted)
             return Result.Error("Este convite já foi aceite.");
 
+        if (teamMember.InviteTokenExpiresAt is null || teamMember.InviteTokenExpiresAt < DateTime.UtcNow)
+            return Result.Error("Este convite expirou. Pede ao proprietário para enviar um novo.");
+
         // Activate the member: set real name + password, mark accepted
         teamMember.Member.FullName = request.FullName;
         teamMember.Member.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);

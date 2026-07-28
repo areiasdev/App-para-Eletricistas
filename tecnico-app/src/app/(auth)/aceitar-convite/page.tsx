@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAcceptInvite } from '@/hooks/useTeam'
 import { getErrorMessage } from '@/lib/api/client'
 
-export default function AceitarConvitePage() {
+function AceitarConviteInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get('token') ?? ''
@@ -72,7 +72,7 @@ export default function AceitarConvitePage() {
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
               style={{ backgroundColor: 'var(--color-brand-500)', color: '#17171a' }}>
-              ⚡
+              T
             </span>
             <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>TécnicoApp</span>
           </div>
@@ -154,5 +154,13 @@ export default function AceitarConvitePage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function AceitarConvitePage() {
+  return (
+    <Suspense>
+      <AceitarConviteInner />
+    </Suspense>
   )
 }

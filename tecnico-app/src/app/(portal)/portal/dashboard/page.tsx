@@ -16,11 +16,15 @@ const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   Sent:        { bg: 'rgba(59,130,246,0.12)',   text: '#60a5fa' },
   Accepted:    { bg: 'rgba(16,185,129,0.12)',   text: '#34d399' },
   Rejected:    { bg: 'rgba(239,68,68,0.12)',    text: '#f87171' },
+  Issued:      { bg: 'rgba(59,130,246,0.12)',   text: '#60a5fa' },
+  Paid:        { bg: 'rgba(16,185,129,0.12)',   text: '#34d399' },
+  Overdue:     { bg: 'rgba(245,158,11,0.12)',   text: '#f59e0b' },
 }
 
 const STATUS_LABELS: Record<string, string> = {
   Scheduled: 'Agendada', InProgress: 'Em curso', Completed: 'Concluída', Cancelled: 'Cancelada',
   Draft: 'Rascunho', Sent: 'Enviado', Accepted: 'Aceite', Rejected: 'Rejeitado',
+  Issued: 'Emitida', Paid: 'Paga', Overdue: 'Em atraso',
 }
 
 const INTERVENTION_TYPE_LABELS: Record<string, string> = {
@@ -74,12 +78,20 @@ export default function PortalDashboardPage() {
     enabled: !!accessToken,
   })
 
+  const { data: invoices = [] } = useQuery({
+    queryKey: ['portal-invoices'],
+    queryFn: portal.invoices,
+    enabled: !!accessToken,
+  })
+
   if (!accessToken) return null
 
   const handleLogout = () => {
-    setPortalToken(null)
-    clearPortal()
-    router.push('/portal/login')
+    portal.logout().catch(() => {}).finally(() => {
+      setPortalToken(null)
+      clearPortal()
+      router.push('/portal/login')
+    })
   }
 
   return (
@@ -90,7 +102,7 @@ export default function PortalDashboardPage() {
         <div className="flex items-center gap-2.5">
           <span className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: '#1c1917' }}>
-            ⚡
+            T
           </span>
           <span className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>Portal do cliente</span>
         </div>
@@ -163,6 +175,7 @@ export default function PortalDashboardPage() {
           <section className="space-y-4">
             <h2 className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>Intervenções</h2>
             <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
@@ -189,6 +202,7 @@ export default function PortalDashboardPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </section>
         )}
@@ -198,6 +212,7 @@ export default function PortalDashboardPage() {
           <section className="space-y-4">
             <h2 className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>Orçamentos</h2>
             <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
@@ -224,6 +239,51 @@ export default function PortalDashboardPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Invoices */}
+        {invoices.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>Faturas</h2>
+            <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
+              <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
+                    {['Número', 'Data', 'Estado', 'Total', ''].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide"
+                        style={{ color: 'var(--color-muted)' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody style={{ backgroundColor: 'var(--color-card)' }}>
+                  {invoices.map((row, i) => (
+                    <tr key={row.id} style={{ borderTop: i > 0 ? '1px solid var(--color-line)' : undefined }}>
+                      <td className="px-4 py-3 font-mono text-xs font-medium" style={{ color: 'var(--color-ink)' }}>
+                        {row.number}
+                      </td>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'var(--color-muted)' }}>
+                        {formatDate(row.createdAt)}
+                      </td>
+                      <td className="px-4 py-3"><Badge status={row.status} /></td>
+                      <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>
+                        {fmt(row.total)}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-right">
+                        {row.payUrl && (
+                          <a href={row.payUrl} className="font-semibold" style={{ color: 'var(--color-brand-500)' }}>
+                            Pagar →
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              </div>
             </div>
           </section>
         )}

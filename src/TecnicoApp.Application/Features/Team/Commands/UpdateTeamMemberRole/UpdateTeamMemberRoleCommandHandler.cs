@@ -21,6 +21,9 @@ public class UpdateTeamMemberRoleCommandHandler(IAppDbContext db, ICurrentUserSe
         if (callingUser is null)
             return Result.Unauthorized();
 
+        if (callingUser.Role is not (UserRole.Owner or UserRole.Admin))
+            return Result.Forbidden("Apenas o proprietário ou administradores podem alterar papéis de equipa.");
+
         var ownerId = callingUser.OwnerId ?? callingUser.Id;
 
         var teamMember = await db.TeamMembers
@@ -37,10 +40,8 @@ public class UpdateTeamMemberRoleCommandHandler(IAppDbContext db, ICurrentUserSe
         if (teamMember.MemberId == userId)
             return Result.Forbidden("Não podes alterar o teu próprio papel.");
 
-        // Only Owner can assign the Owner role; Admins cannot
-        if (request.Role == UserRole.Owner && callingUser.Role != UserRole.Owner)
-            return Result.Forbidden("Apenas o proprietário pode atribuir o papel de Owner.");
-
+        // Note: the Owner role can never reach here — the validator already rejects it
+        // outright, since ownership transfer isn't supported through this operation.
         teamMember.Role = request.Role;
         teamMember.Member.Role = request.Role;
         teamMember.ModifiedAt = DateTime.UtcNow;

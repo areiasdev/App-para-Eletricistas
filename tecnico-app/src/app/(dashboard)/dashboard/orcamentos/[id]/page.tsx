@@ -5,12 +5,13 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useQuote, useUpdateQuoteStatus, useSignQuote, useDeleteQuote, useSendQuoteEmail } from '@/hooks/useQuotes'
+import { useCreateInvoiceFromQuote } from '@/hooks/useInvoices'
+import { useCanManage } from '@/hooks/useCanManage'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { SignatureModal } from '@/components/features/SignatureModal'
-import { UpgradeModal } from '@/components/features/UpgradeModal'
 import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils/formatters'
 import { quotesApi } from '@/lib/api/quotes'
-import { getErrorMessage, isPlanLimitError } from '@/lib/api/client'
+import { getErrorMessage } from '@/lib/api/client'
 import type { QuoteStatus } from '@/types'
 
 // ── Status pipeline ──────────────────────────────────────────────────────────
@@ -106,21 +107,22 @@ const nextStatuses: Partial<Record<QuoteStatus, { status: QuoteStatus; label: st
     { status: 'Rejected', label: 'Recusado pelo cliente', bg: 'transparent', color: '#dc2626' },
     { status: 'Draft',    label: 'Revogar envio',          bg: 'transparent', color: 'var(--color-muted)' },
   ],
-  Accepted: [{ status: 'Invoiced', label: 'Marcar como Faturado',   bg: '#7c3aed', color: 'white' }],
 }
 
 export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const canManage = useCanManage()
   const { data: quote, isLoading } = useQuote(id)
   const updateStatus = useUpdateQuoteStatus()
   const signQuote = useSignQuote()
   const deleteQuote = useDeleteQuote()
   const sendEmail = useSendQuoteEmail()
+  const createInvoice = useCreateInvoiceFromQuote()
   const [pdfLoading, setPdfLoading] = useState(false)
   const [showSignModal, setShowSignModal] = useState(false)
-  const [upgradeMessage, setUpgradeMessage] = useState<string | null>(null)
-  const [emailSent, setEmailSent] = useState(false)
+  // Server-derived — survives a page reload, unlike local component state.
+  const emailSent = !!quote?.emailSentAt
 
   const handleStatusChange = (status: QuoteStatus) => {
     updateStatus.mutate({ id, status }, {
@@ -147,7 +149,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
         onSuccess: () => setShowSignModal(false),
         onError: (err) => {
           setShowSignModal(false)
-          if (isPlanLimitError(err)) setUpgradeMessage(getErrorMessage(err))
+          toast.error(getErrorMessage(err))
         },
       }
     )
@@ -156,7 +158,6 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   const handleSendEmail = () => {
     sendEmail.mutate(id, {
       onSuccess: () => {
-        setEmailSent(true)
         // Auto-advance status Draft → Sent — the client received the quote
         if (quote?.status === 'Draft') {
           updateStatus.mutate({ id, status: 'Sent' })
@@ -170,6 +171,15 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
     if (!confirm(`Apagar o orçamento ${quote?.number}?`)) return
     deleteQuote.mutate(id, {
       onSuccess: () => router.push('/dashboard/orcamentos'),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
+  }
+
+  const handleCreateInvoice = () => {
+    // The backend sets quote.status = Invoiced as part of creating the invoice — no need
+    // to also call updateStatus here, the quote's own pipeline reflects it on next load.
+    createInvoice.mutate(id, {
+      onSuccess: (invoice) => router.push(`/dashboard/faturas/${invoice.id}`),
       onError: (err) => toast.error(getErrorMessage(err)),
     })
   }
@@ -209,13 +219,6 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
           isLoading={signQuote.isPending}
         />
       )}
-      {upgradeMessage && (
-        <UpgradeModal
-          message={upgradeMessage}
-          onClose={() => setUpgradeMessage(null)}
-        />
-      )}
-
       <div className="max-w-3xl space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-muted)' }}>
@@ -316,16 +319,31 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
                 >
                   Editar
                 </Link>
-                <button
-                  onClick={handleDelete}
-                  className="rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150"
-                  style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
-                >
-                  Apagar
-                </button>
+                {canManage && (
+                  <button
+                    onClick={handleDelete}
+                    className="rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150"
+                    style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
+                  >
+                    Apagar
+                  </button>
+                )}
               </>
+            )}
+
+            {/* Faturar (Accepted only) — creates a real Invoice document, replacing the old
+                plain status-flip to Invoiced */}
+            {quote.status === 'Accepted' && canManage && (
+              <button
+                onClick={handleCreateInvoice}
+                disabled={createInvoice.isPending}
+                className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+                style={{ backgroundColor: '#7c3aed', color: 'white' }}
+              >
+                {createInvoice.isPending ? 'A faturar...' : 'Faturar'}
+              </button>
             )}
 
             {/* Status transitions */}
@@ -404,6 +422,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
 
         {/* Lines */}
         <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+          <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
@@ -426,6 +445,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               ))}
             </tbody>
           </table>
+          </div>
 
           {/* Totals */}
           <div className="px-5 py-4 space-y-1.5 text-sm" style={{ borderTop: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>

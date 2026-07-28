@@ -1,6 +1,6 @@
 export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected' | 'Invoiced'
+export type InvoiceStatus = 'Issued' | 'Paid' | 'Overdue' | 'Cancelled'
 export type InterventionStatus = 'Scheduled' | 'InProgress' | 'Completed'
-export type Plan = 'Free' | 'Pro' | 'Team' | 'Enterprise'
 export type UserRole = 'Owner' | 'Admin' | 'Technician' | 'Commercial'
 
 export interface InterventionMaterial {
@@ -51,11 +51,15 @@ export interface User {
   id: string
   fullName: string
   email: string
-  plan: Plan
+  role: UserRole
+  companyName?: string
+  logoUrl?: string
+  brandColor?: string
 }
 
 export interface AuthResponse {
   accessToken: string
+  csrfToken: string
   user: User
 }
 
@@ -68,6 +72,8 @@ export interface Client {
   address?: Address
   notes?: string
   createdAt: string
+  whatsAppOptIn: boolean
+  phoneVerified: boolean
 }
 
 export interface Address {
@@ -94,9 +100,39 @@ export interface Quote {
   clientName: string
   lines: QuoteLine[]
   createdAt: string
+  emailSentAt?: string
 }
 
 export interface QuoteLine {
+  id: string
+  description: string
+  quantity: number
+  unitPrice: number
+  vatRate: number
+  lineTotal: number
+}
+
+export interface Invoice {
+  id: string
+  number: string
+  status: InvoiceStatus
+  subTotal: number
+  vatTotal: number
+  total: number
+  discount?: number
+  notes?: string
+  issuedAt: string
+  dueDate: string
+  paidAt?: string
+  clientId: string
+  clientName: string
+  quoteId?: string
+  quoteNumber?: string
+  lines: InvoiceLine[]
+  createdAt: string
+}
+
+export interface InvoiceLine {
   id: string
   description: string
   quantity: number

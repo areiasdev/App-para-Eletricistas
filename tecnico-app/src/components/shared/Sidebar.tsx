@@ -6,10 +6,41 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
+import { useCanManage } from '@/hooks/useCanManage'
 import { useRouter } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
-import { billingApi } from '@/lib/api/billing'
 import { authApi } from '@/lib/api/auth'
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
+
+// Shown in the desktop sidebar, mobile top bar, and mobile drawer — falls back to the
+// generic "T" mark + "TécnicoApp" until a company uploads its own logo/name in Perfil.
+function SidebarBrand({ onClick }: { onClick?: () => void }) {
+  const user = useAuthStore((s) => s.user)
+
+  return (
+    <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0" onClick={onClick}>
+      {user?.logoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`${API_BASE}${user.logoUrl}`}
+          alt={user.companyName ?? 'Logótipo'}
+          className="w-7 h-7 rounded-md object-contain shrink-0"
+          style={{ backgroundColor: 'white' }}
+        />
+      ) : (
+        <span
+          className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold shrink-0"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+        >
+          T
+        </span>
+      )}
+      <span className="text-sm font-semibold tracking-tight text-white/90 truncate">
+        {user?.companyName || 'TécnicoApp'}
+      </span>
+    </Link>
+  )
+}
 
 const navItems = [
   {
@@ -47,6 +78,18 @@ const navItems = [
     ),
   },
   {
+    href: '/dashboard/faturas',
+    label: 'Faturas',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M4 1h6l3 3v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+        <path d="M10 1v3h3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+        <path d="M6 11.5c.3.4.8.6 1.3.6.9 0 1.6-.5 1.6-1.2 0-.8-.7-1-1.6-1.3-.9-.3-1.6-.6-1.6-1.3 0-.7.7-1.2 1.6-1.2.5 0 1 .2 1.3.6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+        <path d="M7.5 6.8v.7M7.5 11.7v.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
     href: '/dashboard/equipamentos',
     label: 'Equipamentos',
     icon: (
@@ -76,7 +119,7 @@ const navItems = [
         <path d="M7 13c0-2.209 1.791-4 4-4s4 1.791 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
       </svg>
     ),
-    teamOnly: true,
+    managerOnly: true,
   },
   {
     href: '/dashboard/relatorios',
@@ -88,7 +131,7 @@ const navItems = [
         <rect x="11" y="2" width="3" height="13" rx="1" fill="currentColor"/>
       </svg>
     ),
-    enterpriseOnly: true,
+    managerOnly: true,
   },
   {
     href: '/dashboard/audit-logs',
@@ -100,16 +143,7 @@ const navItems = [
         <circle cx="11.5" cy="11" r="1" fill="currentColor"/>
       </svg>
     ),
-    enterpriseOnly: true,
-  },
-  {
-    href: '/dashboard/planos',
-    label: 'Plano',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M8 1l1.8 3.6L14 5.6l-3 2.9.7 4.1L8 10.4l-3.7 2.2.7-4.1L2 5.6l4.2-.9L8 1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-      </svg>
-    ),
+    managerOnly: true,
   },
   {
     href: '/dashboard/perfil',
@@ -123,29 +157,12 @@ const navItems = [
   },
 ]
 
-const planColors: Record<string, { bg: string; text: string }> = {
-  Pro:        { bg: 'rgba(245,158,11,0.18)', text: 'var(--color-brand-400)' },
-  Team:       { bg: 'rgba(124,58,237,0.18)', text: '#a78bfa' },
-  Enterprise: { bg: 'rgba(16,185,129,0.18)', text: '#34d399' },
-  Trial:      { bg: 'rgba(59,130,246,0.18)',  text: '#60a5fa' },
-  Free:       { bg: 'rgba(255,255,255,0.07)', text: 'rgba(255,255,255,0.35)' },
-}
-
 function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const pathname = usePathname()
   const router = useRouter()
   const { user, clearAuth } = useAuthStore()
-  const { data: billing } = useQuery({
-    queryKey: ['billing-me'],
-    queryFn: billingApi.getMe,
-    staleTime: 1000 * 60 * 5,
-  })
-  const plan = billing?.plan ?? 'Enterprise'
-  const isTrialActive = billing?.isTrialActive ?? true
-  const trialDaysLeft = billing?.trialDaysLeft ?? 14
-  const badgeLabel = isTrialActive ? `Trial · ${trialDaysLeft}d` : plan
-  const planColor = isTrialActive ? planColors.Trial : (planColors[plan] ?? planColors.Free)
   const { theme, toggleTheme } = useThemeStore()
+  const canManage = useCanManage()
 
   const handleLogout = async () => {
     try {
@@ -161,24 +178,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--color-sidebar)' }}>
       {/* Logo */}
       <div className="px-5 py-5 border-b border-white/8">
-        <Link href="/dashboard" className="flex items-center gap-2.5" onClick={onNavClick}>
-          <span
-            className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-          >
-            ⚡
-          </span>
-          <span className="text-sm font-semibold tracking-tight text-white/90">
-            TécnicoApp
-          </span>
-        </Link>
+        <SidebarBrand onClick={onNavClick} />
       </div>
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
-          if ('teamOnly' in item && item.teamOnly && plan !== 'Team' && plan !== 'Enterprise' && !isTrialActive) return null
-          if ('enterpriseOnly' in item && item.enterpriseOnly && plan !== 'Enterprise' && !isTrialActive) return null
+          if ('managerOnly' in item && item.managerOnly && !canManage) return null
+
           const isActive =
             item.href === '/dashboard'
               ? pathname === '/dashboard'
@@ -219,15 +226,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-medium text-white/80 truncate leading-tight">{user?.fullName}</p>
-            <div className="flex items-center gap-1.5">
-              <p className="text-xs text-white/35 truncate leading-tight">{user?.email}</p>
-              <span
-                className="shrink-0 rounded px-1 py-px text-[9px] font-bold uppercase tracking-wider leading-none"
-                style={{ backgroundColor: planColor.bg, color: planColor.text }}
-              >
-                {badgeLabel}
-              </span>
-            </div>
+            <p className="text-xs text-white/35 truncate leading-tight">{user?.email}</p>
           </div>
         </div>
         <div className="flex items-center justify-between">
@@ -278,15 +277,7 @@ export function Sidebar() {
         className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 h-14 border-b"
         style={{ backgroundColor: 'var(--color-sidebar)', borderColor: 'rgba(255,255,255,0.08)' }}
       >
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <span
-            className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-          >
-            ⚡
-          </span>
-          <span className="text-sm font-semibold tracking-tight text-white/90">TécnicoApp</span>
-        </Link>
+        <SidebarBrand />
         <button
           onClick={() => setMobileOpen(true)}
           className="w-9 h-9 flex items-center justify-center rounded-md transition-colors duration-150"
@@ -311,15 +302,7 @@ export function Sidebar() {
             style={{ backgroundColor: 'var(--color-sidebar)' }}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
-              <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setMobileOpen(false)}>
-                <span
-                  className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
-                  style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-                >
-                  ⚡
-                </span>
-                <span className="text-sm font-semibold tracking-tight text-white/90">TécnicoApp</span>
-              </Link>
+              <SidebarBrand onClick={() => setMobileOpen(false)} />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-md"
