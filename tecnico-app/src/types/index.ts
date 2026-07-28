@@ -72,6 +72,8 @@ export interface Client {
   address?: Address
   notes?: string
   createdAt: string
+  whatsAppOptIn: boolean
+  phoneVerified: boolean
 }
 
 export interface Address {

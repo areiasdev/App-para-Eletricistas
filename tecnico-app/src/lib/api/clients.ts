@@ -22,6 +22,8 @@ export interface CreateClientRequest {
     postalCode: string
     country: string
   }
+  whatsAppOptIn?: boolean
+  phoneVerified?: boolean
 }
 
 export type UpdateClientRequest = CreateClientRequest

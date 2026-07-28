@@ -13,6 +13,12 @@ public class Client : BaseEntity
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;
 
+    // Notification opt-in (Phase 5) — plain manually-toggled flags, not an OTP/verification
+    // flow. Owner/Admin/Technician confirms the number is real by other means (phone call,
+    // in-person visit) and ticks the box; WhatsApp messages are only sent when both are true.
+    public bool WhatsAppOptIn { get; set; }
+    public bool PhoneVerified { get; set; }
+
     public string? PortalTokenHash { get; set; }
     public DateTime? PortalTokenExpiresAt { get; set; }
     public int PortalTokenVersion { get; set; }

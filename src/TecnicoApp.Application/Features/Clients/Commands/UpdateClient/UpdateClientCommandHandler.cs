@@ -36,6 +36,8 @@ public sealed class UpdateClientCommandHandler(
         client.Phone = command.Phone;
         client.Notes = command.Notes;
         client.ModifiedBy = currentUser.Email;
+        client.WhatsAppOptIn = command.WhatsAppOptIn;
+        client.PhoneVerified = command.PhoneVerified;
         client.Address = command.Address is null ? null : new Address(
             command.Address.Street,
             command.Address.City,
@@ -56,6 +58,8 @@ public sealed class UpdateClientCommandHandler(
                 client.Address.PostalCode,
                 client.Address.Country),
             client.Notes,
-            client.CreatedAt));
+            client.CreatedAt,
+            client.WhatsAppOptIn,
+            client.PhoneVerified));
     }
 }

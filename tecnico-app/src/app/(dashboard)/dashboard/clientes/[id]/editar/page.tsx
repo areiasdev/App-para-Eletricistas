@@ -29,6 +29,8 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
               country: values.address.country ?? 'Portugal',
             }
           : undefined,
+        whatsAppOptIn: values.whatsAppOptIn,
+        phoneVerified: values.phoneVerified,
       },
       { onSuccess: () => router.push(`/dashboard/clientes/${id}`) }
     )
@@ -76,6 +78,8 @@ export default function EditarClientePage({ params }: { params: Promise<{ id: st
             phone: client.phone ?? '',
             notes: client.notes ?? '',
             hasAddress: !!client.address,
+            whatsAppOptIn: client.whatsAppOptIn,
+            phoneVerified: client.phoneVerified,
             address: client.address
               ? {
                   street: client.address.street,

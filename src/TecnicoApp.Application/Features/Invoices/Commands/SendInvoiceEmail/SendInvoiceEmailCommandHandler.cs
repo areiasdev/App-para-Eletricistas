@@ -16,6 +16,7 @@ public class SendInvoiceEmailCommandHandler(
     IFileStorageService fileStorage,
     IInvoicePayLinkService payLinkService,
     IAppSettings appSettings,
+    INotificationService notificationService,
     ILogger<SendInvoiceEmailCommandHandler> logger)
     : IRequestHandler<SendInvoiceEmailCommand, Result>
 {
@@ -196,6 +197,28 @@ public class SendInvoiceEmailCommandHandler(
         // Persists any newly-issued PayTokenHash/PayTokenExpiresAt from GetOrCreateToken above
         // (a no-op write if a valid token already existed and was just reused).
         await db.SaveChangesAsync(cancellationToken);
+
+        // Opt-in WhatsApp ping. The email already succeeded and is the primary channel — this
+        // is a bonus notification, so a failure here must never fail the overall command.
+        // The pay link isn't re-threaded into this message — pointing back at the email (which
+        // already has the "Pagar agora" button) is simpler than re-deriving it here.
+        if (invoice.Client.WhatsAppOptIn && invoice.Client.PhoneVerified &&
+            !string.IsNullOrWhiteSpace(invoice.Client.Phone))
+        {
+            try
+            {
+                var waMessage =
+                    $"Olá {invoice.Client.Name}, {issuerPlain} enviou-te a fatura {invoice.Number} " +
+                    $"no valor de {totalFormatted}. Consulta o teu email para pagar.";
+
+                await notificationService.SendWhatsAppAsync(invoice.Client.Phone, waMessage, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Failed to send WhatsApp notification for invoice {InvoiceId}", request.InvoiceId);
+            }
+        }
 
         return Result.Success();
     }

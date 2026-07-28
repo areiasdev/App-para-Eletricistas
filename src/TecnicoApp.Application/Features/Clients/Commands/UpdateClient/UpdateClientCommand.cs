@@ -12,5 +12,7 @@ public record UpdateClientCommand(
     string? Email,
     string? Phone,
     string? Notes,
-    CreateAddressCommand? Address
+    CreateAddressCommand? Address,
+    bool WhatsAppOptIn = false,
+    bool PhoneVerified = false
 ) : IRequest<Result<ClientDto>>;

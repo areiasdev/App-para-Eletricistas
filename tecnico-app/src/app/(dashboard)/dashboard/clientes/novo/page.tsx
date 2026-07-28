@@ -26,6 +26,8 @@ export default function NovoClientePage() {
               country: values.address.country ?? 'Portugal',
             }
           : undefined,
+        whatsAppOptIn: values.whatsAppOptIn,
+        phoneVerified: values.phoneVerified,
       },
       {
         onSuccess: (client) => router.push(`/dashboard/clientes/${client.id}`),

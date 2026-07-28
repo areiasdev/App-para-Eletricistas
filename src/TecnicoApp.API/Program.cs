@@ -207,11 +207,30 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Stale trigger cleanup: TrialExpirationJob's class was deleted when SaaS-billing was removed,
+// but Hangfire persists recurring job schedules in its own Postgres tables (not in code), so the
+// old "trial-expiration" trigger kept firing daily, failing to resolve the type, and logging a
+// JobLoadException warning every cycle. RemoveIfExists is idempotent — safe to call on every startup.
+RecurringJob.RemoveIfExists("trial-expiration");
+
 // Register recurring job — runs daily at 08:00
 RecurringJob.AddOrUpdate<MaintenanceAlertJob>(
     "maintenance-alerts",
     job => job.RunAsync(),
     "0 8 * * *");
+
+// Reminds clients their invoice is due in ~3 days — staggered a few minutes after the
+// maintenance-alerts job so they don't all hit the DB at once.
+RecurringJob.AddOrUpdate<InvoiceDueReminderJob>(
+    "invoice-due-reminders",
+    job => job.RunAsync(),
+    "15 8 * * *");
+
+// Reminds clients (not the technician) about tomorrow's scheduled intervention.
+RecurringJob.AddOrUpdate<AppointmentReminderJob>(
+    "appointment-reminders",
+    job => job.RunAsync(),
+    "30 8 * * *");
 
 app.Run();
 

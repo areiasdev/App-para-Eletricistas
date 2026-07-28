@@ -36,7 +36,9 @@ public sealed class GetClientByIdQueryHandler(
                     c.Address.PostalCode,
                     c.Address.Country),
                 c.Notes,
-                c.CreatedAt))
+                c.CreatedAt,
+                c.WhatsAppOptIn,
+                c.PhoneVerified))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (client is null)

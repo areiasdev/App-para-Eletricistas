@@ -13,6 +13,7 @@ public class SendQuoteEmailCommandHandler(
     IPdfService pdfService,
     IEmailService emailService,
     IFileStorageService fileStorage,
+    INotificationService notificationService,
     ILogger<SendQuoteEmailCommandHandler> logger)
     : IRequestHandler<SendQuoteEmailCommand, Result>
 {
@@ -160,6 +161,26 @@ public class SendQuoteEmailCommandHandler(
         // tracked only in frontend component state and reset on every remount.
         quote.EmailSentAt = DateTime.UtcNow;
         await db.SaveChangesAsync(cancellationToken);
+
+        // Opt-in WhatsApp ping. The email already succeeded and is the primary channel — this
+        // is a bonus notification, so a failure here must never fail the overall command.
+        if (quote.Client.WhatsAppOptIn && quote.Client.PhoneVerified &&
+            !string.IsNullOrWhiteSpace(quote.Client.Phone))
+        {
+            try
+            {
+                var waMessage =
+                    $"Olá {quote.Client.Name}, {issuerPlain} enviou-te um orçamento ({quote.Number}) " +
+                    $"no valor de {totalFormatted}. Consulta o teu email para o PDF.";
+
+                await notificationService.SendWhatsAppAsync(quote.Client.Phone, waMessage, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Failed to send WhatsApp notification for quote {QuoteId}", request.QuoteId);
+            }
+        }
 
         return Result.Success();
     }

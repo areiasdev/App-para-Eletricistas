@@ -26,7 +26,10 @@ public static class DependencyInjection
         services.AddScoped<IAppSettings, AppSettings>();
         services.AddScoped<IStripeCheckoutService, StripeCheckoutService>();
         services.AddScoped<IInvoicePayLinkService, InvoicePayLinkService>();
+        services.AddScoped<INotificationService, TwilioNotificationService>();
         services.AddScoped<MaintenanceAlertJob>();
+        services.AddScoped<InvoiceDueReminderJob>();
+        services.AddScoped<AppointmentReminderJob>();
         services.AddHttpContextAccessor();
 
         return services;

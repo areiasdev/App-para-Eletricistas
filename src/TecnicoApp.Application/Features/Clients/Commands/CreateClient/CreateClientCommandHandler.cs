@@ -41,6 +41,8 @@ public sealed class CreateClientCommandHandler(
             Notes = command.Notes,
             UserId = ownerId,
             ModifiedBy = currentUser.Email,
+            WhatsAppOptIn = command.WhatsAppOptIn,
+            PhoneVerified = command.PhoneVerified,
             Address = command.Address is null ? null : new Address(
                 command.Address.Street,
                 command.Address.City,
@@ -63,6 +65,8 @@ public sealed class CreateClientCommandHandler(
                 client.Address.PostalCode,
                 client.Address.Country),
             client.Notes,
-            client.CreatedAt));
+            client.CreatedAt,
+            client.WhatsAppOptIn,
+            client.PhoneVerified));
     }
 }

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { clientSchema } from './ClientForm'
 import { validateNif } from '@/lib/utils/formatters'
 
-const valid = { name: 'Cliente Teste', hasAddress: false }
+const valid = { name: 'Cliente Teste', hasAddress: false, whatsAppOptIn: false, phoneVerified: false }
 
 describe('validateNif', () => {
   it('accepts a NIF with a correct checksum digit', () => {

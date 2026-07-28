@@ -62,7 +62,8 @@ public class ClientsController(IMediator mediator) : ControllerBase
     {
         var command = new UpdateClientCommand(
             id, request.Name, request.Nif, request.Email,
-            request.Phone, request.Notes, request.Address);
+            request.Phone, request.Notes, request.Address,
+            request.WhatsAppOptIn, request.PhoneVerified);
 
         var result = await mediator.Send(command, ct);
         return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
@@ -85,5 +86,7 @@ public record UpdateClientRequest(
     string? Email,
     string? Phone,
     string? Notes,
-    CreateAddressCommand? Address
+    CreateAddressCommand? Address,
+    bool WhatsAppOptIn = false,
+    bool PhoneVerified = false
 );
