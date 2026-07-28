@@ -43,10 +43,15 @@ services:
       Smtp__Password: ${SMTP_PASSWORD:-}
       Smtp__FromName: ${SMTP_FROM_NAME:-TécnicoApp}
       Smtp__FromAddress: ${SMTP_FROM_ADDRESS:-}
+      # This install's own Stripe account — collects payment from this trade company's own
+      # customers on invoices. Not a shared platform account, not subscription billing.
       Stripe__SecretKey: ${STRIPE_SECRET_KEY:-}
       Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}
-      Stripe__PriceIdPro: ${STRIPE_PRICE_ID_PRO:-}
-      Stripe__PriceIdTeam: ${STRIPE_PRICE_ID_TEAM:-}
+      Stripe__PublishableKey: ${STRIPE_PUBLISHABLE_KEY:-}
+      Twilio__AccountSid: ${TWILIO_ACCOUNT_SID:-}
+      Twilio__AuthToken: ${TWILIO_AUTH_TOKEN:-}
+      Twilio__FromNumber: ${TWILIO_FROM_NUMBER:-}
+      Twilio__WhatsAppFromNumber: ${TWILIO_WHATSAPP_FROM_NUMBER:-}
     ports:
       - "8080:8080"
     restart: unless-stopped
