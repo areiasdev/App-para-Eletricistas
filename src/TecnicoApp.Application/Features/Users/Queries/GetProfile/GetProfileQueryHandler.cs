@@ -34,7 +34,9 @@ public sealed class GetProfileQueryHandler(IAppDbContext db, ICurrentUserService
             owner?.Nif,
             owner?.Phone,
             owner?.LogoUrl,
-            owner?.BrandColor
+            owner?.BrandColor,
+            owner?.Iban,
+            owner?.BankName
         ));
     }
 }

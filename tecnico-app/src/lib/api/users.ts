@@ -9,6 +9,8 @@ export interface Profile {
   phone?: string
   logoUrl?: string
   brandColor?: string
+  iban?: string
+  bankName?: string
 }
 
 export interface UpdateProfileRequest {
@@ -17,6 +19,8 @@ export interface UpdateProfileRequest {
   nif?: string
   phone?: string
   brandColor?: string
+  iban?: string
+  bankName?: string
 }
 
 export const usersApi = {

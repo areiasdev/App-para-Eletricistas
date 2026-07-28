@@ -64,7 +64,7 @@ public class ProfileBrandingTests
 
         var handler = new UpdateProfileCommandHandler(db, AsUser(technician));
         var result = await handler.Handle(
-            new UpdateProfileCommand("Novo Nome", "Empresa Hackeada", null, null, "#ff0000"),
+            new UpdateProfileCommand("Novo Nome", "Empresa Hackeada", null, null, "#ff0000", null, null),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -83,7 +83,7 @@ public class ProfileBrandingTests
 
         var handler = new UpdateProfileCommandHandler(db, AsUser(owner));
         var result = await handler.Handle(
-            new UpdateProfileCommand("Owner", "Nova Empresa Lda", "123456789", "912345678", "#ff0000"),
+            new UpdateProfileCommand("Owner", "Nova Empresa Lda", "123456789", "912345678", "#ff0000", null, null),
             CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();

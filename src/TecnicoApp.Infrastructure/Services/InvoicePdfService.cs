@@ -5,21 +5,23 @@ using TecnicoApp.Application.Common.Interfaces;
 
 namespace TecnicoApp.Infrastructure.Services;
 
-public class QuotePdfService : IPdfService
+/// <summary>
+/// Composes the invoice PDF. Not itself an IPdfService — QuotePdfService is the single
+/// concrete class registered for that interface (see its GenerateInvoicePdf) and delegates
+/// here. See PdfStyle's doc comment for why the composition logic isn't merged with
+/// QuotePdfService's despite the visual similarity.
+/// </summary>
+public class InvoicePdfService
 {
-    private static readonly string AmberHex  = PdfStyle.AmberHex;
-    private static readonly string InkHex    = PdfStyle.InkHex;
-    private static readonly string MutedHex  = PdfStyle.MutedHex;
-    private static readonly string LineHex   = PdfStyle.LineHex;
-    private static readonly string CanvasHex = PdfStyle.CanvasHex;
+    private const string InkHex    = PdfStyle.InkHex;
+    private const string MutedHex  = PdfStyle.MutedHex;
+    private const string LineHex   = PdfStyle.LineHex;
+    private const string CanvasHex = PdfStyle.CanvasHex;
 
-    // IPdfService is registered as a single scoped service, so this class is the one
-    // resolved for both document kinds — GenerateInvoicePdf just hands off to the sibling
-    // service that owns the invoice-specific composition. See PdfStyle's doc comment for
-    // why the composition logic itself isn't merged into one method.
-    public byte[] GenerateInvoicePdf(InvoicePdfData data) => new InvoicePdfService().Generate(data);
+    private const string NonCertifiedDisclaimer =
+        "Documento emitido para fins de gestão interna. Não constitui fatura certificada pela Autoridade Tributária.";
 
-    public byte[] GenerateQuotePdf(QuotePdfData d)
+    public byte[] Generate(InvoicePdfData d)
     {
         QuestPDF.Settings.License = LicenseType.Community;
 
@@ -33,15 +35,15 @@ public class QuotePdfService : IPdfService
 
                 page.Header().Element(ComposeHeader(d));
                 page.Content().Element(ComposeContent(d));
-                page.Footer().Element(PdfStyle.ComposeFooter());
+                page.Footer().Element(PdfStyle.ComposeFooter(NonCertifiedDisclaimer));
             });
         }).GeneratePdf();
     }
 
     // ── Header ────────────────────────────────────────────────────────────────
-    private static Action<IContainer> ComposeHeader(QuotePdfData d) => container =>
+    private static Action<IContainer> ComposeHeader(InvoicePdfData d) => container =>
     {
-        var brandHex = string.IsNullOrWhiteSpace(d.IssuerBrandColorHex) ? AmberHex : d.IssuerBrandColorHex;
+        var brandHex = PdfStyle.ResolveBrandColor(d.IssuerBrandColorHex);
 
         container.PaddingBottom(24).Row(row =>
         {
@@ -82,29 +84,28 @@ public class QuotePdfService : IPdfService
                 });
             });
 
-            // Right: "ORÇAMENTO" badge + number
+            // Right: "FATURA" badge + number
             row.ConstantItem(160).AlignRight().Column(col =>
             {
                 col.Item().Background(brandHex).Padding(8).AlignCenter()
-                    .Text("ORÇAMENTO").Bold().FontSize(13).FontColor("#ffffff");
+                    .Text("FATURA").Bold().FontSize(13).FontColor("#ffffff");
 
                 col.Item().PaddingTop(6).AlignRight()
                     .Text(d.Number).Bold().FontSize(14).FontColor(InkHex);
 
                 col.Item().AlignRight()
-                    .Text($"Data: {d.CreatedAt:dd/MM/yyyy}").FontColor(MutedHex);
+                    .Text($"Data: {d.IssuedAt:dd/MM/yyyy}").FontColor(MutedHex);
 
-                if (d.ValidUntil.HasValue)
-                    col.Item().AlignRight()
-                        .Text($"Válido até: {d.ValidUntil:dd/MM/yyyy}").FontColor(MutedHex);
+                col.Item().AlignRight()
+                    .Text($"Vencimento: {d.DueDate:dd/MM/yyyy}").FontColor(MutedHex);
             });
         });
     };
 
     // ── Content ───────────────────────────────────────────────────────────────
-    private static Action<IContainer> ComposeContent(QuotePdfData d) => container =>
+    private static Action<IContainer> ComposeContent(InvoicePdfData d) => container =>
     {
-        var brandHex = string.IsNullOrWhiteSpace(d.IssuerBrandColorHex) ? AmberHex : d.IssuerBrandColorHex;
+        var brandHex = PdfStyle.ResolveBrandColor(d.IssuerBrandColorHex);
 
         container.Column(col =>
         {
@@ -157,7 +158,7 @@ public class QuotePdfService : IPdfService
                 // Data rows
                 foreach (var line in d.Lines)
                 {
-                    static void Cell(IContainer c, string text, bool right = false) =>
+                    static void Cell(IContainer c, string text) =>
                         c.BorderBottom(1).BorderColor(LineHex).Padding(8)
                          .AlignLeft().Text(text);
 
@@ -205,6 +206,31 @@ public class QuotePdfService : IPdfService
                 TotalRow("TOTAL", d.Total.ToString("C", ptCulture), bold: true);
             });
 
+            // Bank details — only rendered if at least one of IBAN/bank name is set
+            if (!string.IsNullOrWhiteSpace(d.IssuerIban) || !string.IsNullOrWhiteSpace(d.IssuerBankName))
+            {
+                col.Item().PaddingTop(20).Column(b =>
+                {
+                    b.Item().Text("DADOS BANCÁRIOS").FontSize(8).Bold()
+                        .LetterSpacing(0.08f).FontColor(MutedHex);
+                    b.Item().PaddingTop(4).Background(CanvasHex).Padding(12).Column(inner =>
+                    {
+                        if (!string.IsNullOrWhiteSpace(d.IssuerIban))
+                            inner.Item().Text(t =>
+                            {
+                                t.Span("IBAN: ").FontColor(MutedHex);
+                                t.Span(d.IssuerIban).FontColor(InkHex);
+                            });
+                        if (!string.IsNullOrWhiteSpace(d.IssuerBankName))
+                            inner.Item().Text(t =>
+                            {
+                                t.Span("Banco: ").FontColor(MutedHex);
+                                t.Span(d.IssuerBankName).FontColor(InkHex);
+                            });
+                    });
+                });
+            }
+
             // Notes
             if (!string.IsNullOrWhiteSpace(d.Notes))
             {
@@ -218,5 +244,4 @@ public class QuotePdfService : IPdfService
             }
         });
     };
-
 }

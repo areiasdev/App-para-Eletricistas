@@ -19,5 +19,6 @@ public class Client : BaseEntity
 
     public ICollection<Equipment> Equipment { get; set; } = [];
     public ICollection<Quote> Quotes { get; set; } = [];
+    public ICollection<Invoice> Invoices { get; set; } = [];
     public ICollection<Intervention> Interventions { get; set; } = [];
 }

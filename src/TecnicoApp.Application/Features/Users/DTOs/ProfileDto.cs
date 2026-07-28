@@ -8,5 +8,7 @@ public record ProfileDto(
     string? Nif,
     string? Phone,
     string? LogoUrl,
-    string? BrandColor
+    string? BrandColor,
+    string? Iban,
+    string? BankName
 );

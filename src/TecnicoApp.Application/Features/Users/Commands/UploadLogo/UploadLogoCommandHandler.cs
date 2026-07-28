@@ -54,7 +54,9 @@ public sealed class UploadLogoCommandHandler(
             owner.Nif,
             owner.Phone,
             owner.LogoUrl,
-            owner.BrandColor
+            owner.BrandColor,
+            owner.Iban,
+            owner.BankName
         ));
     }
 }

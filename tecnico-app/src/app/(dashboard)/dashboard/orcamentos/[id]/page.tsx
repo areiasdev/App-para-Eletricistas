@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useQuote, useUpdateQuoteStatus, useSignQuote, useDeleteQuote, useSendQuoteEmail } from '@/hooks/useQuotes'
+import { useCreateInvoiceFromQuote } from '@/hooks/useInvoices'
 import { useCanManage } from '@/hooks/useCanManage'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { SignatureModal } from '@/components/features/SignatureModal'
@@ -106,7 +107,6 @@ const nextStatuses: Partial<Record<QuoteStatus, { status: QuoteStatus; label: st
     { status: 'Rejected', label: 'Recusado pelo cliente', bg: 'transparent', color: '#dc2626' },
     { status: 'Draft',    label: 'Revogar envio',          bg: 'transparent', color: 'var(--color-muted)' },
   ],
-  Accepted: [{ status: 'Invoiced', label: 'Marcar como Faturado',   bg: '#7c3aed', color: 'white' }],
 }
 
 export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -118,6 +118,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   const signQuote = useSignQuote()
   const deleteQuote = useDeleteQuote()
   const sendEmail = useSendQuoteEmail()
+  const createInvoice = useCreateInvoiceFromQuote()
   const [pdfLoading, setPdfLoading] = useState(false)
   const [showSignModal, setShowSignModal] = useState(false)
   // Server-derived — survives a page reload, unlike local component state.
@@ -170,6 +171,15 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
     if (!confirm(`Apagar o orçamento ${quote?.number}?`)) return
     deleteQuote.mutate(id, {
       onSuccess: () => router.push('/dashboard/orcamentos'),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
+  }
+
+  const handleCreateInvoice = () => {
+    // The backend sets quote.status = Invoiced as part of creating the invoice — no need
+    // to also call updateStatus here, the quote's own pipeline reflects it on next load.
+    createInvoice.mutate(id, {
+      onSuccess: (invoice) => router.push(`/dashboard/faturas/${invoice.id}`),
       onError: (err) => toast.error(getErrorMessage(err)),
     })
   }
@@ -321,6 +331,19 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
                   </button>
                 )}
               </>
+            )}
+
+            {/* Faturar (Accepted only) — creates a real Invoice document, replacing the old
+                plain status-flip to Invoiced */}
+            {quote.status === 'Accepted' && canManage && (
+              <button
+                onClick={handleCreateInvoice}
+                disabled={createInvoice.isPending}
+                className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+                style={{ backgroundColor: '#7c3aed', color: 'white' }}
+              >
+                {createInvoice.isPending ? 'A faturar...' : 'Faturar'}
+              </button>
             )}
 
             {/* Status transitions */}

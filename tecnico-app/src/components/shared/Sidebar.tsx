@@ -78,6 +78,18 @@ const navItems = [
     ),
   },
   {
+    href: '/dashboard/faturas',
+    label: 'Faturas',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M4 1h6l3 3v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+        <path d="M10 1v3h3" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+        <path d="M6 11.5c.3.4.8.6 1.3.6.9 0 1.6-.5 1.6-1.2 0-.8-.7-1-1.6-1.3-.9-.3-1.6-.6-1.6-1.3 0-.7.7-1.2 1.6-1.2.5 0 1 .2 1.3.6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+        <path d="M7.5 6.8v.7M7.5 11.7v.7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
     href: '/dashboard/equipamentos',
     label: 'Equipamentos',
     icon: (

@@ -25,5 +25,14 @@ public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileComm
         RuleFor(x => x.BrandColor)
             .Matches(@"^#[0-9a-fA-F]{6}$").WithMessage("A cor deve ser um código hexadecimal (ex: #f59e0b).")
             .When(x => !string.IsNullOrEmpty(x.BrandColor));
+
+        // Portugal-only for now.
+        RuleFor(x => x.Iban)
+            .Matches(@"^PT50\d{21}$").WithMessage("IBAN inválido. Deve começar por PT50 seguido de 21 dígitos.")
+            .When(x => !string.IsNullOrEmpty(x.Iban));
+
+        RuleFor(x => x.BankName)
+            .MaximumLength(100).WithMessage("O nome do banco não pode ter mais de 100 caracteres.")
+            .When(x => x.BankName is not null);
     }
 }

@@ -20,6 +20,8 @@ const profileSchema = z.object({
   nif: z.string().regex(/^\d{9}$/, 'O NIF deve ter 9 dígitos.').refine((v) => validateNif(v), 'NIF inválido.').optional().or(z.literal('')),
   phone: z.string().max(20).optional().or(z.literal('')),
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Cor inválida.'),
+  iban: z.string().regex(/^PT50\d{21}$/, 'IBAN inválido. Deve começar por PT50 seguido de 21 dígitos.').optional().or(z.literal('')),
+  bankName: z.string().max(100).optional().or(z.literal('')),
 })
 
 type ProfileFormValues = z.infer<typeof profileSchema>
@@ -59,7 +61,7 @@ export default function PerfilPage() {
     formState: { errors, isDirty },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { fullName: '', companyName: '', nif: '', phone: '', brandColor: DEFAULT_BRAND_COLOR },
+    defaultValues: { fullName: '', companyName: '', nif: '', phone: '', brandColor: DEFAULT_BRAND_COLOR, iban: '', bankName: '' },
   })
 
   const brandColor = watch('brandColor')
@@ -72,6 +74,8 @@ export default function PerfilPage() {
         nif: profile.nif ?? '',
         phone: profile.phone ?? '',
         brandColor: profile.brandColor ?? DEFAULT_BRAND_COLOR,
+        iban: profile.iban ?? '',
+        bankName: profile.bankName ?? '',
       })
     }
   }, [profile, reset])
@@ -248,6 +252,26 @@ export default function PerfilPage() {
                   <input
                     {...register('phone')}
                     placeholder="+351 912 345 678"
+                    className="form-input"
+                    style={{ borderColor: 'var(--color-line-strong)' }}
+                  />
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="IBAN" error={errors.iban?.message} hint="Usado nos dados bancários das faturas.">
+                  <input
+                    {...register('iban')}
+                    maxLength={25}
+                    placeholder="PT50000000000000000000000"
+                    className="form-input"
+                    style={{ borderColor: errors.iban ? '#fca5a5' : 'var(--color-line-strong)' }}
+                  />
+                </FormField>
+                <FormField label="Banco" error={errors.bankName?.message}>
+                  <input
+                    {...register('bankName')}
+                    placeholder="Ex: Banco Silva"
                     className="form-input"
                     style={{ borderColor: 'var(--color-line-strong)' }}
                   />

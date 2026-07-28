@@ -39,6 +39,8 @@ public sealed class UpdateProfileCommandHandler(IAppDbContext db, ICurrentUserSe
             owner.Nif = string.IsNullOrWhiteSpace(command.Nif) ? null : command.Nif;
             owner.Phone = string.IsNullOrWhiteSpace(command.Phone) ? null : command.Phone;
             owner.BrandColor = string.IsNullOrWhiteSpace(command.BrandColor) ? null : command.BrandColor;
+            owner.Iban = string.IsNullOrWhiteSpace(command.Iban) ? null : command.Iban;
+            owner.BankName = string.IsNullOrWhiteSpace(command.BankName) ? null : command.BankName;
         }
 
         await db.SaveChangesAsync(cancellationToken);
@@ -51,7 +53,9 @@ public sealed class UpdateProfileCommandHandler(IAppDbContext db, ICurrentUserSe
             owner.Nif,
             owner.Phone,
             owner.LogoUrl,
-            owner.BrandColor
+            owner.BrandColor,
+            owner.Iban,
+            owner.BankName
         ));
     }
 }

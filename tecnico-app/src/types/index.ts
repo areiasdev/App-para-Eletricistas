@@ -1,4 +1,5 @@
 export type QuoteStatus = 'Draft' | 'Sent' | 'Accepted' | 'Rejected' | 'Invoiced'
+export type InvoiceStatus = 'Issued' | 'Paid' | 'Overdue' | 'Cancelled'
 export type InterventionStatus = 'Scheduled' | 'InProgress' | 'Completed'
 export type UserRole = 'Owner' | 'Admin' | 'Technician' | 'Commercial'
 
@@ -101,6 +102,35 @@ export interface Quote {
 }
 
 export interface QuoteLine {
+  id: string
+  description: string
+  quantity: number
+  unitPrice: number
+  vatRate: number
+  lineTotal: number
+}
+
+export interface Invoice {
+  id: string
+  number: string
+  status: InvoiceStatus
+  subTotal: number
+  vatTotal: number
+  total: number
+  discount?: number
+  notes?: string
+  issuedAt: string
+  dueDate: string
+  paidAt?: string
+  clientId: string
+  clientName: string
+  quoteId?: string
+  quoteNumber?: string
+  lines: InvoiceLine[]
+  createdAt: string
+}
+
+export interface InvoiceLine {
   id: string
   description: string
   quantity: number
