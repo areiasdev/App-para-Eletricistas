@@ -279,6 +279,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             </span>
           </div>
           <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
@@ -301,6 +302,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}

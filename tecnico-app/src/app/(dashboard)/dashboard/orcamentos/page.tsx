@@ -80,7 +80,7 @@ function OrcamentosContent() {
           placeholder="Pesquisar por número ou cliente..."
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
-          className="rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150 w-64"
+          className="rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150 w-full sm:w-64"
           style={{ border: '1.5px solid var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
           onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)' }}
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -117,6 +117,7 @@ function OrcamentosContent() {
 
       {/* Table */}
       <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+        <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
@@ -226,6 +227,7 @@ function OrcamentosContent() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Pagination */}

@@ -200,6 +200,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
 
       {/* Lines */}
       <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+        <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
@@ -222,6 +223,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
             ))}
           </tbody>
         </table>
+        </div>
 
         {/* Totals */}
         <div className="px-5 py-4 space-y-1.5 text-sm" style={{ borderTop: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>

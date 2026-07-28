@@ -111,6 +111,7 @@ function EquipamentosContent() {
       )}
 
       <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+        <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
@@ -207,6 +208,7 @@ function EquipamentosContent() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {data && data.totalPages > 1 && (

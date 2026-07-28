@@ -175,6 +175,7 @@ export default function PortalDashboardPage() {
           <section className="space-y-4">
             <h2 className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>Intervenções</h2>
             <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
@@ -201,6 +202,7 @@ export default function PortalDashboardPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </section>
         )}
@@ -210,6 +212,7 @@ export default function PortalDashboardPage() {
           <section className="space-y-4">
             <h2 className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>Orçamentos</h2>
             <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
@@ -236,6 +239,7 @@ export default function PortalDashboardPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </section>
         )}
@@ -245,6 +249,7 @@ export default function PortalDashboardPage() {
           <section className="space-y-4">
             <h2 className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>Faturas</h2>
             <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
@@ -278,6 +283,7 @@ export default function PortalDashboardPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </section>
         )}

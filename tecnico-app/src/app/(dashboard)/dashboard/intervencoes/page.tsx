@@ -27,7 +27,84 @@ function buildCalendarDays(year: number, month: number) {
   return cells
 }
 
-function CalendarView({ items }: { items: InterventionListItem[] }) {
+// ── Shared mobile card (list view rows + calendar view's mobile fallback) ──────
+function InterventionCard({
+  iv,
+  canManage,
+  onDelete,
+}: {
+  iv: InterventionListItem
+  canManage: boolean
+  onDelete: (id: string, title: string) => void
+}) {
+  const isLate = iv.status === 'Scheduled' && !!iv.scheduledAt && new Date(iv.scheduledAt) < new Date()
+
+  return (
+    <div
+      className="rounded-xl border p-4 space-y-2.5"
+      style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <Link
+          href={`/dashboard/intervencoes/${iv.id}`}
+          className="text-sm font-medium"
+          style={{ color: 'var(--color-ink)' }}
+        >
+          {iv.title}
+        </Link>
+        <InterventionStatusBadge status={iv.status} />
+      </div>
+      <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{iv.clientName}</p>
+      {isLate && (
+        <span
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+          style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}
+        >
+          ⚠ Em atraso
+        </span>
+      )}
+      <div className="flex items-center justify-between text-xs" style={{ color: 'var(--color-muted)' }}>
+        <span>{iv.scheduledAt ? formatDateTime(iv.scheduledAt) : 'Sem data agendada'}</span>
+        <span>{iv.equipmentCount > 0 ? `${iv.equipmentCount} equipamento${iv.equipmentCount !== 1 ? 's' : ''}` : ''}</span>
+      </div>
+      <div className="flex justify-end gap-3 pt-2 border-t" style={{ borderColor: 'var(--color-line)' }}>
+        <Link
+          href={`/dashboard/intervencoes/${iv.id}`}
+          className="text-xs font-medium"
+          style={{ color: 'var(--color-brand-500)' }}
+        >
+          Ver
+        </Link>
+        <Link
+          href={`/dashboard/intervencoes/${iv.id}/editar`}
+          className="text-xs font-medium"
+          style={{ color: 'var(--color-muted)' }}
+        >
+          Editar
+        </Link>
+        {canManage && (
+          <button
+            onClick={() => onDelete(iv.id, iv.title)}
+            className="text-xs font-medium"
+            style={{ color: 'var(--color-subtle)' }}
+          >
+            Apagar
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function CalendarView({
+  items,
+  canManage,
+  onDelete,
+}: {
+  items: InterventionListItem[]
+  canManage: boolean
+  onDelete: (id: string, title: string) => void
+}) {
   const today = new Date()
   const [calYear, setCalYear] = useState(today.getFullYear())
   const [calMonth, setCalMonth] = useState(today.getMonth())
@@ -60,77 +137,100 @@ function CalendarView({ items }: { items: InterventionListItem[] }) {
     Completed: '#16a34a',
   }
 
+  // Mobile fallback: a 7-column grid is unusable on a narrow phone screen, so below `sm:`
+  // we show the same interventions as a simple chronological list instead (reusing the
+  // list view's card component rather than a third rendering of the same data).
+  const chronological = [...items]
+    .filter(iv => iv.scheduledAt)
+    .sort((a, b) => new Date(a.scheduledAt!).getTime() - new Date(b.scheduledAt!).getTime())
+
   return (
     <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
-      {/* Calendar header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-line)' }}>
-        <button onClick={prevMonth} className="rounded-lg border px-3 py-1.5 text-sm transition-all duration-150"
-          style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}>
-          ←
-        </button>
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
-          {MONTHS_PT[calMonth]} {calYear}
-        </h2>
-        <button onClick={nextMonth} className="rounded-lg border px-3 py-1.5 text-sm transition-all duration-150"
-          style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}>
-          →
-        </button>
-      </div>
-      {/* Weekday headers */}
-      <div className="grid grid-cols-7 border-b" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
-        {WEEKDAYS.map(d => (
-          <div key={d} className="py-2 text-center text-xs font-semibold uppercase tracking-wide"
-            style={{ color: 'var(--color-muted)' }}>
-            {d}
-          </div>
-        ))}
-      </div>
-      {/* Days grid */}
-      <div className="grid grid-cols-7">
-        {cells.map((day, i) => {
-          const isToday = day !== null && calYear === today.getFullYear() && calMonth === today.getMonth() && day === today.getDate()
-          const dayItems = day ? (byDay[day] ?? []) : []
-          return (
-            <div
-              key={i}
-              className="min-h-[80px] p-2 border-b border-r"
-              style={{
-                borderColor: 'var(--color-line)',
-                backgroundColor: day === null ? 'var(--color-canvas)' : 'transparent',
-              }}
-            >
-              {day !== null && (
-                <>
-                  <span
-                    className="text-xs font-medium inline-flex w-6 h-6 items-center justify-center rounded-full mb-1"
-                    style={{
-                      backgroundColor: isToday ? 'var(--color-brand-500)' : 'transparent',
-                      color: isToday ? 'var(--color-sidebar)' : 'var(--color-muted)',
-                    }}
-                  >
-                    {day}
-                  </span>
-                  <div className="space-y-0.5">
-                    {dayItems.slice(0, 3).map(iv => (
-                      <Link
-                        key={iv.id}
-                        href={`/dashboard/intervencoes/${iv.id}`}
-                        className="block rounded px-1.5 py-0.5 text-xs truncate leading-tight transition-opacity duration-150 hover:opacity-80"
-                        style={{ backgroundColor: statusColors[iv.status] + '22', color: statusColors[iv.status], border: `1px solid ${statusColors[iv.status]}44` }}
-                        title={iv.title}
-                      >
-                        {iv.title}
-                      </Link>
-                    ))}
-                    {dayItems.length > 3 && (
-                      <span className="text-xs" style={{ color: 'var(--color-subtle)' }}>+{dayItems.length - 3} mais</span>
-                    )}
-                  </div>
-                </>
-              )}
+      {/* Desktop/tablet grid calendar — sm: and up */}
+      <div className="hidden sm:block">
+        {/* Calendar header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-line)' }}>
+          <button onClick={prevMonth} className="rounded-lg border px-3 py-1.5 text-sm transition-all duration-150"
+            style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}>
+            ←
+          </button>
+          <h2 className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
+            {MONTHS_PT[calMonth]} {calYear}
+          </h2>
+          <button onClick={nextMonth} className="rounded-lg border px-3 py-1.5 text-sm transition-all duration-150"
+            style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}>
+            →
+          </button>
+        </div>
+        {/* Weekday headers */}
+        <div className="grid grid-cols-7 border-b" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
+          {WEEKDAYS.map(d => (
+            <div key={d} className="py-2 text-center text-xs font-semibold uppercase tracking-wide"
+              style={{ color: 'var(--color-muted)' }}>
+              {d}
             </div>
-          )
-        })}
+          ))}
+        </div>
+        {/* Days grid */}
+        <div className="grid grid-cols-7">
+          {cells.map((day, i) => {
+            const isToday = day !== null && calYear === today.getFullYear() && calMonth === today.getMonth() && day === today.getDate()
+            const dayItems = day ? (byDay[day] ?? []) : []
+            return (
+              <div
+                key={i}
+                className="min-h-[80px] p-2 border-b border-r"
+                style={{
+                  borderColor: 'var(--color-line)',
+                  backgroundColor: day === null ? 'var(--color-canvas)' : 'transparent',
+                }}
+              >
+                {day !== null && (
+                  <>
+                    <span
+                      className="text-xs font-medium inline-flex w-6 h-6 items-center justify-center rounded-full mb-1"
+                      style={{
+                        backgroundColor: isToday ? 'var(--color-brand-500)' : 'transparent',
+                        color: isToday ? 'var(--color-sidebar)' : 'var(--color-muted)',
+                      }}
+                    >
+                      {day}
+                    </span>
+                    <div className="space-y-0.5">
+                      {dayItems.slice(0, 3).map(iv => (
+                        <Link
+                          key={iv.id}
+                          href={`/dashboard/intervencoes/${iv.id}`}
+                          className="block rounded px-1.5 py-0.5 text-xs truncate leading-tight transition-opacity duration-150 hover:opacity-80"
+                          style={{ backgroundColor: statusColors[iv.status] + '22', color: statusColors[iv.status], border: `1px solid ${statusColors[iv.status]}44` }}
+                          title={iv.title}
+                        >
+                          {iv.title}
+                        </Link>
+                      ))}
+                      {dayItems.length > 3 && (
+                        <span className="text-xs" style={{ color: 'var(--color-subtle)' }}>+{dayItems.length - 3} mais</span>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Mobile fallback — chronological list, below sm: */}
+      <div className="sm:hidden p-4 space-y-3">
+        {chronological.length === 0 ? (
+          <p className="text-sm text-center py-8" style={{ color: 'var(--color-subtle)' }}>
+            Nenhuma intervenção agendada.
+          </p>
+        ) : (
+          chronological.map(iv => (
+            <InterventionCard key={iv.id} iv={iv} canManage={canManage} onDelete={onDelete} />
+          ))
+        )}
       </div>
     </div>
   )
@@ -166,7 +266,10 @@ function IntervencoesContent() {
     status: status || undefined,
     clientId: clientIdFilter,
     page,
-    pageSize: view === 'calendar' ? 200 : 20,
+    // Backend caps pageSize at 100 (GetInterventionsQueryValidator) — 200 here silently
+    // 400'd every calendar-view fetch, so the calendar (grid and its mobile list fallback)
+    // has been rendering permanently empty.
+    pageSize: view === 'calendar' ? 100 : 20,
   })
 
   const deleteIntervention = useDeleteIntervention()
@@ -236,7 +339,7 @@ function IntervencoesContent() {
           placeholder="Pesquisar por título ou cliente..."
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm outline-none transition-all duration-150 w-64"
+          className="rounded-lg border px-3 py-2 text-sm outline-none transition-all duration-150 w-full sm:w-64"
           style={{ borderColor: 'var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
           onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)' }}
           onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -276,12 +379,12 @@ function IntervencoesContent() {
 
       {/* Calendar view */}
       {view === 'calendar' && (
-        <CalendarView items={data?.items ?? []} />
+        <CalendarView items={data?.items ?? []} canManage={canManage} onDelete={handleDelete} />
       )}
 
-      {/* Table */}
+      {/* Table — sm: and up. Below sm:, a stacked card list is rendered instead (see below). */}
       {view === 'list' && (<>
-      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+      <div className="hidden sm:block rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <table className="min-w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
@@ -389,6 +492,26 @@ function IntervencoesContent() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Stacked cards — below sm:, same data as the table above */}
+      <div className="sm:hidden space-y-3">
+        {isLoading &&
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-28 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--color-line)' }} />
+          ))}
+
+        {!isLoading && data?.items.length === 0 && (
+          <div className="rounded-xl border py-12 text-center text-sm" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-card)', color: 'var(--color-subtle)' }}>
+            {debouncedSearch || status || clientIdFilter
+              ? 'Nenhuma intervenção encontrada.'
+              : 'Ainda não tens intervenções registadas.'}
+          </div>
+        )}
+
+        {data?.items.map((iv) => (
+          <InterventionCard key={iv.id} iv={iv} canManage={canManage} onDelete={handleDelete} />
+        ))}
       </div>
 
       {/* Pagination */}
