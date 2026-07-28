@@ -67,7 +67,7 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         {
             await db.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("quotes_number") == true)
+        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("IX_Quotes_Number", StringComparison.OrdinalIgnoreCase) == true)
         {
             // Unique constraint violation on Number — concurrent request generated same number
             logger.LogWarning("Quote number conflict for {Number}, retrying.", number);
