@@ -24,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<IAppSettings, AppSettings>();
+        services.AddScoped<IStripeCheckoutService, StripeCheckoutService>();
+        services.AddScoped<IInvoicePayLinkService, InvoicePayLinkService>();
         services.AddScoped<MaintenanceAlertJob>();
         services.AddHttpContextAccessor();
 

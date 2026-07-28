@@ -46,3 +46,15 @@ export function useUpdateInvoiceStatus() {
     onSuccess: () => qc.invalidateQueries({ queryKey: [INVOICES_KEY] }),
   })
 }
+
+export function useInvoicePayLink() {
+  return useMutation({
+    mutationFn: (id: string) => invoicesApi.getPayLink(id),
+  })
+}
+
+export function useSendInvoiceEmail() {
+  return useMutation({
+    mutationFn: (id: string) => invoicesApi.sendEmail(id),
+  })
+}

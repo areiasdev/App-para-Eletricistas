@@ -40,3 +40,18 @@ public record InvoiceListItemDto(
     DateTime DueDate,
     DateTime CreatedAt
 );
+
+// Minimal, deliberately non-sensitive summary for the public/unauthenticated "Pagar agora"
+// page — reachable only via a magic-link token, not a logged-in session. No client contact
+// details, no owner-internal notes; just enough to render a payment confirmation screen.
+public record PublicInvoiceDto(
+    Guid Id,
+    string Number,
+    InvoiceStatus Status,
+    string ClientName,
+    string IssuerCompanyName,
+    decimal Total,
+    DateTime DueDate,
+    DateTime IssuedAt,
+    IReadOnlyList<InvoiceLineDto> Lines
+);

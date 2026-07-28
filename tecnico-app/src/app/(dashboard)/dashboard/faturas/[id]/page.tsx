@@ -3,7 +3,7 @@
 import { use, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { useInvoice, useUpdateInvoiceStatus } from '@/hooks/useInvoices'
+import { useInvoice, useUpdateInvoiceStatus, useInvoicePayLink, useSendInvoiceEmail } from '@/hooks/useInvoices'
 import { useCanManage } from '@/hooks/useCanManage'
 import { InvoiceStatusBadge } from '@/components/features/InvoiceStatusBadge'
 import { formatDate, formatCurrency } from '@/lib/utils/formatters'
@@ -15,6 +15,8 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
   const canManage = useCanManage()
   const { data: invoice, isLoading } = useInvoice(id)
   const updateStatus = useUpdateInvoiceStatus()
+  const payLink = useInvoicePayLink()
+  const sendEmail = useSendInvoiceEmail()
   const [pdfLoading, setPdfLoading] = useState(false)
 
   const handleStatusChange = (status: 'Paid' | 'Cancelled') => {
@@ -34,6 +36,27 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
     } finally {
       setPdfLoading(false)
     }
+  }
+
+  const handleCopyPayLink = () => {
+    payLink.mutate(id, {
+      onSuccess: async (url) => {
+        try {
+          await navigator.clipboard.writeText(url)
+          toast.success('Link de pagamento copiado.')
+        } catch {
+          toast.error('Não foi possível copiar o link automaticamente.')
+        }
+      },
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
+  }
+
+  const handleSendEmail = () => {
+    sendEmail.mutate(id, {
+      onSuccess: () => toast.success('Fatura enviada por email.'),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
   }
 
   if (isLoading) {
@@ -116,6 +139,32 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
             </svg>
             {pdfLoading ? 'A gerar...' : 'PDF'}
           </button>
+
+          {/* Payment link + email (Owner/Admin only) */}
+          {canManage && (
+            <>
+              <button
+                onClick={handleCopyPayLink}
+                disabled={payLink.isPending}
+                className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+                style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
+              >
+                {payLink.isPending ? 'A gerar...' : 'Copiar link de pagamento'}
+              </button>
+              <button
+                onClick={handleSendEmail}
+                disabled={sendEmail.isPending}
+                className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+                style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
+              >
+                {sendEmail.isPending ? 'A enviar...' : 'Enviar por email'}
+              </button>
+            </>
+          )}
 
           {/* Status transitions */}
           {canChangeStatus && (

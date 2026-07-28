@@ -24,6 +24,14 @@ public class Invoice : BaseEntity
     public Guid UserId { get; set; }
     public User User { get; set; } = null!;
 
+    // Online payment (Phase 4) — magic-link token for the public "Pagar agora" page.
+    // Only the SHA256 hash is ever persisted; the raw token lives only in the URL/email.
+    public string? PayTokenHash { get; set; }
+    public DateTime? PayTokenExpiresAt { get; set; }
+    // Set when a Stripe Checkout Session is created for this invoice; the webhook looks the
+    // invoice back up by this id when Stripe reports the payment as completed.
+    public string? StripeCheckoutSessionId { get; set; }
+
     public ICollection<InvoiceLine> Lines { get; set; } = [];
 
     // Propriedades calculadas — não persistidas

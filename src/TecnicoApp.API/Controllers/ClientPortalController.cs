@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.API.Controllers;
 
@@ -15,7 +16,8 @@ public class ClientPortalController(
     ICurrentUserService currentUser,
     ITokenService tokenService,
     IEmailService emailService,
-    IAppSettings appSettings) : ControllerBase
+    IAppSettings appSettings,
+    IInvoicePayLinkService payLinkService) : ControllerBase
 {
     // ── Tech-side: send magic link to client ─────────────────────────────────
 
@@ -246,6 +248,46 @@ public class ClientPortalController(
         return Ok(items);
     }
 
+    [HttpGet("invoices")]
+    [Authorize(Roles = "ClientPortal")]
+    [ProducesResponseType(typeof(IReadOnlyList<PortalInvoiceDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> Invoices(CancellationToken ct)
+    {
+        var (clientId, _, tokenVersion) = GetPortalClaims();
+        if (!await IsPortalTokenValidAsync(clientId, tokenVersion, ct)) return Unauthorized();
+
+        var invoices = await db.Invoices
+            .Include(i => i.Lines)
+            .Where(i => i.ClientId == clientId)
+            .OrderByDescending(i => i.CreatedAt)
+            .Take(50)
+            .ToListAsync(ct);
+
+        // Auto-generates a pay token server-side for any invoice that doesn't have one yet
+        // (or has an expired one) — the same reused logic as GetOrCreateInvoicePayLinkCommand,
+        // so a link a technician already sent for this invoice keeps working.
+        var items = new List<PortalInvoiceDto>(invoices.Count);
+        var changed = false;
+        foreach (var invoice in invoices)
+        {
+            string? payUrl = null;
+            if (invoice.Status is not (InvoiceStatus.Paid or InvoiceStatus.Cancelled))
+            {
+                var rawToken = payLinkService.GetOrCreateToken(invoice);
+                payUrl = $"{appSettings.BaseUrl}/pay/{rawToken}";
+                changed = true;
+            }
+
+            items.Add(new PortalInvoiceDto(
+                invoice.Id, invoice.Number, invoice.Status.ToString(),
+                invoice.Total, invoice.DueDate, invoice.CreatedAt, payUrl));
+        }
+
+        if (changed) await db.SaveChangesAsync(ct);
+
+        return Ok(items);
+    }
+
     private (Guid ClientId, Guid OwnerId, int TokenVersion) GetPortalClaims()
     {
         var clientId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -275,3 +317,4 @@ public record PortalClientDto(Guid Id, string Name, string? Email, string? Phone
 public record PortalEquipmentDto(Guid Id, string Type, string? Brand, string? Model, string? SerialNumber, DateTime? InstalledAt, DateTime? NextMaintenance, string? Notes);
 public record PortalInterventionDto(Guid Id, string Title, string Status, string? Description, DateTime? ScheduledAt, DateTime? CompletedAt, string? TechnicianName);
 public record PortalQuoteDto(Guid Id, string Number, string Status, decimal Total, DateTime? ValidUntil, DateTime CreatedAt);
+public record PortalInvoiceDto(Guid Id, string Number, string Status, decimal Total, DateTime DueDate, DateTime CreatedAt, string? PayUrl);

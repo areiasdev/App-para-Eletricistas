@@ -13,6 +13,7 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(i => i.Status).HasConversion<string>();
         builder.Property(i => i.Discount).HasColumnType("decimal(10,2)");
         builder.Property(i => i.Notes).HasMaxLength(2000);
+        builder.Property(i => i.PayTokenHash).HasMaxLength(64);
 
         builder.HasMany(i => i.Lines)
                .WithOne(l => l.Invoice)
@@ -31,6 +32,8 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.HasIndex(i => new { i.UserId, i.CreatedAt });
         builder.HasIndex(i => i.Number).IsUnique();
         builder.HasIndex(i => i.QuoteId);
+        // Looked up by the Stripe webhook to find the invoice a completed Checkout Session belongs to.
+        builder.HasIndex(i => i.StripeCheckoutSessionId);
         builder.HasQueryFilter(i => !i.IsDeleted);
 
         // Propriedades calculadas — não persistidas

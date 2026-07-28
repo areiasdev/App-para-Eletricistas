@@ -41,4 +41,9 @@ export const invoicesApi = {
     a.click()
     URL.revokeObjectURL(url)
   },
+
+  getPayLink: (id: string) =>
+    api.post<{ url: string }>(`/invoices/${id}/pay-link`).then((r) => r.data.url),
+
+  sendEmail: (id: string) => api.post(`/invoices/${id}/send-email`),
 }
