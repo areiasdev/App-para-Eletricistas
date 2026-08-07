@@ -32,7 +32,7 @@ public sealed class ResetPasswordCommandHandler(IAppDbContext db)
         user.PasswordResetTokenHash = null;
         user.PasswordResetTokenExpiresAt = null;
         // Invalidate any active refresh tokens for security
-        user.RefreshToken = null;
+        user.RefreshTokenHash = null;
         user.RefreshTokenExpiresAt = null;
 
         await db.SaveChangesAsync(cancellationToken);

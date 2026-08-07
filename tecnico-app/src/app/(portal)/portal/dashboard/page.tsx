@@ -8,17 +8,17 @@ import { usePortalStore } from '@/stores/portalStore'
 import { formatDate } from '@/lib/utils/formatters'
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  Scheduled:   { bg: 'rgba(245,158,11,0.12)',  text: '#f59e0b' },
-  InProgress:  { bg: 'rgba(59,130,246,0.12)',   text: '#60a5fa' },
-  Completed:   { bg: 'rgba(16,185,129,0.12)',   text: '#34d399' },
-  Cancelled:   { bg: 'rgba(239,68,68,0.12)',    text: '#f87171' },
+  Scheduled:   { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)',  text: 'var(--color-brand-500)' },
+  InProgress:  { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-400)' },
+  Completed:   { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-400)' },
+  Cancelled:   { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',    text: 'var(--color-danger-400)' },
   Draft:       { bg: 'rgba(255,255,255,0.06)',  text: 'rgba(255,255,255,0.4)' },
-  Sent:        { bg: 'rgba(59,130,246,0.12)',   text: '#60a5fa' },
-  Accepted:    { bg: 'rgba(16,185,129,0.12)',   text: '#34d399' },
-  Rejected:    { bg: 'rgba(239,68,68,0.12)',    text: '#f87171' },
-  Issued:      { bg: 'rgba(59,130,246,0.12)',   text: '#60a5fa' },
-  Paid:        { bg: 'rgba(16,185,129,0.12)',   text: '#34d399' },
-  Overdue:     { bg: 'rgba(245,158,11,0.12)',   text: '#f59e0b' },
+  Sent:        { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-400)' },
+  Accepted:    { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-400)' },
+  Rejected:    { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',    text: 'var(--color-danger-400)' },
+  Issued:      { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-400)' },
+  Paid:        { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-400)' },
+  Overdue:     { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)',   text: 'var(--color-brand-500)' },
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -101,7 +101,7 @@ export default function PortalDashboardPage() {
         style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <div className="flex items-center gap-2.5">
           <span className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: '#1c1917' }}>
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
             T
           </span>
           <span className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>Portal do cliente</span>
@@ -156,7 +156,7 @@ export default function PortalDashboardPage() {
                   )}
                   {e.nextMaintenanceDate && (
                     <div className="flex items-center gap-1.5 text-xs"
-                      style={{ color: new Date(e.nextMaintenanceDate) < new Date() ? '#f87171' : '#f59e0b' }}>
+                      style={{ color: new Date(e.nextMaintenanceDate) < new Date() ? 'var(--color-danger-400)' : 'var(--color-brand-500)' }}>
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
                         <path d="M6 3v3l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>

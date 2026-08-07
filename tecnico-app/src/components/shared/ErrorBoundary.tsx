@@ -41,12 +41,12 @@ export class ErrorBoundary extends Component<Props, State> {
         >
           <div
             className="w-12 h-12 rounded-full flex items-center justify-center"
-            style={{ backgroundColor: '#fef2f2' }}
+            style={{ backgroundColor: 'var(--color-danger-50)' }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
-                stroke="#dc2626"
+                stroke="var(--color-danger-600)"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"

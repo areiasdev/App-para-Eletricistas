@@ -73,7 +73,7 @@ export default function DashboardPage() {
       </div>
 
       {isError && (
-        <p className="text-sm rounded-xl px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+        <p className="text-sm rounded-xl px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
           Erro ao carregar estatísticas. Tenta recarregar a página.
         </p>
       )}
@@ -259,8 +259,8 @@ export default function DashboardPage() {
                       <span
                         className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
                         style={{
-                          backgroundColor: m.daysUntil <= 7 ? '#fef3c7' : '#f0fdf4',
-                          color: m.daysUntil <= 7 ? '#b45309' : '#15803d',
+                          backgroundColor: m.daysUntil <= 7 ? 'var(--color-brand-100)' : 'var(--color-success-50)',
+                          color: m.daysUntil <= 7 ? 'var(--color-brand-700)' : 'var(--color-success-700)',
                         }}
                       >
                         {m.daysUntil === 0 ? 'Hoje' : `${m.daysUntil}d`}

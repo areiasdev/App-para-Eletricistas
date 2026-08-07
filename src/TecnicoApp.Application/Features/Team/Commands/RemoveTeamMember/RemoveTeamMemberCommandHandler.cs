@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Team.Commands.RemoveTeamMember;
 
@@ -14,10 +15,7 @@ public class RemoveTeamMemberCommandHandler(IAppDbContext db, ICurrentUserServic
     {
         var userId = currentUser.UserId;
 
-        var caller = await db.Users.AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => new { OwnerId = u.OwnerId ?? u.Id, u.Role })
-            .FirstOrDefaultAsync(cancellationToken);
+        var caller = await db.ResolveCallerAsync(userId, cancellationToken);
 
         if (caller is null)
             return Result.Unauthorized();

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.DTOs;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Invoices.DTOs;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Invoices.Queries.GetInvoices;
 
@@ -14,10 +15,7 @@ public class GetInvoicesQueryHandler(IAppDbContext db, ICurrentUserService curre
         GetInvoicesQuery request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's invoices
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         var query = db.Invoices
             .AsNoTracking()

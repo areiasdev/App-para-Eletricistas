@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAcceptInvite } from '@/hooks/useTeam'
@@ -19,9 +19,10 @@ function AceitarConviteInner() {
 
   const accept = useAcceptInvite()
 
-  useEffect(() => {
-    if (!token) setError('Link de convite inválido ou expirado.')
-  }, [token])
+  // Derived, not state-in-effect: missing token is a render-time fact about the URL,
+  // not an external event to synchronize — setting it via useEffect caused an extra
+  // cascading render for something already knowable on the first render.
+  const displayError = error ?? (!token ? 'Link de convite inválido ou expirado.' : null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,9 +45,9 @@ function AceitarConviteInner() {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-canvas)' }}>
         <div className="w-full max-w-sm text-center space-y-4">
           <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
-            style={{ backgroundColor: 'rgba(16,185,129,0.15)' }}>
+            style={{ backgroundColor: 'color-mix(in srgb, var(--color-success-500) 15%, transparent)' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M5 13l4 4L19 7" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 13l4 4L19 7" stroke="var(--color-success-400)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--color-ink)' }}>Convite aceite!</h1>
@@ -71,7 +72,7 @@ function AceitarConviteInner() {
         <div className="text-center space-y-1">
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-              style={{ backgroundColor: 'var(--color-brand-500)', color: '#17171a' }}>
+              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
               T
             </span>
             <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>TécnicoApp</span>
@@ -82,9 +83,9 @@ function AceitarConviteInner() {
           </p>
         </div>
 
-        {error && (
-          <p className="text-sm rounded-lg px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
-            {error}
+        {displayError && (
+          <p className="text-sm rounded-lg px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
+            {displayError}
           </p>
         )}
 

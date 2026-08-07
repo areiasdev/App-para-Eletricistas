@@ -46,7 +46,7 @@ export default function NovoClientePage() {
       <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Novo Cliente</h1>
 
       {createClient.isError && (
-        <p className="text-sm rounded-xl px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+        <p className="text-sm rounded-xl px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
           {getErrorMessage(createClient.error)}
         </p>
       )}

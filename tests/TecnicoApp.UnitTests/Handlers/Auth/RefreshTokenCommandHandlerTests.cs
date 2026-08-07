@@ -10,6 +10,16 @@ namespace TecnicoApp.UnitTests.Handlers.Auth;
 
 public class RefreshTokenCommandHandlerTests
 {
+    private static ITokenService FakeTokenService()
+    {
+        // Deterministic stand-in for the real SHA256 hash — same input always yields the
+        // same "hash", which is all the handler's DB lookup-by-hash needs from this mock.
+        var tokenService = Substitute.For<ITokenService>();
+        tokenService.HashRefreshToken(Arg.Any<string>()).Returns(call => "hash-of-" + call.Arg<string>());
+        tokenService.GenerateAccessToken(Arg.Any<User>()).Returns("access-token");
+        return tokenService;
+    }
+
     [Fact]
     public async Task Handle_valid_token_rotates_it_and_returns_new_tokens()
     {
@@ -17,14 +27,13 @@ public class RefreshTokenCommandHandlerTests
         var user = new User
         {
             Email = "user@x.pt", PasswordHash = "h", FullName = "User",
-            RefreshToken = "old-refresh-token",
+            RefreshTokenHash = "hash-of-old-refresh-token",
             RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(1),
         };
         db.Users.Add(user);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        var tokenService = Substitute.For<ITokenService>();
-        tokenService.GenerateAccessToken(Arg.Any<User>()).Returns("access-token");
+        var tokenService = FakeTokenService();
         tokenService.GenerateRefreshToken().Returns("rotated-refresh-token");
 
         var handler = new RefreshTokenCommandHandler(db, tokenService);
@@ -32,7 +41,8 @@ public class RefreshTokenCommandHandlerTests
         var result = await handler.Handle(new RefreshTokenCommand("old-refresh-token"), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.RefreshToken.Should().Be("rotated-refresh-token");
+        result.Value.RefreshToken.Should().Be("rotated-refresh-token", "the caller must receive the raw token, never the hash");
+        db.Users.Single().RefreshTokenHash.Should().Be("hash-of-rotated-refresh-token", "only the hash is ever persisted");
     }
 
     [Fact]
@@ -42,14 +52,13 @@ public class RefreshTokenCommandHandlerTests
         var user = new User
         {
             Email = "user@x.pt", PasswordHash = "h", FullName = "User",
-            RefreshToken = "expired-token",
+            RefreshTokenHash = "hash-of-expired-token",
             RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(-1),
         };
         db.Users.Add(user);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        var tokenService = Substitute.For<ITokenService>();
-        var handler = new RefreshTokenCommandHandler(db, tokenService);
+        var handler = new RefreshTokenCommandHandler(db, FakeTokenService());
 
         var result = await handler.Handle(new RefreshTokenCommand("expired-token"), CancellationToken.None);
 
@@ -61,8 +70,7 @@ public class RefreshTokenCommandHandlerTests
     {
         using var db = TestDb.Create();
 
-        var tokenService = Substitute.For<ITokenService>();
-        var handler = new RefreshTokenCommandHandler(db, tokenService);
+        var handler = new RefreshTokenCommandHandler(db, FakeTokenService());
 
         var result = await handler.Handle(new RefreshTokenCommand("never-issued"), CancellationToken.None);
 

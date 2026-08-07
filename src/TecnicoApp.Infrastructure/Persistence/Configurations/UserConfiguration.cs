@@ -18,6 +18,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.Role).HasConversion<string>();
         builder.Property(u => u.OwnerId);
         builder.HasIndex(u => u.Email).IsUnique();
+        builder.HasIndex(u => u.RefreshTokenHash);
         builder.HasQueryFilter(u => !u.IsDeleted);
     }
 }

@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Interfaces;
@@ -16,7 +17,13 @@ public class InvoiceDueReminderJob(
     /// Uses a ±1 day window around "today + 3 days" to handle timing drift, mirroring
     /// MaintenanceAlertJob's windowing approach.
     /// </summary>
-    public async Task RunAsync()
+    /// <remarks>
+    /// AutomaticRetry is disabled: a mid-run failure after some reminders already sent would
+    /// otherwise cause Hangfire to replay the whole batch and double-send to clients already
+    /// notified. Missing a run is cheap — it retries naturally on the next daily schedule.
+    /// </remarks>
+    [AutomaticRetry(Attempts = 0)]
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         var targetDate = DateTime.UtcNow.Date.AddDays(3);
         var windowStart = targetDate.AddDays(-1);
@@ -30,7 +37,7 @@ public class InvoiceDueReminderJob(
                 (i.Status == InvoiceStatus.Issued || i.Status == InvoiceStatus.Overdue) &&
                 i.DueDate >= windowStart &&
                 i.DueDate < windowEnd)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         logger.LogInformation(
             "[InvoiceDueReminder] Found {Count} invoices due around {Date}",
@@ -54,7 +61,7 @@ public class InvoiceDueReminderJob(
                     $"Olá {client.Name}, a tua fatura {invoice.Number} no valor de {totalFormatted} " +
                     $"vence a {dueStr}. Consulta o teu email para efetuar o pagamento.";
 
-                await notificationService.SendWhatsAppAsync(client.Phone, message);
+                await notificationService.SendWhatsAppAsync(client.Phone, message, cancellationToken);
 
                 logger.LogInformation(
                     "[InvoiceDueReminder] Reminder sent to {Phone} for invoice {InvoiceId}",

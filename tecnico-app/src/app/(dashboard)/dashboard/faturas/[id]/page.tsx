@@ -173,7 +173,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
                 onClick={() => handleStatusChange('Paid')}
                 disabled={updateStatus.isPending}
                 className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
-                style={{ backgroundColor: '#16a34a', color: 'white' }}
+                style={{ backgroundColor: 'var(--color-success-600)', color: 'white' }}
               >
                 Marcar como Paga
               </button>
@@ -181,7 +181,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
                 onClick={() => handleStatusChange('Cancelled')}
                 disabled={updateStatus.isPending}
                 className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
-                style={{ border: '1px solid var(--color-line-strong)', color: '#dc2626', backgroundColor: 'transparent' }}
+                style={{ border: '1px solid var(--color-line-strong)', color: 'var(--color-danger-600)', backgroundColor: 'transparent' }}
               >
                 Cancelar
               </button>

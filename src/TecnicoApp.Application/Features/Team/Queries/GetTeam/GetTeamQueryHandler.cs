@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Team.DTOs;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Team.Queries.GetTeam;
 
@@ -15,10 +16,7 @@ public class GetTeamQueryHandler(IAppDbContext db, ICurrentUserService currentUs
         var userId = currentUser.UserId;
 
         // Resolve ownerId: if this user is a member, use their OwnerId; otherwise use their own Id
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(userId, cancellationToken);
 
         var members = await db.TeamMembers
             .AsNoTracking()

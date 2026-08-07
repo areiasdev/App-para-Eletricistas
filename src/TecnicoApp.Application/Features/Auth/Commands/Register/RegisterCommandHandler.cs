@@ -23,12 +23,13 @@ public sealed class RegisterCommandHandler(
         if (emailExists)
             return Result.Conflict("Já existe uma conta com este email.");
 
+        var refreshToken = tokenService.GenerateRefreshToken();
         var user = new User
         {
             Email = command.Email.ToLowerInvariant(),
             FullName = command.FullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(command.Password),
-            RefreshToken = tokenService.GenerateRefreshToken(),
+            RefreshTokenHash = tokenService.HashRefreshToken(refreshToken),
             RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30),
         };
 
@@ -39,7 +40,7 @@ public sealed class RegisterCommandHandler(
 
         return Result.Success(new AuthResponseDto(
             accessToken,
-            user.RefreshToken!,
+            refreshToken,
             user.RefreshTokenExpiresAt!.Value,
             new UserDto(user.Id, user.FullName, user.Email, user.Role, user.CompanyName, user.LogoUrl, user.BrandColor)
         ));

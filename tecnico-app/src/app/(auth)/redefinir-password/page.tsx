@@ -62,9 +62,9 @@ function ResetPasswordForm() {
   if (done) {
     return (
       <div className="space-y-4">
-        <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#d1fae5' }}>
+        <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-success-100)' }}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M5 13l4 4L19 7" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M5 13l4 4L19 7" stroke="var(--color-success-600)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Password atualizada!</h1>
@@ -126,7 +126,7 @@ function ResetPasswordForm() {
         </div>
 
         {error && (
-          <p className="text-sm rounded-lg px-4 py-3 border" style={{ color: '#dc2626', backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
+          <p className="text-sm rounded-lg px-4 py-3 border" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)', borderColor: 'var(--color-danger-200)' }}>
             {error}
           </p>
         )}
@@ -205,7 +205,7 @@ export default function ResetPasswordPage() {
         }
         .auth-input:focus {
           border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent);
         }
         .auth-input::placeholder {
           color: var(--color-subtle);

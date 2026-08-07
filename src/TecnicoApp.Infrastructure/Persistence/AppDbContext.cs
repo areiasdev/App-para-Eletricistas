@@ -66,9 +66,10 @@ public class AppDbContext : DbContext, IAppDbContext
                 var sensitiveFields = new HashSet<string>
                 {
                     "ModifiedAt", "ModifiedBy",
-                    "PasswordHash", "RefreshToken", "RefreshTokenExpiresAt",
+                    "PasswordHash", "RefreshTokenHash", "RefreshTokenExpiresAt",
                     "PasswordResetTokenHash", "PasswordResetTokenExpiresAt",
-                    "InviteTokenHash"
+                    "InviteTokenHash",
+                    "PortalTokenHash", "PayTokenHash"
                 };
                 var modified = entry.Properties
                     .Where(p => p.IsModified && !sensitiveFields.Contains(p.Metadata.Name))

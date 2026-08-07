@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Interventions.Commands.UpdateInterventionStatus;
 
@@ -13,10 +14,7 @@ public class UpdateInterventionStatusCommandHandler(IAppDbContext db, ICurrentUs
         UpdateInterventionStatusCommand request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's interventions
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         var intervention = await db.Interventions
             .FirstOrDefaultAsync(i => i.Id == request.Id, cancellationToken);

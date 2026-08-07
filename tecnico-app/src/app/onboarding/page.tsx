@@ -17,7 +17,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
 
 // Same default used by the Perfil page (perfil/page.tsx) — a fresh install's brand
 // color falls back to this amber until the owner picks their own.
-const DEFAULT_BRAND_COLOR = '#f59e0b'
+const DEFAULT_BRAND_COLOR = 'var(--color-brand-500)'
 
 const STEPS = [
   { id: 1, label: 'Empresa' },
@@ -38,7 +38,7 @@ function FormField({ label, hint, error, children }: {
       </label>
       {children}
       {hint && !error && <p className="mt-1 text-xs" style={{ color: 'var(--color-subtle)' }}>{hint}</p>}
-      {error && <p className="mt-1 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
+      {error && <p className="mt-1 text-xs" style={{ color: 'var(--color-danger-600)' }}>{error}</p>}
     </div>
   )
 }
@@ -256,7 +256,7 @@ export default function OnboardingPage() {
                   {...registerCompany('companyName')}
                   placeholder="Ex: Construções Silva Lda."
                   className="form-input"
-                  style={{ borderColor: companyErrors.companyName ? '#fca5a5' : 'var(--color-line-strong)' }}
+                  style={{ borderColor: companyErrors.companyName ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
                   autoFocus
                 />
               </FormField>
@@ -268,7 +268,7 @@ export default function OnboardingPage() {
                     maxLength={9}
                     placeholder="123456789"
                     className="form-input"
-                    style={{ borderColor: companyErrors.nif ? '#fca5a5' : 'var(--color-line-strong)' }}
+                    style={{ borderColor: companyErrors.nif ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
                   />
                 </FormField>
                 <FormField label="Telefone" error={companyErrors.phone?.message}>
@@ -333,7 +333,7 @@ export default function OnboardingPage() {
                     >
                       {uploadLogo.isPending ? 'A enviar...' : 'Carregar logótipo'}
                     </button>
-                    {logoError && <p className="mt-1.5 text-xs" style={{ color: '#dc2626' }}>{logoError}</p>}
+                    {logoError && <p className="mt-1.5 text-xs" style={{ color: 'var(--color-danger-600)' }}>{logoError}</p>}
                   </div>
                 </div>
               </FormField>
@@ -350,7 +350,7 @@ export default function OnboardingPage() {
                   <input
                     value={brandColorInput}
                     onChange={(e) => handleColorTextChange(e.target.value)}
-                    placeholder="#f59e0b"
+                    placeholder="var(--color-brand-500)"
                     className="form-input"
                     style={{ maxWidth: 140, borderColor: 'var(--color-line-strong)' }}
                   />
@@ -422,7 +422,7 @@ export default function OnboardingPage() {
         }
         .form-input:focus {
           border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent);
         }
         .form-input::placeholder {
           color: var(--color-subtle);

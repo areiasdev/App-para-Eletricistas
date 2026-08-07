@@ -111,7 +111,7 @@ export default function RelatoriosPage() {
 
       {/* Error */}
       {error && (
-        <p className="text-sm rounded-lg px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+        <p className="text-sm rounded-lg px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
           {getErrorMessage(error)}
         </p>
       )}
@@ -146,9 +146,9 @@ export default function RelatoriosPage() {
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--color-ink)' }}>{row.technicianName}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{row.totalInterventions}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{row.completedInterventions}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: '#f59e0b' }}>{fmt(row.materialsCost)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-brand-500)' }}>{fmt(row.materialsCost)}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>{fmt(row.quotedRevenue)}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: '#34d399' }}>{margin(row.quotedRevenue, row.materialsCost)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-success-400)' }}>{margin(row.quotedRevenue, row.materialsCost)}</td>
                   </tr>
                 ))
                 : data.byClient.map((row: ProfitabilityByClient, i) => (
@@ -156,9 +156,9 @@ export default function RelatoriosPage() {
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--color-ink)' }}>{row.clientName}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{row.totalInterventions}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{row.completedInterventions}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: '#f59e0b' }}>{fmt(row.materialsCost)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-brand-500)' }}>{fmt(row.materialsCost)}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>{fmt(row.quotedRevenue)}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: '#34d399' }}>{margin(row.quotedRevenue, row.materialsCost)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-success-400)' }}>{margin(row.quotedRevenue, row.materialsCost)}</td>
                   </tr>
                 ))
               }

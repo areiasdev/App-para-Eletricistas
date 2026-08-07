@@ -22,7 +22,8 @@ public sealed class LoginCommandHandler(
         if (user is null || !BCrypt.Net.BCrypt.Verify(command.Password, user.PasswordHash))
             return Result.Unauthorized();
 
-        user.RefreshToken = tokenService.GenerateRefreshToken();
+        var refreshToken = tokenService.GenerateRefreshToken();
+        user.RefreshTokenHash = tokenService.HashRefreshToken(refreshToken);
         user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
         user.ModifiedAt = DateTime.UtcNow;
 
@@ -37,7 +38,7 @@ public sealed class LoginCommandHandler(
 
         return Result.Success(new AuthResponseDto(
             accessToken,
-            user.RefreshToken!,
+            refreshToken,
             user.RefreshTokenExpiresAt!.Value,
             new UserDto(user.Id, user.FullName, user.Email, user.Role, owner?.CompanyName, owner?.LogoUrl, owner?.BrandColor)
         ));

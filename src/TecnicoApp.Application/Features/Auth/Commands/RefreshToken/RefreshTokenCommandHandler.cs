@@ -15,13 +15,15 @@ public sealed class RefreshTokenCommandHandler(
         RefreshTokenCommand command,
         CancellationToken cancellationToken)
     {
+        var incomingHash = tokenService.HashRefreshToken(command.RefreshToken);
         var user = await db.Users
-            .FirstOrDefaultAsync(u => u.RefreshToken == command.RefreshToken, cancellationToken);
+            .FirstOrDefaultAsync(u => u.RefreshTokenHash == incomingHash, cancellationToken);
 
         if (user is null || user.RefreshTokenExpiresAt is null || user.RefreshTokenExpiresAt < DateTime.UtcNow)
             return Result.Unauthorized();
 
-        user.RefreshToken = tokenService.GenerateRefreshToken();
+        var newRefreshToken = tokenService.GenerateRefreshToken();
+        user.RefreshTokenHash = tokenService.HashRefreshToken(newRefreshToken);
         user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
         user.ModifiedAt = DateTime.UtcNow;
 
@@ -36,7 +38,7 @@ public sealed class RefreshTokenCommandHandler(
 
         return Result.Success(new AuthResponseDto(
             accessToken,
-            user.RefreshToken!,
+            newRefreshToken,
             user.RefreshTokenExpiresAt!.Value,
             new UserDto(user.Id, user.FullName, user.Email, user.Role, owner?.CompanyName, owner?.LogoUrl, owner?.BrandColor)
         ));

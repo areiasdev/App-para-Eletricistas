@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { cn } from '@/lib/utils'
 import { useClients } from '@/hooks/useClients'
 import { useEquipmentList } from '@/hooks/useEquipment'
+import { useQuotes } from '@/hooks/useQuotes'
 import { useTeam } from '@/hooks/useTeam'
 import type { InterventionMaterial } from '@/types'
 
@@ -18,9 +19,27 @@ const interventionSchema = z.object({
   technicianNotes: z.string().max(5000).optional().or(z.literal('')),
   quoteId: z.string().optional(),
   equipmentIds: z.array(z.string()),
-  photos: z.array(z.string().url('URL inválido')).optional(),
+  photos: z
+    .array(
+      z
+        .string()
+        .url('URL inválido')
+        .refine(isHttpsOrLocalhostUrl, 'As fotos devem ser URLs HTTPS válidos.'),
+    )
+    .max(20, 'Máximo de 20 fotos por intervenção.')
+    .refine((urls) => new Set(urls).size === urls.length, 'Não são permitidas fotos duplicadas.')
+    .optional(),
   assignedToUserId: z.string().optional(),
 })
+
+function isHttpsOrLocalhostUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.hostname === 'localhost'
+  } catch {
+    return false
+  }
+}
 
 export type InterventionFormValues = z.infer<typeof interventionSchema>
 
@@ -106,6 +125,7 @@ export function InterventionForm({
   useEffect(() => {
     if (previousClientIdRef.current !== clientId) {
       setValue('equipmentIds', [])
+      setValue('quoteId', '')
       previousClientIdRef.current = clientId
     }
   }, [clientId, setValue])
@@ -114,6 +134,22 @@ export function InterventionForm({
     clientId: clientId || undefined,
     pageSize: 100,
   })
+
+  const { data: quotesData } = useQuotes({
+    clientId: clientId || undefined,
+    pageSize: 100,
+  })
+
+  // Same async-options problem as clientId above: quoteId's <select> options depend on
+  // quotesData (loaded after mount), so the uncontrolled defaultValue can't select it yet.
+  const appliedDefaultQuoteRef = useRef(false)
+  useEffect(() => {
+    if (appliedDefaultQuoteRef.current) return
+    if (defaultValues?.quoteId && quotesData) {
+      setValue('quoteId', defaultValues.quoteId, { shouldValidate: false })
+      appliedDefaultQuoteRef.current = true
+    }
+  }, [quotesData, defaultValues?.quoteId, setValue])
 
   const toggleEquipment = (id: string) => {
     const next = selectedEquipmentIds.includes(id)
@@ -132,8 +168,9 @@ export function InterventionForm({
           Dados da intervenção
         </h2>
 
-        <Field label="Título *" error={errors.title?.message}>
+        <Field label="Título *" id="if-title" error={errors.title?.message}>
           <input
+            id="if-title"
             {...register('title')}
             placeholder="Ex: Revisão anual ar condicionado"
             className={inputCls(!!errors.title)}
@@ -141,8 +178,8 @@ export function InterventionForm({
         </Field>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Cliente *" error={errors.clientId?.message}>
-            <select {...register('clientId')} className={inputCls(!!errors.clientId)}>
+          <Field label="Cliente *" id="if-clientId" error={errors.clientId?.message}>
+            <select id="if-clientId" {...register('clientId')} className={inputCls(!!errors.clientId)}>
               <option value="">Selecionar cliente...</option>
               {clientsData?.items.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -150,26 +187,45 @@ export function InterventionForm({
             </select>
           </Field>
 
-          <Field label="Data agendada" error={errors.scheduledAt?.message}>
-            <input type="datetime-local" {...register('scheduledAt')} className={inputCls(false)} />
+          <Field label="Data agendada" id="if-scheduledAt" error={errors.scheduledAt?.message}>
+            <input id="if-scheduledAt" type="datetime-local" {...register('scheduledAt')} className={inputCls(false)} />
           </Field>
         </div>
 
-        {teamMembers.length > 0 && (
-          <Field label="Atribuir a" error={undefined}>
-            <select {...register('assignedToUserId')} className={inputCls(false)}>
-              <option value="">— Não atribuído —</option>
-              {teamMembers.map((m) => (
-                <option key={m.memberId} value={m.memberId}>
-                  {m.fullName || m.email}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {teamMembers.length > 0 && (
+            <Field label="Atribuir a" id="if-assignedToUserId" error={undefined}>
+              <select id="if-assignedToUserId" {...register('assignedToUserId')} className={inputCls(false)}>
+                <option value="">— Não atribuído —</option>
+                {teamMembers.map((m) => (
+                  <option key={m.memberId} value={m.memberId}>
+                    {m.fullName || m.email}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+
+          <Field label="Orçamento associado" id="if-quoteId" error={undefined}>
+            <select id="if-quoteId" {...register('quoteId')} className={inputCls(false)} disabled={!clientId}>
+              <option value="">— Sem orçamento —</option>
+              {quotesData?.items.map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.number} · {q.total.toFixed(2)} €
                 </option>
               ))}
             </select>
+            {!clientId && (
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--color-subtle)' }}>
+                Seleciona um cliente para ver os seus orçamentos.
+              </p>
+            )}
           </Field>
-        )}
+        </div>
 
-        <Field label="Descrição" error={errors.description?.message}>
+        <Field label="Descrição" id="if-description" error={errors.description?.message}>
           <textarea
+            id="if-description"
             {...register('description')}
             rows={3}
             placeholder="Descrição do trabalho a realizar..."
@@ -251,6 +307,7 @@ export function InterventionForm({
         <div className="grid grid-cols-12 gap-2">
           <input
             type="text"
+            aria-label="Descrição do material"
             value={matName}
             onChange={e => setMatName(e.target.value)}
             placeholder="Descrição (ex: Tubo PVC 32mm)"
@@ -258,6 +315,7 @@ export function InterventionForm({
           />
           <input
             type="number"
+            aria-label="Quantidade"
             value={matQty}
             onChange={e => setMatQty(e.target.value)}
             placeholder="Qtd."
@@ -267,6 +325,7 @@ export function InterventionForm({
           />
           <input
             type="number"
+            aria-label="Custo por unidade"
             value={matCost}
             onChange={e => setMatCost(e.target.value)}
             placeholder="€/un."
@@ -311,7 +370,7 @@ export function InterventionForm({
                         type="button"
                         onClick={() => removeMaterial(i)}
                         className="text-xs rounded px-1 transition-colors duration-150"
-                        style={{ color: '#dc2626' }}
+                        style={{ color: 'var(--color-danger-600)' }}
                       >
                         ×
                       </button>
@@ -330,8 +389,9 @@ export function InterventionForm({
         <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
           Notas técnicas
         </h2>
-        <Field label="Notas do técnico" error={errors.technicianNotes?.message}>
+        <Field label="Notas do técnico" id="if-technicianNotes" error={errors.technicianNotes?.message}>
           <textarea
+            id="if-technicianNotes"
             {...register('technicianNotes')}
             rows={4}
             placeholder="Observações, próximas ações..."
@@ -376,7 +436,7 @@ export function InterventionForm({
                   type="button"
                   onClick={() => removePhoto(i)}
                   className="shrink-0 text-xs px-2 py-0.5 rounded transition-colors duration-150"
-                  style={{ color: '#dc2626' }}
+                  style={{ color: 'var(--color-danger-600)' }}
                 >
                   Remover
                 </button>
@@ -398,14 +458,14 @@ export function InterventionForm({
   )
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, id, error, children }: { label: string; id?: string; error?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
+      <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
         {label}
       </label>
       {children}
-      {error && <p className="mt-1.5 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
+      {error && <p className="mt-1.5 text-xs" style={{ color: 'var(--color-danger-600)' }}>{error}</p>}
     </div>
   )
 }

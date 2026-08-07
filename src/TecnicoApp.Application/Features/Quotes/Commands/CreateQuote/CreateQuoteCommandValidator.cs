@@ -8,6 +8,8 @@ public class CreateQuoteCommandValidator : AbstractValidator<CreateQuoteCommand>
     {
         RuleFor(x => x.ClientId).NotEmpty();
 
+        RuleFor(x => x.Notes).MaximumLength(2000).When(x => x.Notes != null);
+
         RuleFor(x => x.Lines)
             .NotEmpty().WithMessage("O orçamento deve ter pelo menos uma linha.");
 

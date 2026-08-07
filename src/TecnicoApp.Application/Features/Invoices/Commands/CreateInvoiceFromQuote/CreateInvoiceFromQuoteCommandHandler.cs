@@ -6,6 +6,7 @@ using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Invoices.DTOs;
 using TecnicoApp.Domain.Entities;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Invoices.Commands.CreateInvoiceFromQuote;
 
@@ -19,10 +20,7 @@ public class CreateInvoiceFromQuoteCommandHandler(
         CreateInvoiceFromQuoteCommand request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's quotes/invoices
-        var caller = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => new { OwnerId = u.OwnerId ?? u.Id, u.Role })
-            .FirstOrDefaultAsync(cancellationToken);
+        var caller = await db.ResolveCallerAsync(currentUser.UserId, cancellationToken);
 
         if (caller is null)
             return Result.Unauthorized();
@@ -58,7 +56,7 @@ public class CreateInvoiceFromQuoteCommandHandler(
         var year = DateTime.UtcNow.Year;
         var count = await db.Invoices
             .CountAsync(i => i.UserId == ownerId && i.CreatedAt.Year == year, cancellationToken);
-        var number = $"FT-{year}-{(count + 1):D4}";
+        var number = DocumentNumberExtensions.FormatDocumentNumber("FT", year, count);
 
         var issuedAt = DateTime.UtcNow;
 
@@ -95,7 +93,7 @@ public class CreateInvoiceFromQuoteCommandHandler(
             db.Invoices.Remove(invoice);
             var retryCount = await db.Invoices
                 .CountAsync(i => i.UserId == ownerId && i.CreatedAt.Year == year, cancellationToken);
-            invoice.Number = $"FT-{year}-{(retryCount + 1):D4}";
+            invoice.Number = DocumentNumberExtensions.FormatDocumentNumber("FT", year, retryCount);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync(cancellationToken);
         }

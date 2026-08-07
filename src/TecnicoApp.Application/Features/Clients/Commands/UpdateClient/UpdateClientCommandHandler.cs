@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Clients.DTOs;
 using TecnicoApp.Domain.ValueObjects;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Clients.Commands.UpdateClient;
 
@@ -17,10 +18,7 @@ public sealed class UpdateClientCommandHandler(
         CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's clients
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         var client = await db.Clients
             .FirstOrDefaultAsync(

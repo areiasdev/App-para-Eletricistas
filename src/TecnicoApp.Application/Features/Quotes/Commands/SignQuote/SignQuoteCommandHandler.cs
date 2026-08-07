@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.SignQuote;
 
@@ -12,10 +13,7 @@ public class SignQuoteCommandHandler(IAppDbContext db, ICurrentUserService curre
     public async Task<Result> Handle(SignQuoteCommand request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's quotes
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         var ownerExists = await db.Users.AsNoTracking()
             .AnyAsync(u => u.Id == ownerId, cancellationToken);

@@ -28,7 +28,7 @@ public sealed class TokenService(IConfiguration configuration) : ITokenService
             audience: configuration["Jwt:Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddMinutes(
-                double.Parse(configuration["Jwt:ExpiryMinutes"] ?? "60")),
+                double.Parse(configuration["Jwt:ExpiryMinutes"] ?? "60", System.Globalization.CultureInfo.InvariantCulture)),
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
         );
 
@@ -37,6 +37,12 @@ public sealed class TokenService(IConfiguration configuration) : ITokenService
 
     public string GenerateRefreshToken()
         => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+    // Refresh tokens are high-entropy random values (not passwords), so an unsalted
+    // hash is fine — same reasoning already applied to team-invite tokens elsewhere in
+    // this codebase. Hashing at rest means a DB leak alone can't be used to hijack sessions.
+    public string HashRefreshToken(string rawToken)
+        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
 
     public string GeneratePortalToken(Guid clientId, Guid ownerId, string clientName, string clientEmail, int tokenVersion)
     {

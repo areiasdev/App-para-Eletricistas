@@ -82,7 +82,7 @@ function OrcamentosContent() {
           onChange={(e) => handleSearch(e.target.value)}
           className="rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150 w-full sm:w-64"
           style={{ border: '1.5px solid var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
-          onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)' }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent)' }}
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
         />
         <select
@@ -90,7 +90,7 @@ function OrcamentosContent() {
           onChange={(e) => { setStatus(e.target.value as QuoteStatus | ''); setPage(1) }}
           className="rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150"
           style={{ border: '1.5px solid var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
-          onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)' }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent)' }}
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
         >
           {statusOptions.map(o => (
@@ -110,7 +110,7 @@ function OrcamentosContent() {
 
       {/* Error */}
       {isError && (
-        <p className="text-sm rounded-xl px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+        <p className="text-sm rounded-xl px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
           {getErrorMessage(error)}
         </p>
       )}
@@ -213,7 +213,7 @@ function OrcamentosContent() {
                             onClick={() => handleDelete(quote.id, quote.number)}
                             className="text-xs font-medium transition-colors duration-150"
                             style={{ color: 'var(--color-subtle)' }}
-                            onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+                            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-danger-600)')}
                             onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-subtle)')}
                           >
                             Apagar

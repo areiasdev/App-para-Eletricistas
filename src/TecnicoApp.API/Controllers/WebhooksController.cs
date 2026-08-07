@@ -18,7 +18,8 @@ public class WebhooksController(ISender sender, IConfiguration configuration) : 
     {
         // Raw body is required for signature verification — [FromBody] model binding would
         // parse/re-serialize the JSON and break the signature check.
-        var json = await new StreamReader(Request.Body).ReadToEndAsync(ct);
+        using var reader = new StreamReader(Request.Body);
+        var json = await reader.ReadToEndAsync(ct);
         var webhookSecret = configuration["Stripe:WebhookSecret"];
 
         Event stripeEvent;

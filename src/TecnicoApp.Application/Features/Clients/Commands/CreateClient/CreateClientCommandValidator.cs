@@ -24,6 +24,10 @@ public class CreateClientCommandValidator : AbstractValidator<CreateClientComman
             .MaximumLength(20)
             .When(x => !string.IsNullOrEmpty(x.Phone));
 
+        RuleFor(x => x.Notes)
+            .MaximumLength(2000)
+            .When(x => !string.IsNullOrEmpty(x.Notes));
+
         When(x => x.Address is not null, () =>
         {
             RuleFor(x => x.Address!.Street).NotEmpty().MaximumLength(300);

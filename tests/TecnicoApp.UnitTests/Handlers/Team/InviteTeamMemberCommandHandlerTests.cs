@@ -114,4 +114,41 @@ public class InviteTeamMemberCommandHandlerTests
         member.InviteTokenExpiresAt.Should().NotBeNull();
         member.InviteTokenExpiresAt!.Value.Should().BeCloseTo(DateTime.UtcNow.AddDays(7), TimeSpan.FromMinutes(1));
     }
+
+    [Fact]
+    public async Task Handle_inviting_an_existing_independent_user_does_not_reassign_their_tenant_yet()
+    {
+        // Regression test: an existing, independent account (its own Owner, no team of its
+        // own) must NOT have its OwnerId/Role reassigned just because someone invites its
+        // email address. Reassignment must wait until the invite is explicitly accepted
+        // (see AcceptInviteCommandHandlerTests), otherwise any Owner/Admin could hijack an
+        // arbitrary existing account out from under its holder with a single API call.
+        using var db = TestDb.Create();
+        var owner = new User { Email = "owner@x.pt", PasswordHash = "h", FullName = "Owner" };
+        var victim = new User
+        {
+            Email = "victim@x.pt", PasswordHash = "h", FullName = "Victim",
+            OwnerId = null, Role = UserRole.Owner
+        };
+        db.Users.AddRange(owner, victim);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        var currentUser = Substitute.For<ICurrentUserService>();
+        currentUser.UserId.Returns(owner.Id);
+
+        var (email, settings, logger) = Deps();
+        var handler = new InviteTeamMemberCommandHandler(db, currentUser, email, settings, logger);
+
+        var result = await handler.Handle(new InviteTeamMemberCommand("victim@x.pt", UserRole.Technician), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var reloadedVictim = db.Users.Single(u => u.Id == victim.Id);
+        reloadedVictim.OwnerId.Should().BeNull("the invite alone must not reassign the victim's tenant");
+        reloadedVictim.Role.Should().Be(UserRole.Owner, "the invite alone must not downgrade the victim's role");
+
+        var teamMember = db.TeamMembers.Single();
+        teamMember.OwnerId.Should().Be(owner.Id, "the pending assignment is tracked on the TeamMember row");
+        teamMember.Role.Should().Be(UserRole.Technician);
+        teamMember.IsAccepted.Should().BeFalse();
+    }
 }

@@ -88,8 +88,8 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
             <button
               onClick={handleDelete}
               className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
-              style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+              style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
             >
               Apagar
@@ -120,15 +120,15 @@ export default function ClienteDetailPage({ params }: { params: Promise<{ id: st
               onClick={handleSendPortalAccess}
               disabled={portalSending}
               className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
-              style={{ borderColor: 'rgba(16,185,129,0.4)', color: '#34d399', backgroundColor: 'rgba(16,185,129,0.06)' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.12)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.06)')}
+              style={{ borderColor: 'color-mix(in srgb, var(--color-success-500) 40%, transparent)', color: 'var(--color-success-400)', backgroundColor: 'color-mix(in srgb, var(--color-success-500) 6%, transparent)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-success-500) 12%, transparent)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--color-success-500) 6%, transparent)')}
             >
               {portalSending ? 'A enviar...' : 'Enviar acesso ao portal →'}
             </button>
           </div>
           {portalMsg && (
-            <p className="text-xs px-1" style={{ color: portalMsg.type === 'ok' ? '#34d399' : '#f87171' }}>
+            <p className="text-xs px-1" style={{ color: portalMsg.type === 'ok' ? 'var(--color-success-400)' : 'var(--color-danger-400)' }}>
               {portalMsg.text}
             </p>
           )}

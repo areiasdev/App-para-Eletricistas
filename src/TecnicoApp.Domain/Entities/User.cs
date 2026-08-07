@@ -14,7 +14,7 @@ public class User : BaseEntity
     public string? BrandColor { get; set; }
     public string? Iban { get; set; }
     public string? BankName { get; set; }
-    public string? RefreshToken { get; set; }
+    public string? RefreshTokenHash { get; set; }
     public DateTime? RefreshTokenExpiresAt { get; set; }
     public string? PasswordResetTokenHash { get; set; }
     public DateTime? PasswordResetTokenExpiresAt { get; set; }

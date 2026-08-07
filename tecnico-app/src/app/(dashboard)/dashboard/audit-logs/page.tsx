@@ -10,9 +10,9 @@ import { AccessDenied } from '@/components/shared/AccessDenied'
 const ENTITY_TYPES = ['Client', 'Equipment', 'Intervention', 'Quote', 'TeamMember']
 
 const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
-  Created: { bg: 'rgba(16,185,129,0.12)', text: '#34d399' },
-  Updated: { bg: 'rgba(245,158,11,0.12)', text: '#f59e0b' },
-  Deleted: { bg: 'rgba(239,68,68,0.12)',  text: '#f87171' },
+  Created: { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)', text: 'var(--color-success-400)' },
+  Updated: { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)', text: 'var(--color-brand-500)' },
+  Deleted: { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',  text: 'var(--color-danger-400)' },
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -105,7 +105,7 @@ export default function AuditLogsPage() {
 
       {/* Error */}
       {error && (
-        <p className="text-sm rounded-lg px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+        <p className="text-sm rounded-lg px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
           {getErrorMessage(error)}
         </p>
       )}

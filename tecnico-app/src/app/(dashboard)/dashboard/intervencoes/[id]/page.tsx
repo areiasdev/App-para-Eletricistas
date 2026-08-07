@@ -16,7 +16,7 @@ const nextStatuses: Partial<Record<InterventionStatus, { status: InterventionSta
     { status: 'InProgress', label: 'Iniciar intervenção', bg: 'var(--color-brand-500)', color: 'var(--color-sidebar)' },
   ],
   InProgress: [
-    { status: 'Completed', label: 'Marcar como concluída', bg: '#16a34a', color: 'white' },
+    { status: 'Completed', label: 'Marcar como concluída', bg: 'var(--color-success-600)', color: 'white' },
     { status: 'Scheduled', label: 'Reagendar', bg: 'transparent', color: 'var(--color-muted)' },
   ],
 }
@@ -152,8 +152,8 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             <button
               onClick={handleDelete}
               className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
-              style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+              style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
             >
               Apagar
@@ -184,18 +184,18 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
       {isOverdue && (
         <div
           className="flex items-start gap-3 rounded-xl border px-4 py-3"
-          style={{ backgroundColor: '#fffbeb', borderColor: '#fcd34d' }}
+          style={{ backgroundColor: 'var(--color-brand-50)', borderColor: 'var(--color-brand-300)' }}
         >
           <svg className="shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <path d="M10 2L1.5 17h17L10 2z" stroke="#d97706" strokeWidth="1.5" strokeLinejoin="round" fill="#fef3c7"/>
-            <path d="M10 8v4" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round"/>
-            <circle cx="10" cy="14.5" r="0.75" fill="#d97706"/>
+            <path d="M10 2L1.5 17h17L10 2z" stroke="var(--color-brand-600)" strokeWidth="1.5" strokeLinejoin="round" fill="var(--color-brand-100)"/>
+            <path d="M10 8v4" stroke="var(--color-brand-600)" strokeWidth="1.5" strokeLinecap="round"/>
+            <circle cx="10" cy="14.5" r="0.75" fill="var(--color-brand-600)"/>
           </svg>
           <div>
-            <p className="text-sm font-semibold" style={{ color: '#92400e' }}>
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-brand-800)' }}>
               Intervenção em atraso
             </p>
-            <p className="text-sm mt-0.5" style={{ color: '#b45309' }}>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--color-brand-700)' }}>
               A data agendada ({formatDateTime(iv.scheduledAt!)}) já passou e a intervenção ainda está como{' '}
               <strong>Agendada</strong>. Inicia a intervenção ou reagenda para uma nova data.
             </p>
