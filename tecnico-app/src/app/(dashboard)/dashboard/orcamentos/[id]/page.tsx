@@ -45,10 +45,10 @@ function QuotePipeline({ current }: { current: QuoteStatus }) {
                   className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300"
                   style={{
                     backgroundColor: isPast || isCurrent
-                      ? (isRejected && idx === 1 ? '#ef4444' : 'var(--color-brand-500)')
+                      ? (isRejected && idx === 1 ? 'var(--color-danger-500)' : 'var(--color-brand-500)')
                       : 'var(--color-canvas)',
                     border: isFuture ? '2px solid var(--color-line-strong)' : 'none',
-                    boxShadow: isCurrent ? '0 0 0 3px rgba(245,158,11,0.2)' : 'none',
+                    boxShadow: isCurrent ? '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 20%, transparent)' : 'none',
                   }}
                 >
                   {isPast ? (
@@ -85,10 +85,10 @@ function QuotePipeline({ current }: { current: QuoteStatus }) {
         {/* Rejected branch indicator */}
         {isRejected && (
           <div className="ml-4 flex items-center gap-1.5 shrink-0 mb-5">
-            <div className="h-0.5 w-4" style={{ backgroundColor: '#ef4444' }} />
+            <div className="h-0.5 w-4" style={{ backgroundColor: 'var(--color-danger-500)' }} />
             <span
               className="rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{ backgroundColor: '#fef2f2', color: '#dc2626' }}
+              style={{ backgroundColor: 'var(--color-danger-50)', color: 'var(--color-danger-600)' }}
             >
               Recusado
             </span>
@@ -101,10 +101,10 @@ function QuotePipeline({ current }: { current: QuoteStatus }) {
 
 // ── Status actions ────────────────────────────────────────────────────────────
 const nextStatuses: Partial<Record<QuoteStatus, { status: QuoteStatus; label: string; bg: string; color: string }[]>> = {
-  Draft:    [{ status: 'Sent',     label: 'Marcar como Enviado',    bg: '#2563eb', color: 'white' }],
+  Draft:    [{ status: 'Sent',     label: 'Marcar como Enviado',    bg: 'var(--color-info-600)', color: 'white' }],
   Sent:     [
-    { status: 'Accepted', label: 'Aceite pelo cliente',   bg: '#16a34a', color: 'white' },
-    { status: 'Rejected', label: 'Recusado pelo cliente', bg: 'transparent', color: '#dc2626' },
+    { status: 'Accepted', label: 'Aceite pelo cliente',   bg: 'var(--color-success-600)', color: 'white' },
+    { status: 'Rejected', label: 'Recusado pelo cliente', bg: 'transparent', color: 'var(--color-danger-600)' },
     { status: 'Draft',    label: 'Revogar envio',          bg: 'transparent', color: 'var(--color-muted)' },
   ],
 }
@@ -248,10 +248,10 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               {quote.signedAt && (
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
-                  style={{ backgroundColor: '#f0fdf4', color: '#15803d' }}
+                  style={{ backgroundColor: 'var(--color-success-50)', color: 'var(--color-success-700)' }}
                 >
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M1.5 5l2.5 2.5 4.5-4" stroke="#15803d" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M1.5 5l2.5 2.5 4.5-4" stroke="var(--color-success-700)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                   Assinado
                 </span>
@@ -323,8 +323,8 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
                   <button
                     onClick={handleDelete}
                     className="rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150"
-                    style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+                    style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
                   >
                     Apagar
@@ -340,7 +340,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
                 onClick={handleCreateInvoice}
                 disabled={createInvoice.isPending}
                 className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
-                style={{ backgroundColor: '#7c3aed', color: 'white' }}
+                style={{ backgroundColor: 'var(--color-role-purple-text)', color: 'white' }}
               >
                 {createInvoice.isPending ? 'A faturar...' : 'Faturar'}
               </button>
@@ -372,12 +372,12 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
         {emailSent && (
           <div
             className="rounded-xl px-5 py-3.5 flex items-center gap-3"
-            style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}
+            style={{ backgroundColor: 'var(--color-success-50)', border: '1px solid var(--color-success-200)' }}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M1.5 7l3.5 3.5 7.5-7" stroke="#16a34a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M1.5 7l3.5 3.5 7.5-7" stroke="var(--color-success-600)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <p className="text-sm font-medium" style={{ color: '#15803d' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-success-700)' }}>
               Orçamento enviado com sucesso por email para o cliente.
             </p>
           </div>
@@ -413,7 +413,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--color-muted)' }}>
               Assinatura do cliente
             </p>
-            <div className="rounded-lg border p-3 inline-block" style={{ borderColor: 'var(--color-line)', backgroundColor: '#fafafa' }}>
+            <div className="rounded-lg border p-3 inline-block" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-neutral-50)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={quote.signatureUrl} alt="Assinatura" style={{ maxHeight: 120, maxWidth: 300 }} />
             </div>

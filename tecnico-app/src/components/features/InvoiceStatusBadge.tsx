@@ -1,10 +1,10 @@
 import type { InvoiceStatus } from '@/types'
 
 const config: Record<InvoiceStatus, { label: string; bg: string; color: string; dot: string }> = {
-  Issued:    { label: 'Emitida',    bg: '#eff6ff', color: '#1d4ed8', dot: '#3b82f6' },
-  Paid:      { label: 'Paga',       bg: '#f0fdf4', color: '#15803d', dot: '#22c55e' },
-  Overdue:   { label: 'Em atraso',  bg: '#fffbeb', color: '#b45309', dot: '#f59e0b' },
-  Cancelled: { label: 'Cancelada',  bg: '#f4f4f5', color: '#52525b', dot: '#a1a1aa' },
+  Issued:    { label: 'Emitida',    bg: 'var(--color-info-50)', color: 'var(--color-info-700)', dot: 'var(--color-info-500)' },
+  Paid:      { label: 'Paga',       bg: 'var(--color-success-50)', color: 'var(--color-success-700)', dot: 'var(--color-success-500)' },
+  Overdue:   { label: 'Em atraso',  bg: 'var(--color-brand-50)', color: 'var(--color-brand-700)', dot: 'var(--color-brand-500)' },
+  Cancelled: { label: 'Cancelada',  bg: 'var(--color-neutral-100)', color: 'var(--color-neutral-600)', dot: 'var(--color-neutral-400)' },
 }
 
 export function InvoiceStatusBadge({ status }: { status: InvoiceStatus }) {

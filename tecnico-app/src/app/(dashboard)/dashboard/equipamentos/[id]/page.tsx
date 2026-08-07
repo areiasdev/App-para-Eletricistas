@@ -1,6 +1,6 @@
 'use client'
 
-import { use } from 'react'
+import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEquipment, useDeleteEquipment } from '@/hooks/useEquipment'
@@ -13,6 +13,9 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
   const canManage = useCanManage()
   const { data: equipment, isLoading } = useEquipment(id)
   const deleteEquipment = useDeleteEquipment()
+  // Date.now() is impure — React may render a component multiple times before committing,
+  // so reading it directly in the body isn't allowed. Lazy useState initializer runs once.
+  const [now] = useState(() => Date.now())
 
   const handleDelete = () => {
     if (!confirm(`Apagar o equipamento "${equipment?.type}"?`)) return
@@ -40,7 +43,7 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
   }
 
   const daysUntilMaintenance = equipment.nextMaintenance
-    ? Math.ceil((new Date(equipment.nextMaintenance).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    ? Math.ceil((new Date(equipment.nextMaintenance).getTime() - now) / (1000 * 60 * 60 * 24))
     : null
 
   return (
@@ -79,8 +82,8 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
             <button
               onClick={handleDelete}
               className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
-              style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+              style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
             >
               Apagar
@@ -94,14 +97,14 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
         <div
           className="rounded-xl px-5 py-3.5 flex items-center gap-3"
           style={daysUntilMaintenance < 0
-            ? { backgroundColor: '#fef2f2', border: '1px solid #fecaca' }
-            : { backgroundColor: '#fef3c7', border: '1px solid #fde68a' }}
+            ? { backgroundColor: 'var(--color-danger-50)', border: '1px solid var(--color-danger-200)' }
+            : { backgroundColor: 'var(--color-brand-100)', border: '1px solid var(--color-brand-200)' }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <circle cx="7" cy="7" r="6" stroke={daysUntilMaintenance < 0 ? '#dc2626' : '#b45309'} strokeWidth="1.5"/>
-            <path d="M7 4v3M7 9.5v.5" stroke={daysUntilMaintenance < 0 ? '#dc2626' : '#b45309'} strokeWidth="1.5" strokeLinecap="round"/>
+            <circle cx="7" cy="7" r="6" stroke={daysUntilMaintenance < 0 ? 'var(--color-danger-600)' : 'var(--color-brand-700)'} strokeWidth="1.5"/>
+            <path d="M7 4v3M7 9.5v.5" stroke={daysUntilMaintenance < 0 ? 'var(--color-danger-600)' : 'var(--color-brand-700)'} strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
-          <p className="text-sm font-medium" style={{ color: daysUntilMaintenance < 0 ? '#dc2626' : '#b45309' }}>
+          <p className="text-sm font-medium" style={{ color: daysUntilMaintenance < 0 ? 'var(--color-danger-600)' : 'var(--color-brand-700)' }}>
             {daysUntilMaintenance < 0
               ? `Manutenção vencida há ${Math.abs(daysUntilMaintenance)} dia${Math.abs(daysUntilMaintenance) !== 1 ? 's' : ''}`
               : `Manutenção em ${daysUntilMaintenance} dia${daysUntilMaintenance !== 1 ? 's' : ''}`}

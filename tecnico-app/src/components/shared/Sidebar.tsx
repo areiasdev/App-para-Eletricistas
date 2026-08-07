@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -202,7 +202,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
                   ? 'text-white'
                   : 'text-white/45 hover:text-white/80 hover:bg-white/6'
               )}
-              style={isActive ? { backgroundColor: 'rgba(245, 158, 11, 0.15)' } : undefined}
+              style={isActive ? { backgroundColor: 'color-mix(in srgb, var(--color-brand-500) 15%, transparent)' } : undefined}
             >
               <span
                 style={isActive ? { color: 'var(--color-brand-400)' } : undefined}
@@ -265,6 +265,15 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
 export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  useEffect(() => {
+    if (!mobileOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [mobileOpen])
+
   return (
     <>
       {/* Desktop sidebar — always visible on lg+ */}
@@ -298,6 +307,9 @@ export function Sidebar() {
             onClick={() => setMobileOpen(false)}
           />
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu de navegação"
             className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-64"
             style={{ backgroundColor: 'var(--color-sidebar)' }}
           >

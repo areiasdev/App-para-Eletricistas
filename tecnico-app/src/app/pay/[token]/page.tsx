@@ -39,7 +39,7 @@ function PayPageInner({ token }: { token: string }) {
       <div className="w-full max-w-sm space-y-6">
         <div className="flex items-center justify-center gap-2">
           <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: '#17171a' }}>
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
             T
           </span>
           <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>TécnicoApp</span>
@@ -94,13 +94,13 @@ function PayPageInner({ token }: { token: string }) {
 
             <div className="px-6 pb-6">
               {invoice.status === 'Paid' && (
-                <div className="rounded-lg px-4 py-3 text-center text-sm font-medium" style={{ backgroundColor: '#f0fdf4', color: '#15803d' }}>
+                <div className="rounded-lg px-4 py-3 text-center text-sm font-medium" style={{ backgroundColor: 'var(--color-success-50)', color: 'var(--color-success-700)' }}>
                   Esta fatura já foi paga. Obrigado!
                 </div>
               )}
 
               {invoice.status === 'Cancelled' && (
-                <div className="rounded-lg px-4 py-3 text-center text-sm font-medium" style={{ backgroundColor: '#f4f4f5', color: '#52525b' }}>
+                <div className="rounded-lg px-4 py-3 text-center text-sm font-medium" style={{ backgroundColor: 'var(--color-neutral-100)', color: 'var(--color-neutral-600)' }}>
                   Esta fatura foi cancelada e já não pode ser paga.
                 </div>
               )}
@@ -108,17 +108,17 @@ function PayPageInner({ token }: { token: string }) {
               {invoice.status !== 'Paid' && invoice.status !== 'Cancelled' && (
                 <div className="space-y-3">
                   {success && (
-                    <div className="rounded-lg px-4 py-3 text-center text-sm" style={{ backgroundColor: '#eff6ff', color: '#1d4ed8' }}>
+                    <div className="rounded-lg px-4 py-3 text-center text-sm" style={{ backgroundColor: 'var(--color-info-50)', color: 'var(--color-info-700)' }}>
                       Pagamento em processamento. Isto pode demorar um momento a confirmar — não é preciso pagar novamente.
                     </div>
                   )}
                   {cancelled && (
-                    <div className="rounded-lg px-4 py-3 text-center text-sm" style={{ backgroundColor: '#fffbeb', color: '#b45309' }}>
+                    <div className="rounded-lg px-4 py-3 text-center text-sm" style={{ backgroundColor: 'var(--color-brand-50)', color: 'var(--color-brand-700)' }}>
                       Pagamento cancelado. Podes tentar novamente quando quiseres.
                     </div>
                   )}
                   {checkoutError && (
-                    <div className="rounded-lg px-4 py-3 text-center text-sm" style={{ backgroundColor: '#fef2f2', color: '#dc2626' }}>
+                    <div className="rounded-lg px-4 py-3 text-center text-sm" style={{ backgroundColor: 'var(--color-danger-50)', color: 'var(--color-danger-600)' }}>
                       {checkoutError}
                     </div>
                   )}
@@ -126,7 +126,7 @@ function PayPageInner({ token }: { token: string }) {
                     onClick={handlePay}
                     disabled={checkoutLoading}
                     className="w-full rounded-lg px-4 py-3 text-sm font-bold transition-all duration-150 disabled:opacity-60"
-                    style={{ backgroundColor: 'var(--color-brand-500)', color: '#1c1917' }}
+                    style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
                   >
                     {checkoutLoading ? 'A abrir pagamento…' : 'Pagar agora →'}
                   </button>

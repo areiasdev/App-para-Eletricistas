@@ -58,7 +58,7 @@ function InterventionCard({
       {isLate && (
         <span
           className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-          style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}
+          style={{ backgroundColor: 'var(--color-brand-100)', color: 'var(--color-brand-800)', border: '1px solid var(--color-brand-300)' }}
         >
           ⚠ Em atraso
         </span>
@@ -133,8 +133,8 @@ function CalendarView({
 
   const statusColors: Record<InterventionStatus, string> = {
     Scheduled: 'var(--color-brand-500)',
-    InProgress: '#2563eb',
-    Completed: '#16a34a',
+    InProgress: 'var(--color-info-600)',
+    Completed: 'var(--color-success-600)',
   }
 
   // Mobile fallback: a 7-column grid is unusable on a narrow phone screen, so below `sm:`
@@ -341,7 +341,7 @@ function IntervencoesContent() {
           onChange={(e) => handleSearch(e.target.value)}
           className="rounded-lg border px-3 py-2 text-sm outline-none transition-all duration-150 w-full sm:w-64"
           style={{ borderColor: 'var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
-          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(245,158,11,0.12)' }}
+          onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent)' }}
           onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
         />
         <div className="flex gap-1 rounded-lg border p-1" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
@@ -372,7 +372,7 @@ function IntervencoesContent() {
 
       {/* Error */}
       {isError && (
-        <p className="text-sm rounded-lg px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+        <p className="text-sm rounded-lg px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
           {getErrorMessage(error)}
         </p>
       )}
@@ -443,7 +443,7 @@ function IntervencoesContent() {
                     {iv.status === 'Scheduled' && iv.scheduledAt && new Date(iv.scheduledAt) < new Date() && (
                       <span
                         className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-                        style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d' }}
+                        style={{ backgroundColor: 'var(--color-brand-100)', color: 'var(--color-brand-800)', border: '1px solid var(--color-brand-300)' }}
                         title="Data agendada já passou"
                       >
                         ⚠ Em atraso
@@ -480,7 +480,7 @@ function IntervencoesContent() {
                         onClick={() => handleDelete(iv.id, iv.title)}
                         className="text-xs font-medium transition-colors duration-150"
                         style={{ color: 'var(--color-subtle)' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.color = '#dc2626')}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-danger-600)')}
                         onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-subtle)')}
                       >
                         Apagar

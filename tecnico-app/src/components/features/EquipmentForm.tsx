@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useClients } from '@/hooks/useClients'
+import { FormField } from '@/components/ui/FormField'
 
 const equipmentSchema = z.object({
   clientId: z.string().min(1, 'Seleciona um cliente.'),
@@ -15,8 +16,25 @@ const equipmentSchema = z.object({
   installedAt: z.string().optional(),
   nextMaintenance: z.string().optional(),
   notes: z.string().optional(),
-  photos: z.array(z.string().url('URL inválido')).optional(),
+  photos: z
+    .array(
+      z
+        .string()
+        .url('URL inválido')
+        .refine(isHttpsOrLocalhostUrl, 'As fotos devem ser URLs HTTPS válidos.'),
+    )
+    .max(20, 'Máximo de 20 fotos por equipamento.')
+    .optional(),
 })
+
+function isHttpsOrLocalhostUrl(value: string): boolean {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.hostname === 'localhost'
+  } catch {
+    return false
+  }
+}
 
 export type EquipmentFormValues = z.infer<typeof equipmentSchema>
 
@@ -75,11 +93,12 @@ export function EquipmentForm({
 
         <div className="p-5 space-y-4">
           {!lockClient && (
-            <FormField label="Cliente *" error={errors.clientId?.message}>
+            <FormField label="Cliente *" id="ef-clientId" error={errors.clientId?.message}>
               <select
+                id="ef-clientId"
                 {...register('clientId')}
                 className="form-input"
-                style={{ borderColor: errors.clientId ? '#fca5a5' : 'var(--color-line-strong)' }}
+                style={{ borderColor: errors.clientId ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
               >
                 <option value="">Selecionar cliente...</option>
                 {clientsData?.items.map(c => (
@@ -90,16 +109,18 @@ export function EquipmentForm({
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="Tipo *" error={errors.type?.message}>
+            <FormField label="Tipo *" id="ef-type" error={errors.type?.message}>
               <input
+                id="ef-type"
                 {...register('type')}
                 placeholder="Ex: Ar condicionado, Caldeira, Elevador"
                 className="form-input"
-                style={{ borderColor: errors.type ? '#fca5a5' : 'var(--color-line-strong)' }}
+                style={{ borderColor: errors.type ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
               />
             </FormField>
-            <FormField label="Marca" error={errors.brand?.message}>
+            <FormField label="Marca" id="ef-brand" error={errors.brand?.message}>
               <input
+                id="ef-brand"
                 {...register('brand')}
                 placeholder="Ex: Daikin, Bosch"
                 className="form-input"
@@ -109,16 +130,18 @@ export function EquipmentForm({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="Modelo" error={errors.model?.message}>
+            <FormField label="Modelo" id="ef-model" error={errors.model?.message}>
               <input
+                id="ef-model"
                 {...register('model')}
                 placeholder="Ex: FTX35K"
                 className="form-input"
                 style={{ borderColor: 'var(--color-line-strong)' }}
               />
             </FormField>
-            <FormField label="Número de série" error={errors.serialNumber?.message}>
+            <FormField label="Número de série" id="ef-serialNumber" error={errors.serialNumber?.message}>
               <input
+                id="ef-serialNumber"
                 {...register('serialNumber')}
                 placeholder="Ex: SN-12345678"
                 className="form-input"
@@ -139,16 +162,18 @@ export function EquipmentForm({
 
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField label="Data de instalação" error={errors.installedAt?.message}>
+            <FormField label="Data de instalação" id="ef-installedAt" error={errors.installedAt?.message}>
               <input
+                id="ef-installedAt"
                 type="date"
                 {...register('installedAt')}
                 className="form-input"
                 style={{ borderColor: 'var(--color-line-strong)' }}
               />
             </FormField>
-            <FormField label="Próxima manutenção" error={errors.nextMaintenance?.message}>
+            <FormField label="Próxima manutenção" id="ef-nextMaintenance" error={errors.nextMaintenance?.message}>
               <input
+                id="ef-nextMaintenance"
                 type="date"
                 {...register('nextMaintenance')}
                 className="form-input"
@@ -160,8 +185,9 @@ export function EquipmentForm({
             </FormField>
           </div>
 
-          <FormField label="Notas" error={errors.notes?.message}>
+          <FormField label="Notas" id="ef-notes" error={errors.notes?.message}>
             <textarea
+              id="ef-notes"
               {...register('notes')}
               rows={3}
               placeholder="Observações, histórico de avarias, etc."
@@ -212,7 +238,7 @@ export function EquipmentForm({
                     type="button"
                     onClick={() => removePhoto(i)}
                     className="shrink-0 text-xs px-2 py-0.5 rounded transition-colors duration-150"
-                    style={{ color: '#dc2626' }}
+                    style={{ color: 'var(--color-danger-600)' }}
                   >
                     Remover
                   </button>
@@ -233,40 +259,6 @@ export function EquipmentForm({
           {isLoading ? 'A guardar...' : submitLabel}
         </button>
       </div>
-
-      <style>{`
-        .form-input {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1.5px solid var(--color-line-strong);
-          padding: 0.5rem 0.75rem;
-          font-size: 0.875rem;
-          background-color: var(--color-card);
-          color: var(--color-ink);
-          outline: none;
-          transition: border-color 0.15s, box-shadow 0.15s;
-          font-family: var(--font-outfit), system-ui, sans-serif;
-        }
-        .form-input:focus {
-          border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
-        }
-        .form-input::placeholder {
-          color: var(--color-subtle);
-        }
-      `}</style>
     </form>
-  )
-}
-
-function FormField({ label, id, error, children }: { label: string; id?: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
-        {label}
-      </label>
-      {children}
-      {error && <p className="mt-1 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
-    </div>
   )
 }

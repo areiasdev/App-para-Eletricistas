@@ -39,7 +39,7 @@ function PortalLoginInner() {
       <div className="w-full max-w-sm text-center space-y-6">
         <div className="flex items-center justify-center gap-2">
           <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: '#17171a' }}>
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
             T
           </span>
           <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>TécnicoApp</span>

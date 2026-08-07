@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Dashboard;
 
@@ -49,10 +50,7 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
         GetDashboardStatsQuery request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members see their owner's team-wide stats
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         // All counts and aggregates done in SQL — no in-memory loading
         var clientsCount = await db.Clients

@@ -6,6 +6,7 @@ using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Quotes.DTOs;
 using TecnicoApp.Domain.Entities;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.CreateQuote;
 
@@ -18,10 +19,7 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         var userId = currentUser.UserId;
 
         // Resolve ownerId: team members share their owner's clients/quotes
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(userId, cancellationToken);
 
         var ownerExists = await db.Users.AsNoTracking()
             .AnyAsync(u => u.Id == ownerId, cancellationToken);
@@ -43,7 +41,7 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         var year = DateTime.UtcNow.Year;
         var count = await db.Quotes
             .CountAsync(q => q.UserId == ownerId && q.CreatedAt.Year == year, cancellationToken);
-        var number = $"ORC-{year}-{(count + 1):D4}";
+        var number = DocumentNumberExtensions.FormatDocumentNumber("ORC", year, count);
 
         var quote = new Quote
         {
@@ -74,7 +72,7 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
             db.Quotes.Remove(quote);
             var retryCount = await db.Quotes
                 .CountAsync(q => q.UserId == ownerId && q.CreatedAt.Year == year, cancellationToken);
-            quote.Number = $"ORC-{year}-{(retryCount + 1):D4}";
+            quote.Number = DocumentNumberExtensions.FormatDocumentNumber("ORC", year, retryCount);
             db.Quotes.Add(quote);
             await db.SaveChangesAsync(cancellationToken);
         }

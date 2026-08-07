@@ -50,7 +50,7 @@ export default function NovaIntervencaoPage() {
       <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Nova Intervenção</h1>
 
       {createIntervention.isError && (
-        <p className="text-sm rounded-lg px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+        <p className="text-sm rounded-lg px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
           {getErrorMessage(createIntervention.error)}
         </p>
       )}

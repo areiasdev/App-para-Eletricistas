@@ -27,9 +27,13 @@ public class AcceptInviteCommandHandler(IAppDbContext db)
         if (teamMember.InviteTokenExpiresAt is null || teamMember.InviteTokenExpiresAt < DateTime.UtcNow)
             return Result.Error("Este convite expirou. Pede ao proprietário para enviar um novo.");
 
-        // Activate the member: set real name + password, mark accepted
+        // Activate the member: set real name + password, join the inviting owner's
+        // tenant, and adopt the invited role. This is the only point where OwnerId/Role
+        // are assigned — only after the invitee has proven control of the invite token.
         teamMember.Member.FullName = request.FullName;
         teamMember.Member.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        teamMember.Member.OwnerId = teamMember.OwnerId;
+        teamMember.Member.Role = teamMember.Role;
         teamMember.Member.ModifiedAt = DateTime.UtcNow;
 
         teamMember.IsAccepted = true;

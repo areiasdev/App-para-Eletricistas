@@ -13,6 +13,7 @@ public class CreateEquipmentCommandValidator : AbstractValidator<CreateEquipment
         RuleFor(x => x.Brand).MaximumLength(100).When(x => x.Brand != null);
         RuleFor(x => x.Model).MaximumLength(100).When(x => x.Model != null);
         RuleFor(x => x.SerialNumber).MaximumLength(100).When(x => x.SerialNumber != null);
+        RuleFor(x => x.Notes).MaximumLength(2000).When(x => x.Notes != null);
         RuleForEach(x => x.Photos)
             .Must(url =>
                 Uri.TryCreate(url, UriKind.Absolute, out var uri) &&

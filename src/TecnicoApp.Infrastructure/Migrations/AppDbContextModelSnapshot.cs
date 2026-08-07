@@ -634,11 +634,11 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<string>("RefreshToken")
-                        .HasColumnType("text");
-
                     b.Property<DateTime?>("RefreshTokenExpiresAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("RefreshTokenHash")
+                        .HasColumnType("text");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -648,6 +648,8 @@ namespace TecnicoApp.Infrastructure.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("RefreshTokenHash");
 
                     b.ToTable("Users");
                 });

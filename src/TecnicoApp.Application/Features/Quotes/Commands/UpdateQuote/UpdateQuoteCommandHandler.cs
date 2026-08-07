@@ -5,6 +5,7 @@ using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Quotes.DTOs;
 using TecnicoApp.Domain.Entities;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.UpdateQuote;
 
@@ -15,10 +16,7 @@ public class UpdateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         UpdateQuoteCommand request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's clients/quotes
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         var quote = await db.Quotes
             .Include(q => q.Lines)
@@ -56,11 +54,20 @@ public class UpdateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         quote.ValidUntil = request.ValidUntil;
         quote.ModifiedBy = currentUser.Email;
 
-        // Replace all lines
+        // Replace all lines. Old lines are removed and new lines are added explicitly via the
+        // DbSet rather than through quote.Lines.Clear()/Add() alone: when a new child is
+        // introduced to an already-tracked parent purely through collection-navigation fixup,
+        // EF Core's change detection sees QuoteLine.Id already has a non-default value (set
+        // client-side by BaseEntity's Guid.NewGuid() initializer) and concludes the row might
+        // already exist, marking it Modified instead of Added — which issues an UPDATE for a
+        // row that was never inserted and throws DbUpdateConcurrencyException at SaveChanges.
+        db.QuoteLines.RemoveRange(quote.Lines);
         quote.Lines.Clear();
         foreach (var l in request.Lines)
         {
-            quote.Lines.Add(new QuoteLine
+            // db.QuoteLines.Add (not quote.Lines.Add) marks the row Added directly; EF's
+            // relationship fixup then populates quote.Lines from the FK match automatically.
+            db.QuoteLines.Add(new QuoteLine
             {
                 Description = l.Description,
                 Quantity = l.Quantity,

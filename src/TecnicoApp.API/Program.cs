@@ -5,6 +5,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using TecnicoApp.Infrastructure.Jobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -15,6 +16,13 @@ using TecnicoApp.Infrastructure;
 
 // Fix: Npgsql requires DateTimeKind.Utc — legacy mode accepts Unspecified from JSON binding
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+// Must exist before WebApplication.CreateBuilder resolves the environment: if wwwroot is
+// missing at boot (e.g. a fresh clone — it's gitignored, only created on first logo upload),
+// IWebHostEnvironment.WebRootFileProvider gets permanently pinned to a NullFileProvider for
+// this process's lifetime, so UseStaticFiles() 404s forever even after the folder/file show
+// up on disk later. Creating it upfront guarantees a real PhysicalFileProvider every time.
+Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"));
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -157,6 +165,16 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
+// Apply pending EF Core migrations before accepting any requests. Required for the
+// documented one-command deploy (docker compose up -d --build): a fresh install has no
+// schema at all otherwise, and every request touching the database fails with
+// "relation ... does not exist" (42P01) — including the very first registration.
+using (var migrationScope = app.Services.CreateScope())
+{
+    var dbContext = migrationScope.ServiceProvider.GetRequiredService<TecnicoApp.Infrastructure.Persistence.AppDbContext>();
+    dbContext.Database.Migrate();
+}
+
 // ── Security headers ──────────────────────────────────────────────────────────
 app.Use(async (context, next) =>
 {
@@ -185,7 +203,20 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("TecnicoAppCors");
-app.UseSerilogRequestLogging();
+
+// Default request logging echoes the raw RequestPath, which would put the
+// invoice public pay-link token (a bearer-equivalent credential valid for up to
+// a year, e.g. /api/v1/invoices/public/{token}) into plaintext logs on every
+// hit. Redact it via a custom template instead of the raw path.
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {SafeRequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("SafeRequestPath", RedactTokenSegments(httpContext.Request.Path));
+    };
+});
+
 app.UseRateLimiter();
 
 app.UseHttpsRedirection();
@@ -207,31 +238,49 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Use the DI-registered IRecurringJobManager rather than the static RecurringJob helper:
+// AddHangfire() no longer sets the static JobStorage.Current global as a side effect, so
+// RecurringJob.* throws "JobStorage instance has not been initialized" at startup — every
+// deploy crash-loops. IRecurringJobManager reads the storage that was actually configured
+// via builder.Services.AddHangfire(...) above.
+var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+
 // Stale trigger cleanup: TrialExpirationJob's class was deleted when SaaS-billing was removed,
 // but Hangfire persists recurring job schedules in its own Postgres tables (not in code), so the
 // old "trial-expiration" trigger kept firing daily, failing to resolve the type, and logging a
 // JobLoadException warning every cycle. RemoveIfExists is idempotent — safe to call on every startup.
-RecurringJob.RemoveIfExists("trial-expiration");
+recurringJobManager.RemoveIfExists("trial-expiration");
 
 // Register recurring job — runs daily at 08:00
-RecurringJob.AddOrUpdate<MaintenanceAlertJob>(
+recurringJobManager.AddOrUpdate<MaintenanceAlertJob>(
     "maintenance-alerts",
-    job => job.RunAsync(),
+    job => job.RunAsync(default),
     "0 8 * * *");
 
 // Reminds clients their invoice is due in ~3 days — staggered a few minutes after the
 // maintenance-alerts job so they don't all hit the DB at once.
-RecurringJob.AddOrUpdate<InvoiceDueReminderJob>(
+recurringJobManager.AddOrUpdate<InvoiceDueReminderJob>(
     "invoice-due-reminders",
-    job => job.RunAsync(),
+    job => job.RunAsync(default),
     "15 8 * * *");
 
 // Reminds clients (not the technician) about tomorrow's scheduled intervention.
-RecurringJob.AddOrUpdate<AppointmentReminderJob>(
+recurringJobManager.AddOrUpdate<AppointmentReminderJob>(
     "appointment-reminders",
-    job => job.RunAsync(),
+    job => job.RunAsync(default),
     "30 8 * * *");
 
 app.Run();
+
+// Replaces the {token} segment of public token-based routes (currently only the
+// invoice pay link, /api/v1/invoices/public/{token}[/checkout]) with a fixed
+// placeholder before it's ever handed to the logger.
+static string RedactTokenSegments(string path)
+{
+    return System.Text.RegularExpressions.Regex.Replace(
+        path,
+        "(?<=/invoices/public/)[^/]+",
+        "[REDACTED]");
+}
 
 public partial class Program { }

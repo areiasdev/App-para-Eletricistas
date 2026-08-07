@@ -5,6 +5,7 @@ using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Clients.DTOs;
 using TecnicoApp.Domain.Entities;
 using TecnicoApp.Domain.ValueObjects;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Clients.Commands.CreateClient;
 
@@ -20,10 +21,7 @@ public sealed class CreateClientCommandHandler(
         var userId = currentUser.UserId;
 
         // Resolve ownerId: team members share their owner's clients
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(userId, cancellationToken);
 
         if (ownerId == Guid.Empty) return Result.Unauthorized();
 

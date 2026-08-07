@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { validateNif } from '@/lib/utils/formatters'
+import { FormField } from '@/components/ui/FormField'
 
 const addressSchema = z.object({
   street: z.string().min(1, 'Obrigatório'),
@@ -74,7 +75,7 @@ export function ClientForm({
               {...register('name')}
               placeholder="Ex: João Silva"
               className="form-input"
-              style={{ borderColor: errors.name ? '#fca5a5' : 'var(--color-line-strong)' }}
+              style={{ borderColor: errors.name ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
             />
           </FormField>
 
@@ -86,7 +87,7 @@ export function ClientForm({
                 maxLength={9}
                 placeholder="123456789"
                 className="form-input"
-                style={{ borderColor: errors.nif ? '#fca5a5' : 'var(--color-line-strong)' }}
+                style={{ borderColor: errors.nif ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
               />
             </FormField>
             <FormField label="Telefone" id="cf-phone" error={errors.phone?.message}>
@@ -134,7 +135,7 @@ export function ClientForm({
               {...register('email')}
               placeholder="cliente@exemplo.pt"
               className="form-input"
-              style={{ borderColor: errors.email ? '#fca5a5' : 'var(--color-line-strong)' }}
+              style={{ borderColor: errors.email ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
             />
           </FormField>
 
@@ -176,7 +177,7 @@ export function ClientForm({
                 {...register('address.street')}
                 placeholder="Ex: Rua das Flores, 123"
                 className="form-input"
-                style={{ borderColor: errors.address?.street ? '#fca5a5' : 'var(--color-line-strong)' }}
+                style={{ borderColor: errors.address?.street ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
               />
             </FormField>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -186,7 +187,7 @@ export function ClientForm({
                   {...register('address.city')}
                   placeholder="Ex: Lisboa"
                   className="form-input"
-                  style={{ borderColor: errors.address?.city ? '#fca5a5' : 'var(--color-line-strong)' }}
+                  style={{ borderColor: errors.address?.city ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
                 />
               </FormField>
               <FormField label="Código postal *" id="cf-postal" error={errors.address?.postalCode?.message}>
@@ -195,7 +196,7 @@ export function ClientForm({
                   {...register('address.postalCode')}
                   placeholder="1000-001"
                   className="form-input"
-                  style={{ borderColor: errors.address?.postalCode ? '#fca5a5' : 'var(--color-line-strong)' }}
+                  style={{ borderColor: errors.address?.postalCode ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
                 />
               </FormField>
             </div>
@@ -213,40 +214,6 @@ export function ClientForm({
           {isLoading ? 'A guardar...' : submitLabel}
         </button>
       </div>
-
-      <style>{`
-        .form-input {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1.5px solid var(--color-line-strong);
-          padding: 0.5rem 0.75rem;
-          font-size: 0.875rem;
-          background-color: var(--color-card);
-          color: var(--color-ink);
-          outline: none;
-          transition: border-color 0.15s, box-shadow 0.15s;
-          font-family: var(--font-outfit), system-ui, sans-serif;
-        }
-        .form-input:focus {
-          border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
-        }
-        .form-input::placeholder {
-          color: var(--color-subtle);
-        }
-      `}</style>
     </form>
-  )
-}
-
-function FormField({ label, id, error, children }: { label: string; id?: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
-        {label}
-      </label>
-      {children}
-      {error && <p className="mt-1 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
-    </div>
   )
 }

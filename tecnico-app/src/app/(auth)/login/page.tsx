@@ -108,7 +108,7 @@ export default function LoginPage() {
             </Field>
 
             {login.isError && (
-              <p className="text-sm rounded-lg px-4 py-3 border" style={{ color: '#dc2626', backgroundColor: '#fef2f2', borderColor: '#fecaca' }}>
+              <p className="text-sm rounded-lg px-4 py-3 border" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)', borderColor: 'var(--color-danger-200)' }}>
                 {getErrorMessage(login.error)}
               </p>
             )}
@@ -161,7 +161,7 @@ export default function LoginPage() {
         }
         .auth-input:focus {
           border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent);
         }
         .auth-input::placeholder {
           color: var(--color-subtle);
@@ -178,7 +178,7 @@ function Field({ label, error, children }: { label: string; error?: string; chil
         {label}
       </label>
       {children}
-      {error && <p className="mt-1.5 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
+      {error && <p className="mt-1.5 text-xs" style={{ color: 'var(--color-danger-600)' }}>{error}</p>}
     </div>
   )
 }

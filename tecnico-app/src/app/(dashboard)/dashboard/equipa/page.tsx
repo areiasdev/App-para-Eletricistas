@@ -16,10 +16,10 @@ const roleLabels: Record<UserRole, string> = {
 }
 
 const roleColors: Record<UserRole, { bg: string; text: string }> = {
-  Owner:      { bg: 'rgba(245,158,11,0.15)', text: 'var(--color-brand-500)' },
-  Admin:      { bg: 'rgba(124,58,237,0.15)', text: '#a78bfa' },
-  Technician: { bg: 'rgba(59,130,246,0.15)', text: '#60a5fa' },
-  Commercial: { bg: 'rgba(16,185,129,0.15)', text: '#34d399' },
+  Owner:      { bg: 'color-mix(in srgb, var(--color-brand-500) 15%, transparent)', text: 'var(--color-brand-500)' },
+  Admin:      { bg: 'var(--color-role-purple-bg)', text: 'var(--color-role-purple-dot)' },
+  Technician: { bg: 'color-mix(in srgb, var(--color-info-500) 15%, transparent)', text: 'var(--color-info-400)' },
+  Commercial: { bg: 'color-mix(in srgb, var(--color-success-500) 15%, transparent)', text: 'var(--color-success-400)' },
 }
 
 export default function EquipaPage() {
@@ -87,7 +87,7 @@ export default function EquipaPage() {
         </h2>
 
         {inviteError && (
-          <p className="text-sm rounded-lg px-4 py-3" style={{ color: '#dc2626', backgroundColor: '#fef2f2' }}>
+          <p className="text-sm rounded-lg px-4 py-3" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)' }}>
             {inviteError}
           </p>
         )}
@@ -131,8 +131,8 @@ export default function EquipaPage() {
         </div>
 
         {inviteLink && (
-          <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: 'rgba(16,185,129,0.3)', backgroundColor: 'rgba(16,185,129,0.05)' }}>
-            <p className="text-xs font-semibold" style={{ color: '#34d399' }}>
+          <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: 'color-mix(in srgb, var(--color-success-500) 30%, transparent)', backgroundColor: 'color-mix(in srgb, var(--color-success-500) 5%, transparent)' }}>
+            <p className="text-xs font-semibold" style={{ color: 'var(--color-success-400)' }}>
               Link de convite gerado — partilha com o novo membro:
             </p>
             <div className="flex gap-2 items-center">
@@ -143,7 +143,7 @@ export default function EquipaPage() {
               <button
                 onClick={() => { navigator.clipboard.writeText(inviteLink); toast.success('Link copiado.') }}
                 className="shrink-0 rounded px-3 py-1 text-xs font-medium transition-all duration-150"
-                style={{ backgroundColor: 'rgba(16,185,129,0.15)', color: '#34d399' }}
+                style={{ backgroundColor: 'color-mix(in srgb, var(--color-success-500) 15%, transparent)', color: 'var(--color-success-400)' }}
               >
                 Copiar
               </button>
@@ -207,7 +207,7 @@ export default function EquipaPage() {
                       </span>
                       {!member.isAccepted && (
                         <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
-                          style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: 'var(--color-brand-500)' }}>
+                          style={{ backgroundColor: 'color-mix(in srgb, var(--color-brand-500) 10%, transparent)', color: 'var(--color-brand-500)' }}>
                           Pendente
                         </span>
                       )}
@@ -238,8 +238,8 @@ export default function EquipaPage() {
                     onClick={() => handleRemove(member)}
                     disabled={removeMember.isPending}
                     className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150 disabled:opacity-60"
-                    style={{ borderColor: '#fecaca', color: '#dc2626', backgroundColor: 'var(--color-card)' }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+                    style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
                   >
                     Remover

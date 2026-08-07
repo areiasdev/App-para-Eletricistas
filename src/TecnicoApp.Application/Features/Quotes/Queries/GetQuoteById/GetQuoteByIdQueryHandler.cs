@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Quotes.DTOs;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Quotes.Queries.GetQuoteById;
 
@@ -13,10 +14,7 @@ public class GetQuoteByIdQueryHandler(IAppDbContext db, ICurrentUserService curr
         GetQuoteByIdQuery request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's quotes
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         var quote = await db.Quotes
             .AsNoTracking()

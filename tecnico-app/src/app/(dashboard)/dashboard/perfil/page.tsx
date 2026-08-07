@@ -12,7 +12,7 @@ import { validateNif } from '@/lib/utils/formatters'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000')
 
-const DEFAULT_BRAND_COLOR = '#f59e0b'
+const DEFAULT_BRAND_COLOR = 'var(--color-brand-500)'
 
 const profileSchema = z.object({
   fullName: z.string().min(1, 'O nome é obrigatório.').max(200),
@@ -39,7 +39,7 @@ function FormField({ label, hint, error, children }: {
       </label>
       {children}
       {hint && !error && <p className="mt-1 text-xs" style={{ color: 'var(--color-subtle)' }}>{hint}</p>}
-      {error && <p className="mt-1 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
+      {error && <p className="mt-1 text-xs" style={{ color: 'var(--color-danger-600)' }}>{error}</p>}
     </div>
   )
 }
@@ -139,7 +139,7 @@ export default function PerfilPage() {
                 {...register('fullName')}
                 placeholder="Ex: João Silva"
                 className="form-input"
-                style={{ borderColor: errors.fullName ? '#fca5a5' : 'var(--color-line-strong)' }}
+                style={{ borderColor: errors.fullName ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
               />
             </FormField>
 
@@ -205,7 +205,7 @@ export default function PerfilPage() {
                     >
                       {uploadLogo.isPending ? 'A enviar...' : 'Carregar logótipo'}
                     </button>
-                    {logoError && <p className="mt-1.5 text-xs" style={{ color: '#dc2626' }}>{logoError}</p>}
+                    {logoError && <p className="mt-1.5 text-xs" style={{ color: 'var(--color-danger-600)' }}>{logoError}</p>}
                   </div>
                 </div>
               </FormField>
@@ -222,9 +222,9 @@ export default function PerfilPage() {
                   />
                   <input
                     {...register('brandColor')}
-                    placeholder="#f59e0b"
+                    placeholder="var(--color-brand-500)"
                     className="form-input"
-                    style={{ maxWidth: 140, borderColor: errors.brandColor ? '#fca5a5' : 'var(--color-line-strong)' }}
+                    style={{ maxWidth: 140, borderColor: errors.brandColor ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
                   />
                 </div>
               </FormField>
@@ -245,7 +245,7 @@ export default function PerfilPage() {
                     maxLength={9}
                     placeholder="123456789"
                     className="form-input"
-                    style={{ borderColor: errors.nif ? '#fca5a5' : 'var(--color-line-strong)' }}
+                    style={{ borderColor: errors.nif ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
                   />
                 </FormField>
                 <FormField label="Telefone" error={errors.phone?.message}>
@@ -265,7 +265,7 @@ export default function PerfilPage() {
                     maxLength={25}
                     placeholder="PT50000000000000000000000"
                     className="form-input"
-                    style={{ borderColor: errors.iban ? '#fca5a5' : 'var(--color-line-strong)' }}
+                    style={{ borderColor: errors.iban ? 'var(--color-danger-300)' : 'var(--color-line-strong)' }}
                   />
                 </FormField>
                 <FormField label="Banco" error={errors.bankName?.message}>
@@ -310,7 +310,7 @@ export default function PerfilPage() {
         }
         .form-input:focus {
           border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent);
         }
         .form-input::placeholder {
           color: var(--color-subtle);

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { formatCurrency } from '@/lib/utils/formatters'
 import { useClients } from '@/hooks/useClients'
+import { FormField } from '@/components/ui/FormField'
 
 const lineSchema = z.object({
   description: z.string().min(1, 'Obrigatório').max(500),
@@ -13,13 +14,28 @@ const lineSchema = z.object({
   vatRate: z.number().min(0).max(100),
 })
 
-const quoteSchema = z.object({
-  clientId: z.string().min(1, 'Seleciona um cliente.'),
-  discount: z.number().min(0).optional(),
-  notes: z.string().optional(),
-  validUntil: z.string().optional(),
-  lines: z.array(lineSchema).min(1, 'Adiciona pelo menos uma linha.'),
-})
+const quoteSchema = z
+  .object({
+    clientId: z.string().min(1, 'Seleciona um cliente.'),
+    discount: z.number().min(0).optional(),
+    notes: z.string().optional(),
+    validUntil: z.string().optional(),
+    lines: z.array(lineSchema).min(1, 'Adiciona pelo menos uma linha.'),
+  })
+  .refine(
+    (values) => {
+      if (!values.discount) return true
+      const total = values.lines.reduce(
+        (sum, l) => sum + l.quantity * l.unitPrice * (1 + l.vatRate / 100),
+        0,
+      )
+      return values.discount <= total
+    },
+    {
+      message: 'O desconto não pode ser superior ao total do orçamento.',
+      path: ['discount'],
+    },
+  )
 
 export type QuoteFormValues = z.infer<typeof quoteSchema>
 
@@ -81,7 +97,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
               id="qf-client"
               {...register('clientId')}
               style={{
-                borderColor: errors.clientId ? '#fca5a5' : 'var(--color-line-strong)',
+                borderColor: errors.clientId ? 'var(--color-danger-300)' : 'var(--color-line-strong)',
                 color: 'var(--color-ink)',
               }}
               className="form-input"
@@ -173,7 +189,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
         </div>
 
         {errors.lines?.root && (
-          <p className="px-5 py-2 text-xs" style={{ color: '#dc2626' }}>{errors.lines.root.message}</p>
+          <p className="px-5 py-2 text-xs" style={{ color: 'var(--color-danger-600)' }}>{errors.lines.root.message}</p>
         )}
 
         <div className="divide-y" style={{ borderColor: 'var(--color-line)' }}>
@@ -193,12 +209,12 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
                     placeholder="Ex: Instalação de tomada"
                     className="form-input"
                     style={{
-                      borderColor: errors.lines?.[index]?.description ? '#fca5a5' : 'var(--color-line-strong)',
+                      borderColor: errors.lines?.[index]?.description ? 'var(--color-danger-300)' : 'var(--color-line-strong)',
                       color: 'var(--color-ink)',
                     }}
                   />
                   {errors.lines?.[index]?.description && (
-                    <p className="mt-0.5 text-xs" style={{ color: '#dc2626' }}>{errors.lines[index]!.description!.message}</p>
+                    <p className="mt-0.5 text-xs" style={{ color: 'var(--color-danger-600)' }}>{errors.lines[index]!.description!.message}</p>
                   )}
                 </div>
 
@@ -258,7 +274,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
                       onClick={() => remove(index)}
                       className="w-7 h-7 rounded-md flex items-center justify-center transition-colors duration-150"
                       style={{ color: 'var(--color-muted)' }}
-                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fef2f2'; e.currentTarget.style.color = '#dc2626' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-danger-50)'; e.currentTarget.style.color = 'var(--color-danger-600)' }}
                       onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--color-muted)' }}
                       title="Remover linha"
                     >
@@ -312,40 +328,6 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
           {isLoading ? 'A guardar...' : submitLabel}
         </button>
       </div>
-
-      <style>{`
-        .form-input {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1.5px solid var(--color-line-strong);
-          padding: 0.5rem 0.75rem;
-          font-size: 0.875rem;
-          background-color: var(--color-card);
-          color: var(--color-ink);
-          outline: none;
-          transition: border-color 0.15s, box-shadow 0.15s;
-          font-family: var(--font-outfit), system-ui, sans-serif;
-        }
-        .form-input:focus {
-          border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px rgba(245,158,11,0.12);
-        }
-        .form-input::placeholder {
-          color: var(--color-subtle);
-        }
-      `}</style>
     </form>
-  )
-}
-
-function FormField({ label, id, error, children }: { label: string; id?: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label htmlFor={id} className="block text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--color-muted)' }}>
-        {label}
-      </label>
-      {children}
-      {error && <p className="mt-1 text-xs" style={{ color: '#dc2626' }}>{error}</p>}
-    </div>
   )
 }

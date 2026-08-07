@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Interfaces;
@@ -18,7 +19,13 @@ public class AppointmentReminderJob(
     /// Uses a ±1 day window around "tomorrow" to handle timing drift, mirroring
     /// MaintenanceAlertJob's windowing approach.
     /// </summary>
-    public async Task RunAsync()
+    /// <remarks>
+    /// AutomaticRetry is disabled: a mid-run failure after some reminders already sent would
+    /// otherwise cause Hangfire to replay the whole batch and double-send to clients already
+    /// notified. Missing a run is cheap — it retries naturally on the next daily schedule.
+    /// </remarks>
+    [AutomaticRetry(Attempts = 0)]
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         var targetDate = DateTime.UtcNow.Date.AddDays(1);
         var windowStart = targetDate.AddDays(-1);
@@ -33,7 +40,7 @@ public class AppointmentReminderJob(
                 i.ScheduledAt.HasValue &&
                 i.ScheduledAt.Value >= windowStart &&
                 i.ScheduledAt.Value < windowEnd)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         logger.LogInformation(
             "[AppointmentReminder] Found {Count} interventions scheduled around {Date}",
@@ -56,7 +63,7 @@ public class AppointmentReminderJob(
                     $"Olá {client.Name}, lembramos que tens uma intervenção agendada " +
                     $"({intervention.Title}) para amanhã, dia {scheduledStr}.";
 
-                await notificationService.SendWhatsAppAsync(client.Phone, message);
+                await notificationService.SendWhatsAppAsync(client.Phone, message, cancellationToken);
 
                 logger.LogInformation(
                     "[AppointmentReminder] Reminder sent to {Phone} for intervention {InterventionId}",

@@ -4,14 +4,18 @@
   --font-sans: var(--font-outfit);
   --font-mono: var(--font-jetbrains);
 
-  /* Brand — industrial amber */
+  /* Brand — industrial amber (overridden per-install via User.BrandColor, see
+     (dashboard)/layout.tsx generateBrandShades — never hardcode these hexes elsewhere,
+     always reference the var so a company's custom brand color actually takes effect) */
   --color-brand-50:  #fffbeb;
   --color-brand-100: #fef3c7;
   --color-brand-200: #fde68a;
+  --color-brand-300: #fcd34d;
   --color-brand-400: #fbbf24;
   --color-brand-500: #f59e0b;
   --color-brand-600: #d97706;
   --color-brand-700: #b45309;
+  --color-brand-800: #92400e;
 
   /* Surfaces — light defaults */
   --color-canvas:  #f7f7f4;
@@ -26,6 +30,47 @@
   /* Borders — light defaults */
   --color-line:        #e4e4e7;
   --color-line-strong: #d4d4d8;
+
+  /* Semantic status — fixed across themes/brand (danger/success/info must stay
+     recognizable regardless of a company's chosen brand color) */
+  --color-danger-50:  #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+
+  --color-success-50:  #f0fdf4;
+  --color-success-100: #d1fae5;
+  --color-success-200: #bbf7d0;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #16a34a;
+  --color-success-700: #15803d;
+
+  --color-info-50:  #eff6ff;
+  --color-info-400: #60a5fa;
+  --color-info-500: #3b82f6;
+  --color-info-600: #2563eb;
+  --color-info-700: #1d4ed8;
+
+  /* Neutral — inactive/draft/cancelled badges and near-white fills, fixed across themes
+     (same rationale as danger/success/info: a "Cancelled" chip must stay recognizably
+     grey, not swap with the page theme or take on a company's brand color) */
+  --color-neutral-50:  #fafafa;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-600: #52525b;
+
+  /* Role badges — categorical, must stay mutually distinct regardless of theme/brand */
+  --color-role-purple-bg:   #faf5ff;
+  --color-role-purple-text: #7c3aed;
+  --color-role-purple-dot:  #a855f7;
+  --color-role-rose-bg:     #fff1f2;
+  --color-role-rose-text:   #be123c;
+  --color-role-rose-dot:    #f43f5e;
 }
 
 /* ── Light (default) ────────────────────────────────────────────────────── */
@@ -89,4 +134,26 @@ body {
 .stagger > *:nth-child(3) { animation-delay: 100ms; }
 .stagger > *:nth-child(4) { animation-delay: 150ms; }
 .stagger > *:nth-child(5) { animation-delay: 200ms; }
+
+/* Shared text input styling for form fields (ClientForm, EquipmentForm, QuoteForm,
+   InterventionForm) — previously duplicated as an inline <style> tag in each form. */
+.form-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1.5px solid var(--color-line-strong);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: var(--color-card);
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  font-family: var(--font-outfit), system-ui, sans-serif;
+}
+.form-input:focus {
+  border-color: var(--color-brand-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent);
+}
+.form-input::placeholder {
+  color: var(--color-subtle);
+}
 .stagger > *:nth-child(6) { animation-delay: 250ms; }

@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.UpdateQuoteStatus;
 
@@ -13,10 +14,7 @@ public class UpdateQuoteStatusCommandHandler(IAppDbContext db, ICurrentUserServi
         UpdateQuoteStatusCommand request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's quotes
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         var quote = await db.Quotes
             .FirstOrDefaultAsync(q => q.Id == request.Id, cancellationToken);

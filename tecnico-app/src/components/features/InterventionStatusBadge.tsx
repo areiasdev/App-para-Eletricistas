@@ -1,9 +1,9 @@
 import type { InterventionStatus } from '@/types'
 
 const config: Record<InterventionStatus, { label: string; bg: string; color: string; dot: string }> = {
-  Scheduled:  { label: 'Agendada',    bg: '#eff6ff', color: '#1d4ed8', dot: '#3b82f6' },
-  InProgress: { label: 'Em curso',    bg: '#fffbeb', color: '#b45309', dot: '#f59e0b' },
-  Completed:  { label: 'Concluída',   bg: '#f0fdf4', color: '#15803d', dot: '#22c55e' },
+  Scheduled:  { label: 'Agendada',    bg: 'var(--color-info-50)', color: 'var(--color-info-700)', dot: 'var(--color-info-500)' },
+  InProgress: { label: 'Em curso',    bg: 'var(--color-brand-50)', color: 'var(--color-brand-700)', dot: 'var(--color-brand-500)' },
+  Completed:  { label: 'Concluída',   bg: 'var(--color-success-50)', color: 'var(--color-success-700)', dot: 'var(--color-success-500)' },
 }
 
 export function InterventionStatusBadge({ status }: { status: InterventionStatus }) {

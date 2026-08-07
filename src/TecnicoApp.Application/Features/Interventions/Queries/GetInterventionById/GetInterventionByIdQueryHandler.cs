@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Interventions.DTOs;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Interventions.Queries.GetInterventionById;
 
@@ -15,10 +16,7 @@ public class GetInterventionByIdQueryHandler(IAppDbContext db, ICurrentUserServi
         var userId = currentUser.UserId;
 
         // Resolve ownerId: team members see their owner's data
-        var ownerId = await db.Users.AsNoTracking()
-            .Where(u => u.Id == userId)
-            .Select(u => u.OwnerId ?? u.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        var ownerId = await db.ResolveOwnerIdAsync(userId, cancellationToken);
 
         var intervention = await db.Interventions
             .AsNoTracking()

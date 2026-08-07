@@ -1,4 +1,5 @@
 import { api } from './client'
+import type { PaginatedResult } from '@/types'
 
 export interface AuditLogDto {
   id: number
@@ -11,16 +12,6 @@ export interface AuditLogDto {
   occurredAt: string
 }
 
-export interface PaginatedResult<T> {
-  items: T[]
-  totalCount: number
-  page: number
-  pageSize: number
-  totalPages: number
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-}
-
 export const auditLogsApi = {
   get: (params: {
     page?: number
@@ -30,6 +21,6 @@ export const auditLogsApi = {
     to?: string
   }) =>
     api
-      .get<PaginatedResult<AuditLogDto>>('/audit-logs', { params })
+      .get<PaginatedResult<AuditLogDto>>('/auditlogs', { params })
       .then((r) => r.data),
 }

@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
+using TecnicoApp.Application.Common.Extensions;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.DeleteQuote;
 
@@ -13,10 +14,7 @@ public class DeleteQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         DeleteQuoteCommand request, CancellationToken cancellationToken)
     {
         // Resolve ownerId: team members share their owner's quotes
-        var caller = await db.Users.AsNoTracking()
-            .Where(u => u.Id == currentUser.UserId)
-            .Select(u => new { OwnerId = u.OwnerId ?? u.Id, u.Role })
-            .FirstOrDefaultAsync(cancellationToken);
+        var caller = await db.ResolveCallerAsync(currentUser.UserId, cancellationToken);
 
         if (caller is null)
             return Result.Unauthorized();

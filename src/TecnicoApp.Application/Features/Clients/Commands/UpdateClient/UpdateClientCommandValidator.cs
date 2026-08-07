@@ -23,6 +23,14 @@ public class UpdateClientCommandValidator : AbstractValidator<UpdateClientComman
             .MaximumLength(256)
             .When(x => !string.IsNullOrEmpty(x.Email));
 
+        RuleFor(x => x.Phone)
+            .MaximumLength(20)
+            .When(x => !string.IsNullOrEmpty(x.Phone));
+
+        RuleFor(x => x.Notes)
+            .MaximumLength(2000)
+            .When(x => !string.IsNullOrEmpty(x.Notes));
+
         When(x => x.Address is not null, () =>
         {
             RuleFor(x => x.Address!.Street).NotEmpty().MaximumLength(300);

@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Interfaces;
@@ -14,7 +15,13 @@ public class MaintenanceAlertJob(
     /// Runs daily. Sends one email per equipment whose NextMaintenance is exactly 7 days away.
     /// Uses a window of ±12h around "today + 7 days" to handle timing drift.
     /// </summary>
-    public async Task RunAsync()
+    /// <remarks>
+    /// AutomaticRetry is disabled: a mid-run failure after some alerts already sent would
+    /// otherwise cause Hangfire to replay the whole batch and double-send to clients already
+    /// notified. Missing a run is cheap — it retries naturally on the next daily schedule.
+    /// </remarks>
+    [AutomaticRetry(Attempts = 0)]
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
         var targetDate = DateTime.UtcNow.Date.AddDays(7);
         var windowStart = targetDate;
@@ -29,7 +36,7 @@ public class MaintenanceAlertJob(
                 e.NextMaintenance.HasValue &&
                 e.NextMaintenance.Value >= windowStart &&
                 e.NextMaintenance.Value < windowEnd)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         logger.LogInformation(
             "[MaintenanceAlert] Found {Count} equipment items due for maintenance on {Date}",
@@ -50,7 +57,7 @@ public class MaintenanceAlertJob(
                     eq.NextMaintenance!.Value, user.FullName);
 
                 await emailService.SendAsync(
-                    new EmailMessage(user.Email, user.FullName, subject, html));
+                    new EmailMessage(user.Email, user.FullName, subject, html), cancellationToken);
 
                 logger.LogInformation(
                     "[MaintenanceAlert] Alert sent to {Email} for equipment {EquipmentId}",

@@ -82,21 +82,24 @@ public class InviteTeamMemberCommandHandler(
 
         if (existingUser is not null)
         {
+            // Do NOT reassign OwnerId/Role here: this is an already-active account and
+            // reassigning its tenant now (before the invite is accepted) would silently
+            // hijack it out from under the current owner the instant this request commits.
+            // The reassignment happens in AcceptInviteCommandHandler instead, gated on the
+            // invitee proving control of the invite token.
             memberUser = existingUser;
-            memberUser.OwnerId = ownerId;
-            memberUser.Role = request.Role;
         }
         else
         {
-            // Create stub user — they'll reset their password via invite link later
+            // Create stub user — they'll reset their password via invite link later.
+            // OwnerId/Role are intentionally left unset (defaults) until acceptance; the
+            // account has a random, never-disclosed password so it can't be used before then.
             var tempPassword = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
             memberUser = new User
             {
                 Email = normalizedEmail,
                 FullName = normalizedEmail, // placeholder until they accept
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword),
-                OwnerId = ownerId,
-                Role = request.Role
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword)
             };
             db.Users.Add(memberUser);
         }
