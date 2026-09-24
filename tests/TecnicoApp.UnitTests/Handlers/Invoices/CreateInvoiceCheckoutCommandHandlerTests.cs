@@ -59,7 +59,7 @@ public class CreateInvoiceCheckoutCommandHandlerTests
 
         result.IsSuccess.Should().BeFalse();
         await stripe.DidNotReceive().CreateSessionAsync(
-            Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+            Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class CreateInvoiceCheckoutCommandHandlerTests
 
         result.IsSuccess.Should().BeFalse();
         await stripe.DidNotReceive().CreateSessionAsync(
-            Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+            Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class CreateInvoiceCheckoutCommandHandlerTests
         var rawToken = IssueRawToken(db, invoice);
 
         var stripe = Substitute.For<IStripeCheckoutService>();
-        stripe.CreateSessionAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        stripe.CreateSessionAsync(Arg.Any<decimal>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(("cs_test_123", "https://checkout.stripe.com/cs_test_123"));
 
         var handler = new CreateInvoiceCheckoutCommandHandler(db, stripe, MakeAppSettings());
@@ -103,6 +103,7 @@ public class CreateInvoiceCheckoutCommandHandlerTests
             invoice.Total, Arg.Any<string>(),
             Arg.Is<string>(s => s.Contains("success=true")),
             Arg.Is<string>(s => s.Contains("cancelled=true")),
+            invoice.Id.ToString(),
             Arg.Any<CancellationToken>());
     }
 

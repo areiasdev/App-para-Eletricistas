@@ -41,12 +41,7 @@ public class GetPublicInvoiceByTokenQueryHandler(IAppDbContext db)
             invoice.Total,
             invoice.DueDate,
             invoice.IssuedAt,
-            invoice.Lines
-                .OrderBy(l => l.CreatedAt)
-                .Select(l => new InvoiceLineDto(
-                    l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
-                    Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
-                .ToList()
+            invoice.Lines.ToLineDtos()
         );
 
         return Result.Success(dto);

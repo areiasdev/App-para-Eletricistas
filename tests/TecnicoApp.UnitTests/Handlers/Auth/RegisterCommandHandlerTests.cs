@@ -10,6 +10,45 @@ namespace TecnicoApp.UnitTests.Handlers.Auth;
 
 public class RegisterCommandHandlerTests
 {
+    private static IAppSettings OpenRegistration(bool open = true)
+    {
+        var settings = Substitute.For<IAppSettings>();
+        settings.AllowOpenRegistration.Returns(open);
+        return settings;
+    }
+
+    [Fact]
+    public async Task Handle_registration_is_closed_once_an_account_exists()
+    {
+        using var db = TestDb.Create();
+        db.Users.Add(new User { Email = "owner@x.pt", PasswordHash = "h", FullName = "Owner" });
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new RegisterCommandHandler(db, Substitute.For<ITokenService>(), OpenRegistration(false));
+
+        var result = await handler.Handle(
+            new RegisterCommand("Estranho", "stranger@x.pt", "password123"),
+            CancellationToken.None);
+
+        result.Status.Should().Be(Ardalis.Result.ResultStatus.Forbidden);
+        db.Users.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Handle_first_account_can_register_while_closed()
+    {
+        using var db = TestDb.Create();
+        var tokenService = Substitute.For<ITokenService>();
+        tokenService.GenerateRefreshToken().Returns("refresh-token");
+        var handler = new RegisterCommandHandler(db, tokenService, OpenRegistration(false));
+
+        var result = await handler.Handle(
+            new RegisterCommand("Dono", "dono@x.pt", "password123"),
+            CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
     [Fact]
     public async Task Handle_new_email_creates_user_and_returns_tokens()
     {
@@ -19,7 +58,7 @@ public class RegisterCommandHandlerTests
         tokenService.GenerateAccessToken(Arg.Any<User>()).Returns("access-token");
         tokenService.GenerateRefreshToken().Returns("refresh-token");
 
-        var handler = new RegisterCommandHandler(db, tokenService);
+        var handler = new RegisterCommandHandler(db, tokenService, OpenRegistration());
 
         var result = await handler.Handle(
             new RegisterCommand("Novo Utilizador", "Novo@X.pt", "password123"),
@@ -41,7 +80,7 @@ public class RegisterCommandHandlerTests
         await db.SaveChangesAsync(CancellationToken.None);
 
         var tokenService = Substitute.For<ITokenService>();
-        var handler = new RegisterCommandHandler(db, tokenService);
+        var handler = new RegisterCommandHandler(db, tokenService, OpenRegistration());
 
         var result = await handler.Handle(
             new RegisterCommand("Outro", "existing@x.pt", "password123"),

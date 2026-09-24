@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAcceptInvite } from '@/hooks/useTeam'
 import { getErrorMessage } from '@/lib/api/client'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
 function AceitarConviteInner() {
   const searchParams = useSearchParams()
@@ -73,9 +74,9 @@ function AceitarConviteInner() {
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
               style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
-              T
+              {APP_INITIAL}
             </span>
-            <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>TécnicoApp</span>
+            <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>{APP_NAME}</span>
           </div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>Aceitar convite</h1>
           <p className="text-sm" style={{ color: 'var(--color-muted)' }}>

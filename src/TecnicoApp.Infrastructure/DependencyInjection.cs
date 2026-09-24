@@ -29,6 +29,7 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, TwilioNotificationService>();
         services.AddScoped<MaintenanceAlertJob>();
         services.AddScoped<InvoiceDueReminderJob>();
+        services.AddScoped<InvoiceOverdueJob>();
         services.AddScoped<AppointmentReminderJob>();
         services.AddHttpContextAccessor();
 

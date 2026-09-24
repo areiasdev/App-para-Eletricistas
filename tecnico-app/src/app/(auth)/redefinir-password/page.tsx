@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { authApi } from '@/lib/api/auth'
 import { getErrorMessage } from '@/lib/api/client'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams()
@@ -157,15 +158,15 @@ export default function ResetPasswordPage() {
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            T
+            {APP_INITIAL}
           </span>
-          <span className="text-sm font-semibold text-white/90 tracking-tight">TécnicoApp</span>
+          <span className="text-sm font-semibold text-white/90 tracking-tight">{APP_NAME}</span>
         </div>
         <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
           Redefine a tua password de forma segura.
         </p>
         <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-          © 2026 TécnicoApp
+          © {new Date().getFullYear()} {APP_NAME}
         </p>
       </div>
 
@@ -177,10 +178,10 @@ export default function ResetPasswordPage() {
               className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
               style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
             >
-              T
+              {APP_INITIAL}
             </span>
             <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-ink)' }}>
-              TécnicoApp
+              {APP_NAME}
             </span>
           </div>
 

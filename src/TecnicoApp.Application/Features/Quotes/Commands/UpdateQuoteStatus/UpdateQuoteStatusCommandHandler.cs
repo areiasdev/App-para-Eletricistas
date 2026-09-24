@@ -31,7 +31,8 @@ public class UpdateQuoteStatusCommandHandler(IAppDbContext db, ICurrentUserServi
             (QuoteStatus.Draft, QuoteStatus.Sent) => true,
             (QuoteStatus.Sent, QuoteStatus.Accepted) => true,
             (QuoteStatus.Sent, QuoteStatus.Rejected) => true,
-            (QuoteStatus.Accepted, QuoteStatus.Invoiced) => true,
+            // Accepted → Invoiced is deliberately absent: it only happens through
+            // CreateInvoiceFromQuote, so an "Invoiced" quote always has a real invoice behind it.
             (QuoteStatus.Sent, QuoteStatus.Draft) => true,   // allow recall
             _ => false
         };

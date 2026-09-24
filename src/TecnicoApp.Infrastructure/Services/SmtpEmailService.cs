@@ -8,18 +8,20 @@ using TecnicoApp.Application.Common.Interfaces;
 
 namespace TecnicoApp.Infrastructure.Services;
 
-public class SmtpEmailService(IConfiguration configuration, ILogger<SmtpEmailService> logger)
+public class SmtpEmailService(IConfiguration configuration, IAppSettings appSettings, ILogger<SmtpEmailService> logger)
     : IEmailService
 {
     public async Task SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
     {
         var smtp = configuration.GetSection("Smtp");
         var host     = smtp["Host"];
-        var port     = int.Parse(smtp["Port"] ?? "587");
+        var port     = int.TryParse(smtp["Port"], out var configuredPort) ? configuredPort : 587;
         var user     = smtp["Username"];
         var password = smtp["Password"];
-        var fromName = smtp["FromName"] ?? "TécnicoApp";
-        var fromAddr = smtp["FromAddress"] ?? user ?? "noreply@tecnicoapp.pt";
+        // Blank env vars arrive as "" (not null) from docker-compose's ${VAR:-} defaults, so
+        // `??` alone would send with an empty From address and every email would bounce.
+        var fromName = FirstNonBlank(smtp["FromName"], appSettings.ProductName)!;
+        var fromAddr = FirstNonBlank(smtp["FromAddress"], user);
 
         if (string.IsNullOrWhiteSpace(host))
         {
@@ -28,6 +30,10 @@ public class SmtpEmailService(IConfiguration configuration, ILogger<SmtpEmailSer
                 "[Email] Would send to {To}: {Subject}", message.To, message.Subject);
             return;
         }
+
+        if (fromAddr is null)
+            throw new InvalidOperationException(
+                "Smtp:FromAddress (or Smtp:Username) must be set when Smtp:Host is configured.");
 
         var mime = new MimeMessage();
         mime.From.Add(new MailboxAddress(fromName, fromAddr));
@@ -67,4 +73,7 @@ public class SmtpEmailService(IConfiguration configuration, ILogger<SmtpEmailSer
 
         logger.LogInformation("[Email] Sent to {To}: {Subject}", message.To, message.Subject);
     }
+
+    private static string? FirstNonBlank(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 }

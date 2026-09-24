@@ -1,3 +1,4 @@
+using TecnicoApp.Domain.Common;
 using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Domain.Entities;
@@ -21,9 +22,8 @@ public class Quote : BaseEntity
 
     public ICollection<QuoteLine> Lines { get; set; } = [];
 
-    // Propriedades calculadas — não persistidas
-    // Round each line individually before summing to avoid cent-level drift across many lines
-    public decimal SubTotal => Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2, MidpointRounding.AwayFromZero));
-    public decimal VatTotal => Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice * (l.VatRate / 100), 2, MidpointRounding.AwayFromZero));
-    public decimal Total => Math.Round(SubTotal + VatTotal - (Discount ?? 0), 2, MidpointRounding.AwayFromZero);
+    // Propriedades calculadas — não persistidas (see DocumentMath for the rounding rules)
+    public decimal SubTotal => DocumentMath.SubTotal(Lines);
+    public decimal VatTotal => DocumentMath.VatTotal(Lines);
+    public decimal Total => DocumentMath.Total(Lines, Discount);
 }

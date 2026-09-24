@@ -9,13 +9,20 @@ namespace TecnicoApp.Application.Features.Auth.Commands.Register;
 
 public sealed class RegisterCommandHandler(
     IAppDbContext db,
-    ITokenService tokenService)
+    ITokenService tokenService,
+    IAppSettings appSettings)
     : IRequestHandler<RegisterCommand, Result<AuthResponseDto>>
 {
     public async Task<Result<AuthResponseDto>> Handle(
         RegisterCommand command,
         CancellationToken cancellationToken)
     {
+        // One install = one company. Once the first account (the Owner) exists, everyone else
+        // joins through a team invite — otherwise anyone who finds the URL could create a
+        // separate account on this company's server.
+        if (!appSettings.AllowOpenRegistration && await db.Users.AnyAsync(cancellationToken))
+            return Result.Forbidden("O registo está fechado. Pede um convite ao administrador da tua empresa.");
+
         var emailExists = await db.Users
             .AsNoTracking()
             .AnyAsync(u => u.Email == command.Email.ToLowerInvariant(), cancellationToken);
@@ -30,7 +37,7 @@ public sealed class RegisterCommandHandler(
             FullName = command.FullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(command.Password),
             RefreshTokenHash = tokenService.HashRefreshToken(refreshToken),
-            RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30),
+            RefreshTokenExpiresAt = DateTime.UtcNow.Add(tokenService.RefreshTokenLifetime),
         };
 
         await db.Users.AddAsync(user, cancellationToken);

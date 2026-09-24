@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using MediatR;
 using TecnicoApp.Application.Features.Quotes.DTOs;
+using TecnicoApp.Domain.Common;
 
 namespace TecnicoApp.Application.Features.Quotes.Commands.CreateQuote;
 
@@ -8,7 +9,7 @@ public record CreateQuoteLineRequest(
     string Description,
     decimal Quantity,
     decimal UnitPrice,
-    decimal VatRate = 23m
+    decimal VatRate = DocumentMath.StandardVatRate
 );
 
 public record CreateQuoteCommand(

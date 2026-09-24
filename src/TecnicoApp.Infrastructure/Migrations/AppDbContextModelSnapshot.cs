@@ -17,7 +17,7 @@ namespace TecnicoApp.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.29")
+                .HasAnnotation("ProductVersion", "8.0.31")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -393,7 +393,7 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .HasColumnType("decimal(10,3)");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(12,4)");
 
                     b.Property<decimal>("VatRate")
                         .HasColumnType("decimal(5,2)");
@@ -502,7 +502,7 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(10,2)");
+                        .HasColumnType("decimal(12,4)");
 
                     b.Property<decimal>("VatRate")
                         .HasColumnType("decimal(5,2)");

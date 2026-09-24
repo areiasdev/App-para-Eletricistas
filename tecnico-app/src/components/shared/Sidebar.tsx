@@ -9,11 +9,12 @@ import { useThemeStore } from '@/stores/themeStore'
 import { useCanManage } from '@/hooks/useCanManage'
 import { useRouter } from 'next/navigation'
 import { authApi } from '@/lib/api/auth'
+import { API_BASE_URL } from '@/lib/config'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
 
 // Shown in the desktop sidebar, mobile top bar, and mobile drawer — falls back to the
-// generic "T" mark + "TécnicoApp" until a company uploads its own logo/name in Perfil.
+// generic APP_INITIAL mark + APP_NAME until a company uploads its own logo/name in Perfil.
 function SidebarBrand({ onClick }: { onClick?: () => void }) {
   const user = useAuthStore((s) => s.user)
 
@@ -22,7 +23,7 @@ function SidebarBrand({ onClick }: { onClick?: () => void }) {
       {user?.logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`${API_BASE}${user.logoUrl}`}
+          src={`${API_BASE_URL}${user.logoUrl}`}
           alt={user.companyName ?? 'Logótipo'}
           className="w-7 h-7 rounded-md object-contain shrink-0"
           style={{ backgroundColor: 'white' }}
@@ -32,11 +33,11 @@ function SidebarBrand({ onClick }: { onClick?: () => void }) {
           className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold shrink-0"
           style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
         >
-          T
+          {APP_INITIAL}
         </span>
       )}
       <span className="text-sm font-semibold tracking-tight text-white/90 truncate">
-        {user?.companyName || 'TécnicoApp'}
+        {user?.companyName || APP_NAME}
       </span>
     </Link>
   )

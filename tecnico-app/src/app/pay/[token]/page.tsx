@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '@/lib/api/public'
 import { formatDate, formatCurrency } from '@/lib/utils/formatters'
 import { InvoiceStatusBadge } from '@/components/features/InvoiceStatusBadge'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
 function PayPageInner({ token }: { token: string }) {
   const searchParams = useSearchParams()
@@ -40,9 +41,9 @@ function PayPageInner({ token }: { token: string }) {
         <div className="flex items-center justify-center gap-2">
           <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
-            T
+            {APP_INITIAL}
           </span>
-          <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>TécnicoApp</span>
+          <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>{APP_NAME}</span>
         </div>
 
         {isLoading && (

@@ -5,6 +5,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using TecnicoApp.Infrastructure.Jobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -76,35 +77,45 @@ builder.Services.AddAuthorization();
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 builder.Services.AddRateLimiter(options =>
 {
-    // Auth endpoints: 10 attempts per minute per IP (brute-force protection)
-    options.AddFixedWindowLimiter("auth", opt =>
-    {
-        opt.PermitLimit = 10;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit = 0;
-    });
-
-    // General API: 120 requests per minute per IP
-    options.AddFixedWindowLimiter("api", opt =>
-    {
-        opt.PermitLimit = 120;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit = 10;
-    });
+    // Auth endpoints: 10 attempts per minute *per client IP* (brute-force protection).
+    // A plain AddFixedWindowLimiter is one global bucket — ten failed logins from anywhere
+    // would lock the whole company out for a minute — so partition by the caller's address
+    // (the real one, after UseForwardedHeaders below has applied X-Forwarded-For).
+    options.AddPolicy("auth", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            QueueLimit = 0,
+        }));
 
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    // Use real IP (respects X-Forwarded-For behind reverse proxy)
     options.OnRejected = async (context, ct) =>
     {
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.HttpContext.Response.ContentType = "application/problem+json";
         await context.HttpContext.Response.WriteAsync(
-            """{"type":"https://tecnicoapp.pt/errors/rate-limit","title":"Demasiadas tentativas. Aguarda um momento.","status":429}""",
+            """{"title":"Demasiadas tentativas. Aguarda um momento.","status":429}""",
             ct);
     };
+});
+
+// ── Reverse proxy ─────────────────────────────────────────────────────────────
+// Production runs behind Caddy/Nginx/Traefik (see README), so the TCP peer is the proxy.
+// Trust X-Forwarded-For/-Proto only from the proxy's network — by default loopback plus the
+// private ranges Docker networks use; override with ReverseProxy:KnownNetworks (CIDR list).
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    var networks = builder.Configuration.GetSection("ReverseProxy:KnownNetworks").Get<string[]>()
+        ?? ["127.0.0.0/8", "::1/128", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"];
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+    foreach (var cidr in networks)
+        options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(cidr));
 });
 
 // ── Swagger ───────────────────────────────────────────────────────────────────
@@ -157,7 +168,7 @@ builder.Services.AddHangfire(config => config
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
-    .UsePostgreSqlStorage(hangfireConnStr));
+    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(hangfireConnStr)));
 builder.Services.AddHangfireServer();
 
 // ── Health checks ─────────────────────────────────────────────────────────────
@@ -174,6 +185,9 @@ using (var migrationScope = app.Services.CreateScope())
     var dbContext = migrationScope.ServiceProvider.GetRequiredService<TecnicoApp.Infrastructure.Persistence.AppDbContext>();
     dbContext.Database.Migrate();
 }
+
+// Must run first so logging, rate limiting and HTTPS redirection all see the real client.
+app.UseForwardedHeaders();
 
 // ── Security headers ──────────────────────────────────────────────────────────
 app.Use(async (context, next) =>
@@ -251,24 +265,38 @@ var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>(
 // JobLoadException warning every cycle. RemoveIfExists is idempotent — safe to call on every startup.
 recurringJobManager.RemoveIfExists("trial-expiration");
 
-// Register recurring job — runs daily at 08:00
+// Recurring jobs run on the company's local clock (App:TimeZone, default Europe/Lisbon) —
+// Hangfire's default is UTC, which shifts every "08:00" reminder by an hour in summer.
+var jobTimeZone = ResolveTimeZone(builder.Configuration["App:TimeZone"], app.Logger);
+var jobOptions = new RecurringJobOptions { TimeZone = jobTimeZone };
+
 recurringJobManager.AddOrUpdate<MaintenanceAlertJob>(
     "maintenance-alerts",
     job => job.RunAsync(default),
-    "0 8 * * *");
+    "0 8 * * *",
+    jobOptions);
+
+// Marks unpaid invoices past their due date as Overdue — runs before the reminders below.
+recurringJobManager.AddOrUpdate<InvoiceOverdueJob>(
+    "invoice-overdue",
+    job => job.RunAsync(default),
+    "5 0 * * *",
+    jobOptions);
 
 // Reminds clients their invoice is due in ~3 days — staggered a few minutes after the
 // maintenance-alerts job so they don't all hit the DB at once.
 recurringJobManager.AddOrUpdate<InvoiceDueReminderJob>(
     "invoice-due-reminders",
     job => job.RunAsync(default),
-    "15 8 * * *");
+    "15 8 * * *",
+    jobOptions);
 
 // Reminds clients (not the technician) about tomorrow's scheduled intervention.
 recurringJobManager.AddOrUpdate<AppointmentReminderJob>(
     "appointment-reminders",
     job => job.RunAsync(default),
-    "30 8 * * *");
+    "30 8 * * *",
+    jobOptions);
 
 app.Run();
 
@@ -281,6 +309,20 @@ static string RedactTokenSegments(string path)
         path,
         "(?<=/invoices/public/)[^/]+",
         "[REDACTED]");
+}
+
+static TimeZoneInfo ResolveTimeZone(string? id, Microsoft.Extensions.Logging.ILogger logger)
+{
+    const string defaultTimeZone = "Europe/Lisbon";
+    try
+    {
+        return TimeZoneInfo.FindSystemTimeZoneById(string.IsNullOrWhiteSpace(id) ? defaultTimeZone : id);
+    }
+    catch (TimeZoneNotFoundException)
+    {
+        logger.LogWarning("Time zone {TimeZone} not found — scheduling recurring jobs in UTC.", id ?? defaultTimeZone);
+        return TimeZoneInfo.Utc;
+    }
 }
 
 public partial class Program { }

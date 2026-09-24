@@ -2,6 +2,7 @@ using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TecnicoApp.Application.Common.Email;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Team.DTOs;
 using TecnicoApp.Domain.Entities;
@@ -129,37 +130,20 @@ public class InviteTeamMemberCommandHandler(
         try
         {
             var inviteUrl = $"{appSettings.BaseUrl}/aceitar-convite?token={rawToken}";
-            var html = $"""
-                <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
-                  <div style="margin-bottom:24px">
-                    <span style="background:#f59e0b;color:#1c1917;font-size:14px;font-weight:700;
-                      padding:6px 10px;border-radius:6px">T TécnicoApp</span>
-                  </div>
-                  <h1 style="font-size:22px;font-weight:700;margin-bottom:8px">
-                    Foste convidado para a equipa
-                  </h1>
-                  <p style="color:#555;margin-bottom:8px">
-                    <strong>{ownerUser!.FullName}</strong> convidou-te para se juntar à equipa no TécnicoApp.
-                  </p>
-                  <p style="color:#555;margin-bottom:24px">
-                    Clica no botão abaixo para configurar a tua conta. O link é válido por 7 dias.
-                  </p>
-                  <a href="{inviteUrl}"
-                    style="display:inline-block;background:#f59e0b;color:#1c1917;font-weight:700;
-                      font-size:15px;padding:12px 28px;border-radius:8px;text-decoration:none">
-                    Aceitar convite →
-                  </a>
-                  <p style="color:#999;font-size:12px;margin-top:32px">
-                    Se não reconheces este email, podes ignorá-lo com segurança.
-                  </p>
-                </div>
+            var branding = EmailBranding.ForCompany(ownerUser!);
+            var body = $"""
+                <h1 style="font-size:22px;font-weight:700;margin:0 0 8px;color:#1a1a1a;">Foste convidado para a equipa</h1>
+                <p style="margin:0 0 8px;"><strong>{EmailLayout.Encode(ownerUser.FullName)}</strong> convidou-te para te juntares à equipa de <strong>{EmailLayout.Encode(branding.SenderName)}</strong>.</p>
+                <p style="margin:0 0 24px;">Clica no botão abaixo para configurar a tua conta. O link é válido por 7 dias.</p>
+                {EmailLayout.Button(branding, inviteUrl, "Aceitar convite →")}
+                <p style="margin:0;color:#9ca3af;font-size:12px;">Se não reconheces este email, podes ignorá-lo com segurança.</p>
                 """;
 
             await emailService.SendAsync(new EmailMessage(
                 To: normalizedEmail,
                 ToName: normalizedEmail,
-                Subject: $"Convite para a equipa TécnicoApp de {ownerUser.FullName}",
-                HtmlBody: html), cancellationToken);
+                Subject: EmailLayout.SubjectSafe($"Convite para a equipa de {branding.SenderName}"),
+                HtmlBody: EmailLayout.Render(branding, body, appSettings.ProductName)), cancellationToken);
         }
         catch (Exception ex)
         {

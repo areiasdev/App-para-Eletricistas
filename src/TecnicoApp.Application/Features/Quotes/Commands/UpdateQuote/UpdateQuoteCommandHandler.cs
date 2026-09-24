@@ -79,28 +79,7 @@ public class UpdateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
 
         await db.SaveChangesAsync(cancellationToken);
 
-        var dto = new QuoteDto(
-            quote.Id,
-            quote.Number,
-            quote.Status,
-            quote.Discount,
-            quote.Notes,
-            quote.ValidUntil,
-            quote.SignedAt,
-            quote.PdfUrl,
-            quote.ClientId,
-            quote.Client.Name,
-            quote.SubTotal,
-            quote.VatTotal,
-            quote.Total,
-            quote.Lines
-                .Select(l => new QuoteLineDto(
-                    l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
-                    Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
-                .ToList(),
-            quote.CreatedAt,
-            quote.EmailSentAt
-        );
+        var dto = quote.ToDto();
 
         return Result.Success(dto);
     }

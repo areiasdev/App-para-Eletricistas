@@ -46,7 +46,9 @@ public class GetInvoicesQueryHandler(IAppDbContext db, ICurrentUserService curre
                 i.Number,
                 i.Status,
                 i.Client.Name,
-                i.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100)) - (i.Discount ?? 0),
+                // Same per-line rounding as DocumentMath (Postgres round() is half-away-from-zero),
+                // so the list total matches the detail page and PDF to the cent.
+                i.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (i.Discount ?? 0),
                 i.DueDate,
                 i.CreatedAt
             ))

@@ -5,8 +5,9 @@ import { http, HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
 import { server } from '@/test/msw/server'
 import { useClients, useClient } from './useClients'
+import { API_BASE_URL } from '@/lib/config'
 
-const BASE_URL = 'http://localhost:5000/api/v1'
+const BASE_URL = `${API_BASE_URL}/api/v1`
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })

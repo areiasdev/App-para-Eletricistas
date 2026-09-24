@@ -12,8 +12,9 @@ import { useCreateClient } from '@/hooks/useClients'
 import { ClientForm, type ClientFormValues } from '@/components/features/ClientForm'
 import { getErrorMessage } from '@/lib/api/client'
 import { companyInfoSchema, type CompanyInfoFormValues } from './schema'
+import { API_BASE_URL } from '@/lib/config'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
 
 // Same default used by the Perfil page (perfil/page.tsx) — a fresh install's brand
 // color falls back to this amber until the owner picks their own.
@@ -225,10 +226,10 @@ export default function OnboardingPage() {
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            T
+            {APP_INITIAL}
           </span>
           <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-ink)' }}>
-            TécnicoApp
+            {APP_NAME}
           </span>
         </div>
 
@@ -311,7 +312,7 @@ export default function OnboardingPage() {
                   >
                     {profile?.logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`${API_BASE}${profile.logoUrl}?v=${Date.now()}`} alt="Logótipo" className="w-full h-full object-contain" />
+                      <img src={`${API_BASE_URL}${profile.logoUrl}?v=${Date.now()}`} alt="Logótipo" className="w-full h-full object-contain" />
                     ) : (
                       <span className="text-xs" style={{ color: 'var(--color-subtle)' }}>Sem logo</span>
                     )}

@@ -35,13 +35,18 @@ services:
       Jwt__Issuer: ${JWT_ISSUER:-https://tecnicoapp.pt}
       Jwt__Audience: ${JWT_AUDIENCE:-https://tecnicoapp.pt}
       Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES:-60}
+      Jwt__RefreshTokenDays: ${JWT_REFRESH_TOKEN_DAYS:-30}
       Cors__AllowedOrigins: ${FRONTEND_URL:?FRONTEND_URL must be set}
       App__BaseUrl: ${FRONTEND_URL}
+      App__ProductName: ${APP_PRODUCT_NAME:-TécnicoApp}
+      App__TimeZone: ${APP_TIME_ZONE:-Europe/Lisbon}
+      App__InvoicePaymentTermDays: ${INVOICE_PAYMENT_TERM_DAYS:-30}
+      App__AllowOpenRegistration: ${ALLOW_OPEN_REGISTRATION:-false}
       Smtp__Host: ${SMTP_HOST:-}
       Smtp__Port: ${SMTP_PORT:-587}
       Smtp__Username: ${SMTP_USERNAME:-}
       Smtp__Password: ${SMTP_PASSWORD:-}
-      Smtp__FromName: ${SMTP_FROM_NAME:-TécnicoApp}
+      Smtp__FromName: ${SMTP_FROM_NAME:-}
       Smtp__FromAddress: ${SMTP_FROM_ADDRESS:-}
       # This install's own Stripe account — collects payment from this trade company's own
       # customers on invoices. Not a shared platform account, not subscription billing.
@@ -52,6 +57,9 @@ services:
       Twilio__AuthToken: ${TWILIO_AUTH_TOKEN:-}
       Twilio__FromNumber: ${TWILIO_FROM_NUMBER:-}
       Twilio__WhatsAppFromNumber: ${TWILIO_WHATSAPP_FROM_NUMBER:-}
+    volumes:
+      # Company logos uploaded in Perfil — without a volume they vanish on every rebuild.
+      - uploads:/app/wwwroot/uploads
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -65,6 +73,7 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL must be set (public URL of the API)}
+        NEXT_PUBLIC_APP_NAME: ${APP_PRODUCT_NAME:-TécnicoApp}
     container_name: tecnicoapp-frontend
     depends_on:
       - api
@@ -76,6 +85,7 @@ services:
 
 volumes:
   pgdata:
+  uploads:
 
 networks:
   internal:

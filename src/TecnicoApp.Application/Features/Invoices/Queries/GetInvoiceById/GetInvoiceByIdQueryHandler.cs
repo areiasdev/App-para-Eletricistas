@@ -29,34 +29,7 @@ public class GetInvoiceByIdQueryHandler(IAppDbContext db, ICurrentUserService cu
         if (invoice.UserId != ownerId)
             return Result.Forbidden();
 
-        var dto = new InvoiceDto(
-            invoice.Id,
-            invoice.Number,
-            invoice.Status,
-            invoice.Discount,
-            invoice.Notes,
-            invoice.IssuedAt,
-            invoice.DueDate,
-            invoice.PaidAt,
-            invoice.ClientId,
-            invoice.Client.Name,
-            invoice.QuoteId,
-            invoice.Quote?.Number,
-            invoice.SubTotal,
-            invoice.VatTotal,
-            invoice.Total,
-            invoice.Lines
-                .OrderBy(l => l.CreatedAt)
-                .Select(l => new InvoiceLineDto(
-                    l.Id,
-                    l.Description,
-                    l.Quantity,
-                    l.UnitPrice,
-                    l.VatRate,
-                    Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
-                .ToList(),
-            invoice.CreatedAt
-        );
+        var dto = invoice.ToDto();
 
         return Result.Success(dto);
     }

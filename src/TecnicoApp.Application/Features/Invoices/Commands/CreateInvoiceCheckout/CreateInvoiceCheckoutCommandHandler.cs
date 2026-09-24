@@ -40,7 +40,7 @@ public class CreateInvoiceCheckoutCommandHandler(
         var description = $"Fatura {invoice.Number} — {invoice.User.CompanyName ?? invoice.User.FullName}";
 
         var (sessionId, checkoutUrl) = await stripeCheckoutService.CreateSessionAsync(
-            invoice.Total, description, successUrl, cancelUrl, cancellationToken);
+            invoice.Total, description, successUrl, cancelUrl, invoice.Id.ToString(), cancellationToken);
 
         invoice.StripeCheckoutSessionId = sessionId;
         await db.SaveChangesAsync(cancellationToken);

@@ -11,7 +11,10 @@ public class MarkInvoicePaidFromWebhookCommandHandler(IAppDbContext db)
     public async Task Handle(MarkInvoicePaidFromWebhookCommand request, CancellationToken cancellationToken)
     {
         var invoice = await db.Invoices
-            .FirstOrDefaultAsync(i => i.StripeCheckoutSessionId == request.StripeCheckoutSessionId, cancellationToken);
+            .FirstOrDefaultAsync(i => i.StripeCheckoutSessionId == request.StripeCheckoutSessionId, cancellationToken)
+            ?? (request.InvoiceId is { } invoiceId
+                ? await db.Invoices.FirstOrDefaultAsync(i => i.Id == invoiceId, cancellationToken)
+                : null);
 
         // Idempotent — Stripe retries webhook deliveries, so an invoice already marked Paid must
         // not be touched again. Also guard Cancelled: a technician can cancel an invoice after

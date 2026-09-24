@@ -74,6 +74,18 @@ docker compose -f docker-compose.prod.yml --env-file docker-compose.prod.env up 
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `STRIPE_PUBLISHABLE_KEY` | O botão "Faturar" e o PDF da fatura continuam a funcionar; só o link de pagamento online fica indisponível. Cada instalação usa a **sua própria** conta Stripe — nunca partilhar chaves entre clientes. Depois de criar o webhook endpoint no dashboard Stripe (`{FRONTEND_URL da API}/api/v1/webhooks/stripe`, eventos `checkout.session.completed` e `checkout.session.async_payment_succeeded`), copiar o *signing secret* para `STRIPE_WEBHOOK_SECRET`. |
 | `TWILIO_*` | Os pings de WhatsApp/SMS (orçamento enviado, fatura enviada, lembretes de vencimento e de intervenção) ficam só registados em log. Nada mais é afetado — email continua a ser o canal principal. |
 
+### Comportamento da instalação (opcionais, com valores por omissão)
+
+| Variável | Omissão | Efeito |
+|---|---|---|
+| `APP_PRODUCT_NAME` | `TécnicoApp` | Nome nos ecrãs de login, emails de sistema e separador do browser. Emails e PDFs enviados a clientes usam o nome/cor da empresa definidos em Perfil. |
+| `APP_TIME_ZONE` | `Europe/Lisbon` | Relógio local dos lembretes agendados. |
+| `INVOICE_PAYMENT_TERM_DAYS` | `30` | Prazo de vencimento de uma fatura nova. |
+| `ALLOW_OPEN_REGISTRATION` | `false` | Com `false`, só a primeira conta se regista; as restantes entram por convite de equipa. |
+| `JWT_REFRESH_TOKEN_DAYS` | `30` | Duração da sessão "lembrar-me". |
+
+Os logótipos carregados ficam no volume `uploads` (sobrevivem a `up --build`). Se o reverse proxy não estiver numa rede privada/loopback, definir `ReverseProxy__KnownNetworks__0=<CIDR do proxy>` para que o rate limiting veja o IP real do cliente.
+
 **Importante — faturação não é certificada AT.** As faturas geradas por esta aplicação são documentos profissionais reais (numeração sequencial, snapshot imutável, PDF com IBAN) mas **não têm certificação da Autoridade Tributária portuguesa**. Isso exigiria registar o software junto da AT — um processo legal fora do âmbito deste produto. O PDF da fatura e a página de detalhe trazem sempre um aviso visível nesse sentido; não representar o produto a um cliente como "faturação certificada".
 
 ### Checklist de arranque para um cliente novo
@@ -82,7 +94,7 @@ docker compose -f docker-compose.prod.yml --env-file docker-compose.prod.env up 
 2. Preencher `docker-compose.prod.env` — no mínimo as 4 variáveis obrigatórias; SMTP antes de qualquer utilização real.
 3. `docker compose -f docker-compose.prod.yml --env-file docker-compose.prod.env up -d --build`
 4. As migrations aplicam-se automaticamente no arranque da `api`. Confirmar nos logs (`docker compose logs api`) que não há erros de ligação à base de dados.
-5. Registar a primeira conta (torna-se automaticamente `Owner`) em `{FRONTEND_URL}/register`.
+5. Registar a primeira conta (torna-se automaticamente `Owner`) em `{FRONTEND_URL}/register`. A partir daí o registo público fica fechado — a equipa entra por convite.
 6. O assistente de configuração inicial (`/onboarding`) aparece automaticamente — nome da empresa, logótipo/cor de marca, primeiro cliente.
 7. Se aplicável: configurar Stripe (webhook) e Twilio, testar um envio de orçamento por email e, se configurado, um pagamento em modo de teste Stripe.
 8. Entregar credenciais de acesso ao cliente.

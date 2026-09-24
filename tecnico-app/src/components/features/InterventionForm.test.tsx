@@ -5,8 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { http, HttpResponse } from 'msw'
 import { server } from '@/test/msw/server'
 import { InterventionForm } from './InterventionForm'
+import { API_BASE_URL } from '@/lib/config'
 
-const BASE_URL = 'http://localhost:5000/api/v1'
+const BASE_URL = `${API_BASE_URL}/api/v1`
 
 const CLIENT_A = { id: 'client-a', name: 'Cliente A' }
 const CLIENT_B = { id: 'client-b', name: 'Cliente B' }

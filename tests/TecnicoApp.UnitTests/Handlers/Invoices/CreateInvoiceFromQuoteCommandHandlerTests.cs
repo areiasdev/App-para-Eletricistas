@@ -26,7 +26,9 @@ public class CreateInvoiceFromQuoteCommandHandlerTests
         AppDbContext db, ICurrentUserService currentUser)
     {
         var logger = Substitute.For<ILogger<CreateInvoiceFromQuoteCommandHandler>>();
-        return new CreateInvoiceFromQuoteCommandHandler(db, currentUser, logger);
+        var appSettings = Substitute.For<IAppSettings>();
+        appSettings.InvoicePaymentTermDays.Returns(30);
+        return new CreateInvoiceFromQuoteCommandHandler(db, currentUser, appSettings, logger);
     }
 
     private static (User owner, User technician, Client client) SeedTeamWithClient(

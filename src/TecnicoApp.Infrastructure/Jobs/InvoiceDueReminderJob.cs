@@ -1,6 +1,7 @@
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TecnicoApp.Application.Common.Formatting;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
 using TecnicoApp.Infrastructure.Persistence;
@@ -55,8 +56,8 @@ public class InvoiceDueReminderJob(
 
             try
             {
-                var dueStr = invoice.DueDate.ToString("dd/MM/yyyy");
-                var totalFormatted = invoice.Total.ToString("C", new System.Globalization.CultureInfo("pt-PT"));
+                var dueStr = PtFormat.ShortDate(invoice.DueDate);
+                var totalFormatted = PtFormat.Currency(invoice.Total);
                 var message =
                     $"Olá {client.Name}, a tua fatura {invoice.Number} no valor de {totalFormatted} " +
                     $"vence a {dueStr}. Consulta o teu email para efetuar o pagamento.";
