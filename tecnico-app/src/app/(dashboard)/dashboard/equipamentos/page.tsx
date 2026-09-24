@@ -18,14 +18,14 @@ function MaintenanceBadge({ date }: { date?: string }) {
 
   if (daysUntil < 0) {
     return (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: 'var(--color-danger-50)', color: 'var(--color-danger-600)' }}>
+      <span className="inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: 'var(--color-danger-50)', color: 'var(--color-danger-600)' }}>
         Vencida
       </span>
     )
   }
   if (daysUntil <= 30) {
     return (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: 'var(--color-brand-100)', color: 'var(--color-brand-700)' }}>
+      <span className="inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: 'var(--color-brand-100)', color: 'var(--color-brand-700)' }}>
         {formatDate(date)}
       </span>
     )
@@ -75,8 +75,8 @@ function EquipamentosContent() {
         </div>
         <Link
           href="/dashboard/equipamentos/novo"
-          className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-100"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           + Novo Equipamento
         </Link>
@@ -88,7 +88,7 @@ function EquipamentosContent() {
           placeholder="Pesquisar por tipo, marca ou modelo..."
           value={search}
           onChange={e => handleSearch(e.target.value)}
-          className="w-full max-w-sm rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150"
+          className="w-full max-w-sm rounded-lg px-3 py-2 text-sm outline-none transition-colors duration-100"
           style={{ border: '1.5px solid var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
           onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent)' }}
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -139,7 +139,7 @@ function EquipamentosContent() {
                   {debouncedSearch || clientIdFilter
                     ? 'Nenhum equipamento encontrado.'
                     : <>Ainda não tens equipamentos.{' '}
-                        <Link href="/dashboard/equipamentos/novo" className="font-medium underline underline-offset-2" style={{ color: 'var(--color-brand-600)' }}>
+                        <Link href="/dashboard/equipamentos/novo" className="font-medium underline underline-offset-2" style={{ color: 'var(--color-brand-text)' }}>
                           Regista o primeiro
                         </Link>
                       </>}
@@ -159,7 +159,7 @@ function EquipamentosContent() {
                     href={`/dashboard/equipamentos/${eq.id}`}
                     className="text-sm font-medium transition-colors duration-150"
                     style={{ color: 'var(--color-ink)' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-500)')}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-text)')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-ink)')}
                   >
                     {eq.type}

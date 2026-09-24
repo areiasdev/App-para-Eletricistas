@@ -51,7 +51,7 @@ export default function EditarIntervencaoPage({ params }: { params: Promise<{ id
         <Link
           href="/dashboard/intervencoes"
           className="text-sm mt-2 inline-block transition-colors duration-150"
-          style={{ color: 'var(--color-brand-500)' }}
+          style={{ color: 'var(--color-brand-text)' }}
         >
           Voltar à lista
         </Link>

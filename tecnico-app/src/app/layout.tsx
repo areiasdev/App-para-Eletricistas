@@ -1,19 +1,20 @@
 import type { Metadata, Viewport } from 'next'
-import { Outfit, JetBrains_Mono } from 'next/font/google'
+import { IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 import { APP_NAME } from '@/lib/config'
 
-const outfit = Outfit({
-  variable: '--font-outfit',
+// IBM Plex: a plain, technical typeface — reads like trade paperwork, not a startup landing page.
+const bodyFont = IBM_Plex_Sans({
+  variable: '--font-body',
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
 })
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: '--font-jetbrains',
+const codeFont = IBM_Plex_Mono({
+  variable: '--font-code',
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400', '500', '600'],
 })
 
 export const metadata: Metadata = {
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#17171a',
+  themeColor: '#141416',
   width: 'device-width',
   initialScale: 1,
   // Lets the app use the full screen on notched phones when installed.
@@ -34,7 +35,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt" className={`${outfit.variable} ${jetbrainsMono.variable} h-full`}>
+    <html lang="pt" className={`${bodyFont.variable} ${codeFont.variable} h-full`}>
       <body className="min-h-full antialiased">
         <Providers>{children}</Providers>
       </body>

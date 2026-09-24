@@ -36,7 +36,7 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
     return (
       <div className="text-center py-16">
         <p style={{ color: 'var(--color-muted)' }}>Equipamento não encontrado.</p>
-        <Link href="/dashboard/equipamentos" className="text-sm mt-2 inline-block" style={{ color: 'var(--color-brand-500)' }}>
+        <Link href="/dashboard/equipamentos" className="text-sm mt-2 inline-block" style={{ color: 'var(--color-brand-text)' }}>
           Voltar à lista
         </Link>
       </div>
@@ -72,7 +72,7 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
         <div className="flex gap-2">
           <Link
             href={`/dashboard/equipamentos/${id}/editar`}
-            className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
+            className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-100"
             style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -82,7 +82,7 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
           {canManage && (
             <button
               onClick={handleDelete}
-              className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
+              className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-100"
               style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -119,9 +119,9 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
           <Link
             href={`/dashboard/clientes/${equipment.clientId}`}
             className="text-sm transition-colors duration-150"
-            style={{ color: 'var(--color-brand-600)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-500)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-brand-600)')}
+            style={{ color: 'var(--color-brand-text)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-text)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-brand-text)')}
           >
             {equipment.clientName}
           </Link>
@@ -158,7 +158,7 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
                 <img
                   src={photoSrc(url)}
                   alt={`Foto ${i + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-200"
                   onError={e => {
                     const parent = e.currentTarget.parentElement
                     if (parent) {

@@ -74,7 +74,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
     return (
       <div className="text-center py-16">
         <p style={{ color: 'var(--color-muted)' }}>Fatura não encontrada.</p>
-        <Link href="/dashboard/faturas" className="text-sm mt-2 inline-block" style={{ color: 'var(--color-brand-500)' }}>
+        <Link href="/dashboard/faturas" className="text-sm mt-2 inline-block" style={{ color: 'var(--color-brand-text)' }}>
           Voltar à lista
         </Link>
       </div>
@@ -96,7 +96,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
           Faturas
         </Link>
         <span style={{ color: 'var(--color-line-strong)' }}>/</span>
-        <span style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-jetbrains), monospace' }}>{invoice.number}</span>
+        <span style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-code), monospace' }}>{invoice.number}</span>
       </div>
 
       {/* Header */}
@@ -105,19 +105,19 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
           <div className="flex items-center gap-3 flex-wrap">
             <h1
               className="text-2xl font-bold"
-              style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-jetbrains), monospace' }}
+              style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-code), monospace' }}
             >
               {invoice.number}
             </h1>
             <InvoiceStatusBadge status={invoice.status} />
           </div>
           <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
-            Cliente: <Link href={`/dashboard/clientes/${invoice.clientId}`} style={{ color: 'var(--color-brand-500)' }}>{invoice.clientName}</Link>
+            Cliente: <Link href={`/dashboard/clientes/${invoice.clientId}`} style={{ color: 'var(--color-brand-text)' }}>{invoice.clientName}</Link>
           </p>
           {invoice.quoteId && (
             <p className="text-sm mt-1" style={{ color: 'var(--color-subtle)' }}>
               Gerado a partir do orçamento{' '}
-              <Link href={`/dashboard/orcamentos/${invoice.quoteId}`} style={{ color: 'var(--color-brand-500)' }}>
+              <Link href={`/dashboard/orcamentos/${invoice.quoteId}`} style={{ color: 'var(--color-brand-text)' }}>
                 {invoice.quoteNumber}
               </Link>
             </p>
@@ -129,7 +129,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
           <button
             onClick={handleDownloadPdf}
             disabled={pdfLoading}
-            className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+            className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-colors duration-100 disabled:opacity-60"
             style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -146,7 +146,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
               <button
                 onClick={handleCopyPayLink}
                 disabled={payLink.isPending}
-                className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+                className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-colors duration-100 disabled:opacity-60"
                 style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -156,7 +156,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
               <button
                 onClick={handleSendEmail}
                 disabled={sendEmail.isPending}
-                className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+                className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-colors duration-100 disabled:opacity-60"
                 style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -172,15 +172,15 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
               <button
                 onClick={() => handleStatusChange('Paid')}
                 disabled={updateStatus.isPending}
-                className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
-                style={{ backgroundColor: 'var(--color-success-600)', color: 'white' }}
+                className="rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-100 disabled:opacity-60"
+                style={{ backgroundColor: 'var(--color-success-solid)', color: 'white' }}
               >
                 Marcar como Paga
               </button>
               <button
                 onClick={() => handleStatusChange('Cancelled')}
                 disabled={updateStatus.isPending}
-                className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+                className="rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-100 disabled:opacity-60"
                 style={{ border: '1px solid var(--color-line-strong)', color: 'var(--color-danger-600)', backgroundColor: 'transparent' }}
               >
                 Cancelar
@@ -242,7 +242,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
             className="flex justify-between font-bold text-base pt-2"
             style={{ color: 'var(--color-ink)', borderTop: '1px solid var(--color-line)' }}
           >
-            <span>Total</span><span style={{ color: 'var(--color-brand-600)' }}>{formatCurrency(invoice.total)}</span>
+            <span>Total</span><span style={{ color: 'var(--color-brand-text)' }}>{formatCurrency(invoice.total)}</span>
           </div>
         </div>
       </div>

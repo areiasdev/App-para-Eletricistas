@@ -57,7 +57,7 @@ function InterventionCard({
       <p className="text-sm" style={{ color: 'var(--color-muted)' }}>{iv.clientName}</p>
       {isLate && (
         <span
-          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+          className="inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-medium"
           style={{ backgroundColor: 'var(--color-brand-100)', color: 'var(--color-brand-800)', border: '1px solid var(--color-brand-300)' }}
         >
           ⚠ Em atraso
@@ -71,7 +71,7 @@ function InterventionCard({
         <Link
           href={`/dashboard/intervencoes/${iv.id}`}
           className="text-xs font-medium"
-          style={{ color: 'var(--color-brand-500)' }}
+          style={{ color: 'var(--color-brand-text)' }}
         >
           Ver
         </Link>
@@ -150,14 +150,14 @@ function CalendarView({
       <div className="hidden sm:block">
         {/* Calendar header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: 'var(--color-line)' }}>
-          <button onClick={prevMonth} className="rounded-lg border px-3 py-1.5 text-sm transition-all duration-150"
+          <button onClick={prevMonth} className="rounded-lg border px-3 py-1.5 text-sm transition-colors duration-100"
             style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}>
             ←
           </button>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>
             {MONTHS_PT[calMonth]} {calYear}
           </h2>
-          <button onClick={nextMonth} className="rounded-lg border px-3 py-1.5 text-sm transition-all duration-150"
+          <button onClick={nextMonth} className="rounded-lg border px-3 py-1.5 text-sm transition-colors duration-100"
             style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}>
             →
           </button>
@@ -191,7 +191,7 @@ function CalendarView({
                       className="text-xs font-medium inline-flex w-6 h-6 items-center justify-center rounded-full mb-1"
                       style={{
                         backgroundColor: isToday ? 'var(--color-brand-500)' : 'transparent',
-                        color: isToday ? 'var(--color-sidebar)' : 'var(--color-muted)',
+                        color: isToday ? 'var(--color-on-brand)' : 'var(--color-muted)',
                       }}
                     >
                       {day}
@@ -302,21 +302,21 @@ function IntervencoesContent() {
           <div className="flex rounded-lg border overflow-hidden" style={{ borderColor: 'var(--color-line-strong)' }}>
             <button
               onClick={() => setView('list')}
-              className="px-3 py-2 text-xs font-medium transition-all duration-150"
+              className="px-3 py-2 text-xs font-medium transition-colors duration-100"
               style={{
                 backgroundColor: view === 'list' ? 'var(--color-brand-500)' : 'var(--color-canvas)',
-                color: view === 'list' ? 'var(--color-sidebar)' : 'var(--color-muted)',
+                color: view === 'list' ? 'var(--color-on-brand)' : 'var(--color-muted)',
               }}
             >
               Lista
             </button>
             <button
               onClick={() => setView('calendar')}
-              className="px-3 py-2 text-xs font-medium transition-all duration-150 border-l"
+              className="px-3 py-2 text-xs font-medium transition-colors duration-100 border-l"
               style={{
                 borderColor: 'var(--color-line-strong)',
                 backgroundColor: view === 'calendar' ? 'var(--color-brand-500)' : 'var(--color-canvas)',
-                color: view === 'calendar' ? 'var(--color-sidebar)' : 'var(--color-muted)',
+                color: view === 'calendar' ? 'var(--color-on-brand)' : 'var(--color-muted)',
               }}
             >
               Calendário
@@ -324,8 +324,8 @@ function IntervencoesContent() {
           </div>
           <Link
             href="/dashboard/intervencoes/novo"
-            className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-100"
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             + Nova Intervenção
           </Link>
@@ -339,7 +339,7 @@ function IntervencoesContent() {
           placeholder="Pesquisar por título ou cliente..."
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm outline-none transition-all duration-150 w-full sm:w-64"
+          className="rounded-lg border px-3 py-2 text-sm outline-none transition-colors duration-100 w-full sm:w-64"
           style={{ borderColor: 'var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
           onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent)' }}
           onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -349,10 +349,10 @@ function IntervencoesContent() {
             <button
               key={o.value}
               onClick={() => { setStatus(o.value as InterventionStatus | ''); setPage(1) }}
-              className="rounded-md px-3 py-1 text-xs font-medium transition-all duration-150"
+              className="rounded-md px-3 py-1 text-xs font-medium transition-colors duration-100"
               style={{
                 backgroundColor: status === o.value ? 'var(--color-brand-500)' : 'transparent',
-                color: status === o.value ? 'var(--color-sidebar)' : 'var(--color-muted)',
+                color: status === o.value ? 'var(--color-on-brand)' : 'var(--color-muted)',
               }}
             >
               {o.label}
@@ -430,7 +430,7 @@ function IntervencoesContent() {
                     href={`/dashboard/intervencoes/${iv.id}`}
                     className="text-sm font-medium transition-colors duration-150"
                     style={{ color: 'var(--color-ink)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-brand-500)')}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-brand-text)')}
                     onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-ink)')}
                   >
                     {iv.title}
@@ -442,7 +442,7 @@ function IntervencoesContent() {
                     <InterventionStatusBadge status={iv.status} />
                     {iv.status === 'Scheduled' && iv.scheduledAt && new Date(iv.scheduledAt) < new Date() && (
                       <span
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                        className="inline-flex items-center gap-1 rounded-sm px-2 py-0.5 text-xs font-medium"
                         style={{ backgroundColor: 'var(--color-brand-100)', color: 'var(--color-brand-800)', border: '1px solid var(--color-brand-300)' }}
                         title="Data agendada já passou"
                       >
@@ -462,7 +462,7 @@ function IntervencoesContent() {
                     <Link
                       href={`/dashboard/intervencoes/${iv.id}`}
                       className="text-xs font-medium transition-colors duration-150"
-                      style={{ color: 'var(--color-brand-500)' }}
+                      style={{ color: 'var(--color-brand-text)' }}
                     >
                       Ver
                     </Link>

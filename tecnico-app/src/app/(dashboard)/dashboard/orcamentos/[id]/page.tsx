@@ -42,10 +42,10 @@ function QuotePipeline({ current }: { current: QuoteStatus }) {
               {/* Circle */}
               <div className="flex flex-col items-center gap-1.5 shrink-0">
                 <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-colors duration-100"
                   style={{
                     backgroundColor: isPast || isCurrent
-                      ? (isRejected && idx === 1 ? 'var(--color-danger-500)' : 'var(--color-brand-500)')
+                      ? (isRejected && idx === 1 ? 'var(--color-danger-500)' : 'var(--color-brand-text)')
                       : 'var(--color-canvas)',
                     border: isFuture ? '2px solid var(--color-line-strong)' : 'none',
                     boxShadow: isCurrent ? '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 20%, transparent)' : 'none',
@@ -58,7 +58,7 @@ function QuotePipeline({ current }: { current: QuoteStatus }) {
                   ) : (
                     <span
                       className="text-xs font-bold"
-                      style={{ color: isCurrent ? 'var(--color-sidebar)' : 'var(--color-subtle)' }}
+                      style={{ color: isCurrent ? 'var(--color-on-brand)' : 'var(--color-subtle)' }}
                     >
                       {idx + 1}
                     </span>
@@ -74,7 +74,7 @@ function QuotePipeline({ current }: { current: QuoteStatus }) {
               {/* Connector */}
               {idx < PIPELINE.length - 1 && (
                 <div
-                  className="flex-1 h-0.5 mx-2 mb-5 transition-all duration-300"
+                  className="flex-1 h-0.5 mx-2 mb-5 transition-colors duration-100"
                   style={{ backgroundColor: isPast ? 'var(--color-brand-500)' : 'var(--color-line)' }}
                 />
               )}
@@ -85,9 +85,9 @@ function QuotePipeline({ current }: { current: QuoteStatus }) {
         {/* Rejected branch indicator */}
         {isRejected && (
           <div className="ml-4 flex items-center gap-1.5 shrink-0 mb-5">
-            <div className="h-0.5 w-4" style={{ backgroundColor: 'var(--color-danger-500)' }} />
+            <div className="h-0.5 w-4" style={{ backgroundColor: 'var(--color-danger-solid)' }} />
             <span
-              className="rounded-full px-2 py-0.5 text-xs font-medium"
+              className="rounded-sm px-2 py-0.5 text-xs font-medium"
               style={{ backgroundColor: 'var(--color-danger-50)', color: 'var(--color-danger-600)' }}
             >
               Recusado
@@ -101,9 +101,9 @@ function QuotePipeline({ current }: { current: QuoteStatus }) {
 
 // ── Status actions ────────────────────────────────────────────────────────────
 const nextStatuses: Partial<Record<QuoteStatus, { status: QuoteStatus; label: string; bg: string; color: string }[]>> = {
-  Draft:    [{ status: 'Sent',     label: 'Marcar como Enviado',    bg: 'var(--color-info-600)', color: 'white' }],
+  Draft:    [{ status: 'Sent',     label: 'Marcar como Enviado',    bg: 'var(--color-info-solid)', color: 'white' }],
   Sent:     [
-    { status: 'Accepted', label: 'Aceite pelo cliente',   bg: 'var(--color-success-600)', color: 'white' },
+    { status: 'Accepted', label: 'Aceite pelo cliente',   bg: 'var(--color-success-solid)', color: 'white' },
     { status: 'Rejected', label: 'Recusado pelo cliente', bg: 'transparent', color: 'var(--color-danger-600)' },
     { status: 'Draft',    label: 'Revogar envio',          bg: 'transparent', color: 'var(--color-muted)' },
   ],
@@ -207,7 +207,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
     return (
       <div className="text-center py-16">
         <p style={{ color: 'var(--color-muted)' }}>Orçamento não encontrado.</p>
-        <Link href="/dashboard/orcamentos" className="text-sm mt-2 inline-block" style={{ color: 'var(--color-brand-500)' }}>
+        <Link href="/dashboard/orcamentos" className="text-sm mt-2 inline-block" style={{ color: 'var(--color-brand-text)' }}>
           Voltar à lista
         </Link>
       </div>
@@ -239,7 +239,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             Orçamentos
           </Link>
           <span style={{ color: 'var(--color-line-strong)' }}>/</span>
-          <span style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-jetbrains), monospace' }}>{quote.number}</span>
+          <span style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-code), monospace' }}>{quote.number}</span>
         </div>
 
         {/* Header */}
@@ -248,14 +248,14 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             <div className="flex items-center gap-3 flex-wrap">
               <h1
                 className="text-2xl font-bold"
-                style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-jetbrains), monospace' }}
+                style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-code), monospace' }}
               >
                 {quote.number}
               </h1>
               <QuoteStatusBadge status={quote.status} />
               {quote.signedAt && (
                 <span
-                  className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                  className="inline-flex items-center gap-1.5 rounded-sm px-2.5 py-0.5 text-xs font-medium"
                   style={{ backgroundColor: 'var(--color-success-50)', color: 'var(--color-success-700)' }}
                 >
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
@@ -266,7 +266,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               )}
             </div>
             <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
-              Cliente: <Link href={`/dashboard/clientes/${quote.clientId}`} style={{ color: 'var(--color-brand-500)' }}>{quote.clientName}</Link>
+              Cliente: <Link href={`/dashboard/clientes/${quote.clientId}`} style={{ color: 'var(--color-brand-text)' }}>{quote.clientName}</Link>
             </p>
           </div>
 
@@ -275,7 +275,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             <button
               onClick={handleDownloadPdf}
               disabled={pdfLoading}
-              className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+              className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-colors duration-100 disabled:opacity-60"
               style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -291,7 +291,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               onClick={handleSendEmail}
               disabled={sendEmail.isPending}
               title={emailSent ? 'Enviar novamente (o link de aprovação mantém-se válido)' : 'Enviar por email com link para aceitar online'}
-              className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+              className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-colors duration-100 disabled:opacity-60"
               style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
               onMouseEnter={(e) => { if (!sendEmail.isPending) e.currentTarget.style.backgroundColor = 'var(--color-canvas)' }}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -306,7 +306,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             <button
               onClick={handleDuplicate}
               disabled={duplicateQuote.isPending}
-              className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+              className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-colors duration-100 disabled:opacity-60"
               style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -322,8 +322,8 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             {canSign && (
               <button
                 onClick={() => setShowSignModal(true)}
-                className="rounded-lg px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150"
-                style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+                className="rounded-lg px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-colors duration-100"
+                style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
               >
                 <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                   <path d="M2 11c2-2 3-4 4-6M6 5c1-1 2-1 3 0s1 2 0 3l-4 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -337,7 +337,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               <>
                 <Link
                   href={`/dashboard/orcamentos/${id}/editar`}
-                  className="rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150"
+                  className="rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-100"
                   style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -347,7 +347,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
                 {canManage && (
                   <button
                     onClick={handleDelete}
-                    className="rounded-lg border px-3 py-2 text-sm font-medium transition-all duration-150"
+                    className="rounded-lg border px-3 py-2 text-sm font-medium transition-colors duration-100"
                     style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -364,8 +364,8 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               <button
                 onClick={handleCreateInvoice}
                 disabled={createInvoice.isPending}
-                className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
-                style={{ backgroundColor: 'var(--color-role-purple-text)', color: 'white' }}
+                className="rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-100 disabled:opacity-60"
+                style={{ backgroundColor: 'var(--color-role-purple-solid)', color: 'white' }}
               >
                 {createInvoice.isPending ? 'A faturar...' : 'Faturar'}
               </button>
@@ -377,7 +377,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
                 key={a.status}
                 onClick={() => handleStatusChange(a.status)}
                 disabled={updateStatus.isPending}
-                className="rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+                className="rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-100 disabled:opacity-60"
                 style={{
                   backgroundColor: a.bg,
                   color: a.color,
@@ -461,7 +461,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             <p className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--color-muted)' }}>
               Assinatura do cliente
             </p>
-            <div className="rounded-lg border p-3 inline-block" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-neutral-50)' }}>
+            <div className="rounded-lg border p-3 inline-block" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-paper)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={quote.signatureUrl} alt="Assinatura" style={{ maxHeight: 120, maxWidth: 300 }} />
             </div>
@@ -512,7 +512,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               className="flex justify-between font-bold text-base pt-2"
               style={{ color: 'var(--color-ink)', borderTop: '1px solid var(--color-line)' }}
             >
-              <span>Total</span><span style={{ color: 'var(--color-brand-600)' }}>{formatCurrency(quote.total)}</span>
+              <span>Total</span><span style={{ color: 'var(--color-brand-text)' }}>{formatCurrency(quote.total)}</span>
             </div>
           </div>
         </div>

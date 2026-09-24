@@ -40,23 +40,23 @@ export default function LoginPage() {
         <div className="flex items-center gap-2.5">
           <span
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             {APP_INITIAL}
           </span>
-          <span className="text-sm font-semibold text-white/90 tracking-tight">{APP_NAME}</span>
+          <span className="text-sm font-semibold text-[var(--color-sidebar-text)] tracking-tight">{APP_NAME}</span>
         </div>
 
         <div className="space-y-3">
-          <p className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-outfit)' }}>
+          <p className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-body)' }}>
             Clientes, orçamentos e intervenções — numa só ferramenta.
           </p>
-          <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+          <p className="text-sm" style={{ color: 'var(--color-sidebar-muted)' }}>
             BackOffice interno para a tua equipa.
           </p>
         </div>
 
-        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        <p className="text-xs" style={{ color: 'var(--color-sidebar-muted)' }}>
           © {new Date().getFullYear()} {APP_NAME}
         </p>
       </div>
@@ -69,7 +69,7 @@ export default function LoginPage() {
           <div className="flex items-center gap-2 mb-8 lg:hidden">
             <span
               className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
             >
               {APP_INITIAL}
             </span>
@@ -117,8 +117,8 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={login.isPending}
-              className="w-full rounded-lg py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
-              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+              className="w-full rounded-lg py-2.5 text-sm font-semibold transition-colors duration-100 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
             >
               {login.isPending ? 'A entrar...' : 'Entrar'}
             </button>
@@ -139,35 +139,13 @@ export default function LoginPage() {
             <Link
               href="/register"
               className="font-semibold transition-colors"
-              style={{ color: 'var(--color-brand-600)' }}
+              style={{ color: 'var(--color-brand-text)' }}
             >
               Regista-te
             </Link>
           </p>
         </div>
       </div>
-
-      <style>{`
-        .auth-input {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1.5px solid var(--color-line-strong);
-          padding: 0.625rem 0.875rem;
-          font-size: 0.875rem;
-          background-color: var(--color-canvas);
-          color: var(--color-ink);
-          outline: none;
-          transition: border-color 0.15s;
-          font-family: var(--font-outfit), system-ui, sans-serif;
-        }
-        .auth-input:focus {
-          border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent);
-        }
-        .auth-input::placeholder {
-          color: var(--color-subtle);
-        }
-      `}</style>
     </div>
   )
 }

@@ -47,7 +47,7 @@ function AceitarConviteInner() {
           <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
             style={{ backgroundColor: 'color-mix(in srgb, var(--color-success-500) 15%, transparent)' }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M5 13l4 4L19 7" stroke="var(--color-success-400)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5 13l4 4L19 7" stroke="var(--color-success-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--color-ink)' }}>Convite aceite!</h1>
@@ -56,8 +56,8 @@ function AceitarConviteInner() {
           </p>
           <Link
             href="/login"
-            className="inline-block rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-150 hover:brightness-110"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            className="inline-block rounded-lg px-6 py-2.5 text-sm font-semibold transition-colors duration-100"
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             Ir para o login →
           </Link>
@@ -72,7 +72,7 @@ function AceitarConviteInner() {
         <div className="text-center space-y-1">
           <div className="flex items-center justify-center gap-2 mb-4">
             <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
+              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}>
               {APP_INITIAL}
             </span>
             <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>{APP_NAME}</span>
@@ -100,7 +100,7 @@ function AceitarConviteInner() {
               onChange={e => setFullName(e.target.value)}
               placeholder="João Silva"
               required
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all duration-150"
+              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors duration-100"
               style={{
                 borderColor: 'var(--color-line-strong)',
                 backgroundColor: 'var(--color-canvas)',
@@ -118,7 +118,7 @@ function AceitarConviteInner() {
               onChange={e => setPassword(e.target.value)}
               placeholder="Mínimo 8 caracteres"
               required
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all duration-150"
+              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors duration-100"
               style={{
                 borderColor: 'var(--color-line-strong)',
                 backgroundColor: 'var(--color-canvas)',
@@ -136,7 +136,7 @@ function AceitarConviteInner() {
               onChange={e => setConfirm(e.target.value)}
               placeholder="Repetir palavra-passe"
               required
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-all duration-150"
+              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors duration-100"
               style={{
                 borderColor: 'var(--color-line-strong)',
                 backgroundColor: 'var(--color-canvas)',
@@ -147,8 +147,8 @@ function AceitarConviteInner() {
           <button
             type="submit"
             disabled={accept.isPending || !token}
-            className="w-full rounded-lg py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            className="w-full rounded-lg py-2.5 text-sm font-semibold transition-colors duration-100 disabled:opacity-60"
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             {accept.isPending ? 'A ativar...' : 'Ativar conta'}
           </button>

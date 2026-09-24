@@ -26,7 +26,7 @@ function ResetPasswordForm() {
         <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
           Este link de redefinição é inválido ou já foi usado.
         </p>
-        <Link href="/esqueci-password" className="text-sm font-semibold" style={{ color: 'var(--color-brand-600)' }}>
+        <Link href="/esqueci-password" className="text-sm font-semibold" style={{ color: 'var(--color-brand-text)' }}>
           Pedir novo link
         </Link>
       </div>
@@ -75,7 +75,7 @@ function ResetPasswordForm() {
         <Link
           href="/login"
           className="block text-sm font-semibold"
-          style={{ color: 'var(--color-brand-600)' }}
+          style={{ color: 'var(--color-brand-text)' }}
         >
           Ir para o login →
         </Link>
@@ -135,8 +135,8 @@ function ResetPasswordForm() {
         <button
           type="submit"
           disabled={isPending || !password || !confirm}
-          className="w-full rounded-lg py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.99]"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          className="w-full rounded-lg py-2.5 text-sm font-semibold transition-colors duration-100 disabled:opacity-60 disabled:cursor-not-allowed"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           {isPending ? 'A guardar...' : 'Redefinir password'}
         </button>
@@ -156,16 +156,16 @@ export default function ResetPasswordPage() {
         <div className="flex items-center gap-2.5">
           <span
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             {APP_INITIAL}
           </span>
-          <span className="text-sm font-semibold text-white/90 tracking-tight">{APP_NAME}</span>
+          <span className="text-sm font-semibold text-[var(--color-sidebar-text)] tracking-tight">{APP_NAME}</span>
         </div>
-        <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
+        <p className="text-sm" style={{ color: 'var(--color-sidebar-muted)' }}>
           Redefine a tua password de forma segura.
         </p>
-        <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
+        <p className="text-xs" style={{ color: 'var(--color-sidebar-muted)' }}>
           © {new Date().getFullYear()} {APP_NAME}
         </p>
       </div>
@@ -176,7 +176,7 @@ export default function ResetPasswordPage() {
           <div className="flex items-center gap-2 mb-8 lg:hidden">
             <span
               className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
             >
               {APP_INITIAL}
             </span>
@@ -190,28 +190,6 @@ export default function ResetPasswordPage() {
           </Suspense>
         </div>
       </div>
-
-      <style>{`
-        .auth-input {
-          width: 100%;
-          border-radius: 0.5rem;
-          border: 1.5px solid var(--color-line-strong);
-          padding: 0.625rem 0.875rem;
-          font-size: 0.875rem;
-          background-color: var(--color-card);
-          color: var(--color-ink);
-          outline: none;
-          transition: border-color 0.15s;
-          font-family: var(--font-outfit), system-ui, sans-serif;
-        }
-        .auth-input:focus {
-          border-color: var(--color-brand-500);
-          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent);
-        }
-        .auth-input::placeholder {
-          color: var(--color-subtle);
-        }
-      `}</style>
     </div>
   )
 }

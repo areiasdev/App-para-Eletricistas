@@ -12,8 +12,8 @@ export function QuoteStatusBadge({ status }: { status: QuoteStatus }) {
   const c = config[status] ?? config.Draft
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
-      style={{ backgroundColor: c.bg, color: c.color }}
+      className="inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium border whitespace-nowrap"
+      style={{ backgroundColor: c.bg, color: c.color, borderColor: `color-mix(in srgb, ${c.dot} 35%, transparent)` }}
     >
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: c.dot }} />
       {c.label}

@@ -16,32 +16,35 @@ function StatCard({
   href?: string
   accent?: boolean
 }) {
+  // Ledger-style tile: the highlighted figure gets a brand edge, not a full colour fill —
+  // it stays readable whatever brand colour the company picked.
   const inner = (
     <div
-      className="rounded-xl border p-5 transition-all duration-150 hover:shadow-sm group h-full flex flex-col justify-between"
+      className="border h-full px-4 py-3.5 flex flex-col gap-1 transition-colors duration-100 group-hover:border-[var(--color-line-strong)]"
       style={{
-        backgroundColor: accent ? 'var(--color-brand-500)' : 'var(--color-card)',
-        borderColor: accent ? 'var(--color-brand-600)' : 'var(--color-line)',
-        minHeight: '6rem',
+        backgroundColor: 'var(--color-card)',
+        borderColor: 'var(--color-line)',
+        borderLeft: accent ? '3px solid var(--color-brand-500)' : '1px solid var(--color-line)',
+        borderRadius: 'var(--radius-md)',
       }}
     >
-      <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent ? 'rgba(23,23,26,0.65)' : 'var(--color-muted)' }}>
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-muted)' }}>
         {label}
       </p>
-      <div>
-        <p className="text-3xl font-bold mt-1.5 leading-none" style={{ color: accent ? 'var(--color-sidebar)' : 'var(--color-ink)' }}>
-          {value}
+      <p className="text-2xl font-semibold tabular-nums leading-tight" style={{ color: 'var(--color-ink)' }}>
+        {value}
+      </p>
+      {sub && (
+        <p className="text-xs" style={{ color: 'var(--color-subtle)' }}>
+          {sub}
         </p>
-        <p className="text-xs mt-2 min-h-[1rem]" style={{ color: accent ? 'rgba(23,23,26,0.55)' : 'var(--color-subtle)' }}>
-          {sub ?? ''}
-        </p>
-      </div>
+      )}
     </div>
   )
 
   if (href) {
     return (
-      <Link href={href} className="block group">
+      <Link href={href} className="block group focus-visible:outline-offset-0">
         {inner}
       </Link>
     )
@@ -64,7 +67,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>
-          {greeting}, {user?.fullName?.split(' ')[0]} 👋
+          {greeting}, {user?.fullName?.split(' ')[0]}
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--color-muted)' }}>
           {formatDate(new Date().toISOString())} · Aqui está o resumo da tua atividade
@@ -159,7 +162,7 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
             Orçamentos recentes
           </h2>
-          <Link href="/dashboard/orcamentos" className="text-xs font-medium transition-colors" style={{ color: 'var(--color-brand-600)' }}>
+          <Link href="/dashboard/orcamentos" className="text-xs font-medium transition-colors" style={{ color: 'var(--color-brand-text)' }}>
             Ver todos →
           </Link>
         </div>
@@ -175,7 +178,7 @@ export default function DashboardPage() {
             <div className="px-6 py-14 text-center">
               <p className="text-sm" style={{ color: 'var(--color-subtle)' }}>
                 Ainda não tens orçamentos.{' '}
-                <Link href="/dashboard/orcamentos/novo" className="font-medium underline underline-offset-2" style={{ color: 'var(--color-brand-600)' }}>
+                <Link href="/dashboard/orcamentos/novo" className="font-medium underline underline-offset-2" style={{ color: 'var(--color-brand-text)' }}>
                   Cria o primeiro
                 </Link>
               </p>
@@ -208,15 +211,15 @@ export default function DashboardPage() {
                     <td className="px-5 py-3.5">
                       <Link
                         href={`/dashboard/orcamentos/${q.id}`}
-                        className="text-sm font-medium transition-colors"
-                        style={{ fontFamily: 'var(--font-jetbrains), monospace', color: 'var(--color-ink)' }}
+                        className="text-sm font-mono font-medium whitespace-nowrap transition-colors"
+                        style={{ fontFamily: 'var(--font-code), monospace', color: 'var(--color-ink)' }}
                       >
                         {q.number}
                       </Link>
                     </td>
                     <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{q.clientName}</td>
                     <td className="px-5 py-3.5"><QuoteStatusBadge status={q.status} /></td>
-                    <td className="px-5 py-3.5 text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>{formatCurrency(q.total)}</td>
+                    <td className="whitespace-nowrap px-5 py-3.5 text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>{formatCurrency(q.total)}</td>
                     <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-subtle)' }}>{formatDate(q.createdAt)}</td>
                   </tr>
                 ))}
@@ -234,7 +237,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
               Manutenções próximas (30 dias)
             </h2>
-            <Link href="/dashboard/equipamentos" className="text-xs font-medium transition-colors" style={{ color: 'var(--color-brand-600)' }}>
+            <Link href="/dashboard/equipamentos" className="text-xs font-medium transition-colors" style={{ color: 'var(--color-brand-text)' }}>
               Ver equipamentos →
             </Link>
           </div>
@@ -262,9 +265,9 @@ export default function DashboardPage() {
                     <td className="px-5 py-3.5">
                       <Link
                         href={`/dashboard/equipamentos/${m.equipmentId}`}
-                        className="text-sm font-medium transition-colors"
+                        className="text-sm font-mono font-medium whitespace-nowrap transition-colors"
                         style={{ color: 'var(--color-ink)' }}
-                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-500)')}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-text)')}
                         onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-ink)')}
                       >
                         {[m.type, m.brand, m.model].filter(Boolean).join(' ')}
@@ -274,7 +277,7 @@ export default function DashboardPage() {
                     <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{formatDate(m.nextMaintenance)}</td>
                     <td className="px-5 py-3.5">
                       <span
-                        className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                        className="inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium"
                         style={{
                           backgroundColor: m.daysUntil <= 7 ? 'var(--color-brand-100)' : 'var(--color-success-50)',
                           color: m.daysUntil <= 7 ? 'var(--color-brand-700)' : 'var(--color-success-700)',
@@ -300,28 +303,28 @@ export default function DashboardPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             href="/dashboard/orcamentos/novo"
-            className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-100"
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             + Novo Orçamento
           </Link>
           <Link
             href="/dashboard/clientes/novo"
-            className="rounded-lg border px-4 py-2 text-sm font-semibold transition-all duration-150 hover:bg-white"
+            className="rounded-lg border px-4 py-2 text-sm font-semibold transition-colors duration-100 hover:bg-white"
             style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'transparent' }}
           >
             + Novo Cliente
           </Link>
           <Link
             href="/dashboard/equipamentos/novo"
-            className="rounded-lg border px-4 py-2 text-sm font-semibold transition-all duration-150 hover:bg-white"
+            className="rounded-lg border px-4 py-2 text-sm font-semibold transition-colors duration-100 hover:bg-white"
             style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'transparent' }}
           >
             + Novo Equipamento
           </Link>
           <Link
             href="/dashboard/intervencoes/novo"
-            className="rounded-lg border px-4 py-2 text-sm font-semibold transition-all duration-150 hover:bg-white"
+            className="rounded-lg border px-4 py-2 text-sm font-semibold transition-colors duration-100 hover:bg-white"
             style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'transparent' }}
           >
             + Nova Intervenção

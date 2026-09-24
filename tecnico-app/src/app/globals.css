@@ -1,12 +1,32 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens.
+ *
+ * Every text/background pair used in the app is checked for WCAG AA contrast in both themes
+ * (4.5:1 for text, 3:1 for input borders and icons) — see src/lib/utils/contrast.test.ts.
+ * Components reference these variables only; never hardcode a hex in a component.
+ *
+ * Corners are deliberately tight (2–6px): this is a work tool, not a marketing page.
+ */
 @theme inline {
-  --font-sans: var(--font-outfit);
-  --font-mono: var(--font-jetbrains);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-code);
 
-  /* Brand — industrial amber (overridden per-install via User.BrandColor, see
-     (dashboard)/layout.tsx generateBrandShades — never hardcode these hexes elsewhere,
-     always reference the var so a company's custom brand color actually takes effect) */
+  /* Tight corners everywhere — Tailwind's rounded-* utilities read these. */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
+
+  /* Brand — industrial amber by default, overridden per install via User.BrandColor
+     (see lib/utils/color.ts brandStyleSheet). Use:
+       brand-500      solid fills (buttons, active states) with --color-on-brand text
+       brand-text     brand-coloured text/links on card or canvas
+       brand-50/100   tinted panels, brand-200/300 their borders, brand-700/800 text on them */
   --color-brand-50:  #fffbeb;
   --color-brand-100: #fef3c7;
   --color-brand-200: #fde68a;
@@ -14,94 +34,145 @@
   --color-brand-400: #fbbf24;
   --color-brand-500: #f59e0b;
   --color-brand-600: #d97706;
-  --color-brand-700: #b45309;
-  --color-brand-800: #92400e;
+  --color-brand-700: #92400e;
+  --color-brand-800: #78350f;
+  --color-on-brand:  #141416;
+  --color-brand-text: var(--color-brand-700);
 
-  /* Surfaces — light defaults */
-  --color-canvas:  #f7f7f4;
-  --color-sidebar: #17171a;
-  --color-card:    #ffffff;
-
-  /* Text — light defaults */
-  --color-ink:    #18181b;
-  --color-muted:  #71717a;
-  --color-subtle: #a1a1aa;
-
-  /* Borders — light defaults */
-  --color-line:        #e4e4e7;
-  --color-line-strong: #d4d4d8;
-
-  /* Semantic status — fixed across themes/brand (danger/success/info must stay
-     recognizable regardless of a company's chosen brand color) */
+  /* Semantic status — fixed, independent of the company's brand colour, so "Em atraso"
+     never looks like "Enviado" just because a company picked blue.
+       -50/-100 tint background · -200/-300 tint border · -400/-500 dot/icon
+       -600/-700 text · -solid a filled button background that takes white text */
   --color-danger-50:  #fef2f2;
   --color-danger-100: #fee2e2;
   --color-danger-200: #fecaca;
   --color-danger-300: #fca5a5;
   --color-danger-400: #f87171;
-  --color-danger-500: #ef4444;
-  --color-danger-600: #dc2626;
-  --color-danger-700: #b91c1c;
+  --color-danger-500: #dc2626;
+  --color-danger-600: #b91c1c;
+  --color-danger-700: #991b1b;
+  --color-danger-solid: #b91c1c;
 
   --color-success-50:  #f0fdf4;
-  --color-success-100: #d1fae5;
+  --color-success-100: #dcfce7;
   --color-success-200: #bbf7d0;
-  --color-success-400: #34d399;
-  --color-success-500: #10b981;
-  --color-success-600: #16a34a;
-  --color-success-700: #15803d;
+  --color-success-400: #22c55e;
+  --color-success-500: #16a34a;
+  --color-success-600: #15803d;
+  --color-success-700: #166534;
+  --color-success-solid: #15803d;
 
   --color-info-50:  #eff6ff;
   --color-info-400: #60a5fa;
-  --color-info-500: #3b82f6;
-  --color-info-600: #2563eb;
-  --color-info-700: #1d4ed8;
+  --color-info-500: #2563eb;
+  --color-info-600: #1d4ed8;
+  --color-info-700: #1e40af;
+  --color-info-solid: #1d4ed8;
 
-  /* Neutral — inactive/draft/cancelled badges and near-white fills, fixed across themes
-     (same rationale as danger/success/info: a "Cancelled" chip must stay recognizably
-     grey, not swap with the page theme or take on a company's brand color) */
+  --color-warning-50:  #fffbeb;
+  --color-warning-200: #fde68a;
+  --color-warning-500: #d97706;
+  --color-warning-700: #92400e;
+
   --color-neutral-50:  #fafafa;
-  --color-neutral-100: #f4f4f5;
-  --color-neutral-400: #a1a1aa;
-  --color-neutral-600: #52525b;
+  --color-neutral-100: #f0f0f1;
+  --color-neutral-400: #8b8b94;
+  --color-neutral-600: #4a4a52;
 
-  /* Role badges — categorical, must stay mutually distinct regardless of theme/brand */
-  --color-role-purple-bg:   #faf5ff;
-  --color-role-purple-text: #7c3aed;
-  --color-role-purple-dot:  #a855f7;
+  --color-role-purple-bg:   #f5f3ff;
+  --color-role-purple-text: #6d28d9;
+  --color-role-purple-dot:  #7c3aed;
+  --color-role-purple-solid: #6d28d9;
   --color-role-rose-bg:     #fff1f2;
   --color-role-rose-text:   #be123c;
-  --color-role-rose-dot:    #f43f5e;
+  --color-role-rose-dot:    #e11d48;
+
+  /* Signatures are captured as black ink — always shown on white "paper", in both themes */
+  --color-paper: #ffffff;
+
+  /* Sidebar — dark in both themes */
+  --color-sidebar-text:   #e4e4e7;
+  --color-sidebar-muted:  #a1a1aa;
+  --color-sidebar-line:   #2a2a2f;
+  --color-sidebar-active: #26262b;
+  /* Brand-coloured text on the (always dark) sidebar */
+  --color-sidebar-accent: color-mix(in srgb, var(--color-brand-400) 75%, #ffffff);
 }
 
-/* ── Light (default) ────────────────────────────────────────────────────── */
+/* ── Light (default) ─────────────────────────────────────────────────────── */
 :root {
-  --background: #f7f7f4;
-  --foreground: #18181b;
+  --background: #f3f3f1;
+  --foreground: #141416;
 
-  --color-canvas:       #f7f7f4;
-  --color-sidebar:      #17171a;
-  --color-card:         #ffffff;
-  --color-ink:          #18181b;
-  --color-muted:        #71717a;
-  --color-subtle:       #a1a1aa;
-  --color-line:         #e4e4e7;
-  --color-line-strong:  #d4d4d8;
+  --color-canvas:      #f3f3f1;
+  --color-sidebar:     #141416;
+  --color-card:        #ffffff;
+  --color-ink:         #141416;
+  --color-muted:       #4b4b53;   /* 8.6:1 on white */
+  --color-subtle:      #65656e;   /* 5.6:1 on white, 5.1:1 on canvas */
+  --color-line:        #dcdcdf;   /* dividers */
+  --color-line-strong: #8a8a93;   /* input/button borders — 3.4:1 on white */
 }
 
 /* ── Dark ────────────────────────────────────────────────────────────────── */
-.dark {
+/* html.dark (not .dark) so it outranks the per-install brand :root rule injected at runtime. */
+html.dark {
   color-scheme: dark;
-  --background: #17171a;
-  --foreground: #f4f4f5;
+  --background: #111113;
+  --foreground: #ededef;
 
-  --color-canvas:       #1c1c21;
-  --color-sidebar:      #111114;
-  --color-card:         #232328;
-  --color-ink:          #f4f4f5;
-  --color-muted:        #a1a1aa;
-  --color-subtle:       #71717a;
-  --color-line:         #2d2d33;
-  --color-line-strong:  #3f3f46;
+  --color-canvas:      #111113;
+  --color-sidebar:     #0a0a0b;
+  --color-card:        #1a1a1d;
+  --color-ink:         #ededef;
+  --color-muted:       #b4b4bc;   /* 9.1:1 on card */
+  --color-subtle:      #96969f;   /* 6.2:1 on card */
+  --color-line:        #2e2e33;
+  --color-line-strong: #6b6b75;   /* 3.2:1 on card */
+
+  /* Tints become low-alpha washes over the card; text on them gets lighter */
+  --color-brand-50:  color-mix(in srgb, var(--color-brand-500) 13%, #1a1a1d);
+  --color-brand-100: color-mix(in srgb, var(--color-brand-500) 22%, #1a1a1d);
+  --color-brand-200: color-mix(in srgb, var(--color-brand-500) 40%, #1a1a1d);
+  --color-brand-300: color-mix(in srgb, var(--color-brand-500) 55%, #1a1a1d);
+  --color-brand-700: color-mix(in srgb, var(--color-brand-400) 55%, #ffffff);
+  --color-brand-800: color-mix(in srgb, var(--color-brand-400) 40%, #ffffff);
+  --color-brand-text: color-mix(in srgb, var(--color-brand-400) 70%, #ffffff);
+
+  --color-danger-50:  #2a1616;
+  --color-danger-100: #3a1a1a;
+  --color-danger-200: #5c2323;
+  --color-danger-300: #7f2d2d;
+  --color-danger-500: #f87171;
+  --color-danger-600: #fca5a5;
+  --color-danger-700: #fecaca;
+
+  --color-success-50:  #122219;
+  --color-success-100: #16301f;
+  --color-success-200: #1f4a2e;
+  --color-success-500: #4ade80;
+  --color-success-600: #86efac;
+  --color-success-700: #bbf7d0;
+
+  --color-info-50:  #141d31;
+  --color-info-500: #60a5fa;
+  --color-info-600: #93c5fd;
+  --color-info-700: #bfdbfe;
+
+  --color-warning-50:  #2a2012;
+  --color-warning-200: #5a4214;
+  --color-warning-500: #fbbf24;
+  --color-warning-700: #fde68a;
+
+  --color-neutral-50:  #202024;
+  --color-neutral-100: #27272c;
+  --color-neutral-400: #8b8b94;
+  --color-neutral-600: #c4c4cc;
+
+  --color-role-purple-bg:   #221b36;
+  --color-role-purple-text: #c4b5fd;
+  --color-role-rose-bg:     #2e1720;
+  --color-role-rose-text:   #fda4af;
 }
 
 * { box-sizing: border-box; }
@@ -114,46 +185,50 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  font-family: var(--font-body), system-ui, sans-serif;
 }
 
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Visible keyboard focus everywhere (buttons and links styled inline lose the UA ring). */
+:focus-visible {
+  outline: 2px solid var(--color-brand-text);
+  outline-offset: 2px;
 }
 
-.animate-fade-up {
-  animation: fade-up 0.22s ease-out both;
-}
-
+/* Kept as a no-op hook: page transitions were removed — they made a work tool feel slow. */
+.animate-fade-up,
 .stagger > * {
-  animation: fade-up 0.22s ease-out both;
+  animation: none;
 }
-.stagger > *:nth-child(1) { animation-delay: 0ms; }
-.stagger > *:nth-child(2) { animation-delay: 50ms; }
-.stagger > *:nth-child(3) { animation-delay: 100ms; }
-.stagger > *:nth-child(4) { animation-delay: 150ms; }
-.stagger > *:nth-child(5) { animation-delay: 200ms; }
 
-/* Shared text input styling for form fields (ClientForm, EquipmentForm, QuoteForm,
-   InterventionForm) — previously duplicated as an inline <style> tag in each form. */
-.form-input {
+/* Shared text input styling for form fields (auth-input: same look, a little taller for sign-in screens). */
+.form-input,
+.auth-input {
   width: 100%;
-  border-radius: 0.5rem;
-  border: 1.5px solid var(--color-line-strong);
-  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line-strong);
+  padding: 0.5rem 0.625rem;
   font-size: 0.875rem;
+  line-height: 1.4;
   background-color: var(--color-card);
   color: var(--color-ink);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  font-family: var(--font-outfit), system-ui, sans-serif;
+  transition: border-color 0.1s, box-shadow 0.1s;
+  font-family: inherit;
 }
-.form-input:focus {
-  border-color: var(--color-brand-500);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent);
+.form-input:focus,
+.auth-input:focus {
+  border-color: var(--color-brand-text);
+  box-shadow: 0 0 0 1px var(--color-brand-text);
 }
-.form-input::placeholder {
+.form-input::placeholder,
+.auth-input::placeholder {
   color: var(--color-subtle);
+  opacity: 1;
 }
-.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.auth-input {
+  padding: 0.625rem 0.75rem;
+}
+.form-input:disabled {
+  background-color: var(--color-canvas);
+  color: var(--color-muted);
+}

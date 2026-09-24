@@ -140,7 +140,7 @@ export function SignatureModal({
         {/* Canvas area */}
         <div
           className="rounded-xl border overflow-hidden"
-          style={{ borderColor: 'var(--color-line-strong)', backgroundColor: 'var(--color-neutral-50)' }}
+          style={{ borderColor: 'var(--color-line-strong)', backgroundColor: 'var(--color-paper)' }}
         >
           <SignatureCanvas
             ref={padRef}
@@ -178,7 +178,7 @@ export function SignatureModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
+              className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-100"
               style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
             >
               Cancelar
@@ -187,8 +187,8 @@ export function SignatureModal({
               type="button"
               onClick={handleConfirm}
               disabled={!canConfirm || isLoading}
-              className="rounded-lg px-5 py-2 text-sm font-semibold transition-all duration-150 disabled:opacity-50"
-              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+              className="rounded-lg px-5 py-2 text-sm font-semibold transition-colors duration-100 disabled:opacity-50"
+              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
             >
               {isLoading ? 'A guardar...' : confirmLabel}
             </button>

@@ -10,9 +10,9 @@ import { AccessDenied } from '@/components/shared/AccessDenied'
 const ENTITY_TYPES = ['Client', 'Equipment', 'Intervention', 'Quote', 'TeamMember']
 
 const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
-  Created: { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)', text: 'var(--color-success-400)' },
-  Updated: { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)', text: 'var(--color-brand-500)' },
-  Deleted: { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',  text: 'var(--color-danger-400)' },
+  Created: { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)', text: 'var(--color-success-600)' },
+  Updated: { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)', text: 'var(--color-brand-text)' },
+  Deleted: { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',  text: 'var(--color-danger-600)' },
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -59,7 +59,7 @@ export default function AuditLogsPage() {
     enabled: canManage,
   })
 
-  const inputCls = 'rounded-lg border px-3 py-2 text-sm outline-none transition-all duration-150 bg-[var(--color-canvas)] text-[var(--color-ink)] border-[var(--color-line-strong)]'
+  const inputCls = 'rounded-lg border px-3 py-2 text-sm outline-none transition-colors duration-100 bg-[var(--color-canvas)] text-[var(--color-ink)] border-[var(--color-line-strong)]'
 
   if (!canManage) return <AccessDenied />
 
@@ -149,7 +149,7 @@ export default function AuditLogsPage() {
                         {new Date(row.occurredAt).toLocaleString('pt-PT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                        <span className="rounded-sm px-2.5 py-0.5 text-xs font-semibold"
                           style={{ backgroundColor: actionColor.bg, color: actionColor.text }}>
                           {row.action}
                         </span>
@@ -187,7 +187,7 @@ export default function AuditLogsPage() {
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={!data.hasPreviousPage}
-                  className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150 disabled:opacity-40"
+                  className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors duration-100 disabled:opacity-40"
                   style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
                 >
                   ← Anterior
@@ -195,7 +195,7 @@ export default function AuditLogsPage() {
                 <button
                   onClick={() => setPage(p => p + 1)}
                   disabled={!data.hasNextPage}
-                  className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150 disabled:opacity-40"
+                  className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors duration-100 disabled:opacity-40"
                   style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
                 >
                   Seguinte →

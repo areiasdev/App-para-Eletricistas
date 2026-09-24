@@ -176,7 +176,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
             type="button"
             onClick={() => append({ description: '', quantity: 1, unitPrice: 0, vatRate: DEFAULT_VAT_RATE, unit: DEFAULT_UNIT })}
             className="text-xs font-semibold flex items-center gap-1 transition-colors duration-150"
-            style={{ color: 'var(--color-brand-600)' }}
+            style={{ color: 'var(--color-brand-text)' }}
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M6 1v10M1 6h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -346,7 +346,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
             style={{ color: 'var(--color-ink)', borderColor: 'var(--color-line)' }}
           >
             <span>Total</span>
-            <span className="w-24 text-right" style={{ color: 'var(--color-brand-600)' }}>{formatCurrency(total)}</span>
+            <span className="w-24 text-right" style={{ color: 'var(--color-brand-text)' }}>{formatCurrency(total)}</span>
           </div>
         </div>
       </section>
@@ -355,8 +355,8 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
         <button
           type="submit"
           disabled={isLoading}
-          className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110 active:scale-[0.99]"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-colors duration-100 disabled:opacity-60"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           {isLoading ? 'A guardar...' : submitLabel}
         </button>
