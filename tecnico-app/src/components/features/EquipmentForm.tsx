@@ -212,8 +212,8 @@ export function EquipmentForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110 active:scale-[0.99]"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-colors duration-100 disabled:opacity-60"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           {isLoading ? 'A guardar...' : submitLabel}
         </button>

@@ -61,10 +61,35 @@ const LIGHTNESS_BY_SHADE: Record<string, number> = {
   '50': 0.96,
   '100': 0.9,
   '200': 0.8,
+  '300': 0.7,
   '400': 0.62,
   '500': 0.5,
   '600': 0.4,
-  '700': 0.32,
+  '700': 0.28,
+  '800': 0.22,
+}
+
+const DARK_TEXT = '#141416'
+const LIGHT_TEXT = '#ffffff'
+
+/** WCAG relative luminance of a #rrggbb colour. */
+export function relativeLuminance(hex: string): number {
+  const channel = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  }
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5)
+}
+
+/** WCAG contrast ratio between two #rrggbb colours (1–21). */
+export function contrastRatio(a: string, b: string): number {
+  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+
+/** Text colour (near-black or white) that reads best on the given background. */
+export function readableTextOn(backgroundHex: string): string {
+  return contrastRatio(backgroundHex, DARK_TEXT) >= contrastRatio(backgroundHex, LIGHT_TEXT) ? DARK_TEXT : LIGHT_TEXT
 }
 
 export function generateBrandShades(baseHex: string): Record<string, string> {
@@ -76,5 +101,27 @@ export function generateBrandShades(baseHex: string): Record<string, string> {
   for (const [shade, lightness] of Object.entries(LIGHTNESS_BY_SHADE)) {
     shades[shade] = hslToHex(h, Math.min(1, s * 1.05), lightness)
   }
+
+  // Buttons are brand-500 with black or white text. For some colours (mid greys, pure reds)
+  // neither reaches 4.5:1 at 50% lightness, so darken the fill a little until white text does.
+  let l500 = LIGHTNESS_BY_SHADE['500']
+  const readable = (bg: string) => Math.max(contrastRatio(bg, DARK_TEXT), contrastRatio(bg, LIGHT_TEXT)) >= 4.5
+  while (!readable(shades['500']) && l500 > 0.2) {
+    l500 -= 0.02
+    shades['500'] = hslToHex(h, Math.min(1, s * 1.05), l500)
+  }
   return shades
+}
+
+/**
+ * CSS that applies a company's brand colour: the shade scale plus the text colour that stays
+ * readable on a brand-filled button, whatever colour was picked (dark text on yellow, white on blue).
+ * Dark-mode tints are derived from these in globals.css (html.dark), so only :root is emitted.
+ */
+export function brandStyleSheet(baseHex: string): string | null {
+  const shades = generateBrandShades(baseHex)
+  if (Object.keys(shades).length === 0) return null
+  const vars = Object.entries(shades).map(([shade, hex]) => `--color-brand-${shade}: ${hex};`)
+  vars.push(`--color-on-brand: ${readableTextOn(shades['500'])};`)
+  return `:root { ${vars.join(' ')} }`
 }

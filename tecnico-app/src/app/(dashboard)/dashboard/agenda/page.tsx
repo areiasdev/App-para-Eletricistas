@@ -65,7 +65,7 @@ export default function AgendaPage() {
         <Link
           href="/dashboard/intervencoes/novo"
           className="rounded-lg px-4 py-2 text-sm font-semibold"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           + Nova intervenção
         </Link>

@@ -1,5 +1,6 @@
 'use client'
 
+import { formatCurrency } from '@/lib/utils/formatters'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
@@ -9,17 +10,17 @@ import { formatDate } from '@/lib/utils/formatters'
 import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
-  Scheduled:   { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)',  text: 'var(--color-brand-500)' },
-  InProgress:  { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-400)' },
-  Completed:   { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-400)' },
-  Cancelled:   { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',    text: 'var(--color-danger-400)' },
-  Draft:       { bg: 'rgba(255,255,255,0.06)',  text: 'rgba(255,255,255,0.4)' },
-  Sent:        { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-400)' },
-  Accepted:    { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-400)' },
-  Rejected:    { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',    text: 'var(--color-danger-400)' },
-  Issued:      { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-400)' },
-  Paid:        { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-400)' },
-  Overdue:     { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)',   text: 'var(--color-brand-500)' },
+  Scheduled:   { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)',  text: 'var(--color-brand-text)' },
+  InProgress:  { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-600)' },
+  Completed:   { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-600)' },
+  Cancelled:   { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',    text: 'var(--color-danger-600)' },
+  Draft:       { bg: 'var(--color-neutral-100)', text: 'var(--color-neutral-600)' },
+  Sent:        { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-600)' },
+  Accepted:    { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-600)' },
+  Rejected:    { bg: 'color-mix(in srgb, var(--color-danger-500) 12%, transparent)',    text: 'var(--color-danger-600)' },
+  Issued:      { bg: 'color-mix(in srgb, var(--color-info-500) 12%, transparent)',   text: 'var(--color-info-600)' },
+  Paid:        { bg: 'color-mix(in srgb, var(--color-success-500) 12%, transparent)',   text: 'var(--color-success-600)' },
+  Overdue:     { bg: 'var(--color-warning-50)', text: 'var(--color-warning-700)' },
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -33,13 +34,13 @@ const INTERVENTION_TYPE_LABELS: Record<string, string> = {
 }
 
 function fmt(n: number) {
-  return n.toFixed(2).replace('.', ',') + ' €'
+  return formatCurrency(n)
 }
 
 function Badge({ status }: { status: string }) {
   const c = STATUS_COLORS[status] ?? { bg: 'var(--color-canvas)', text: 'var(--color-muted)' }
   return (
-    <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+    <span className="rounded-sm px-2.5 py-0.5 text-xs font-semibold"
       style={{ backgroundColor: c.bg, color: c.text }}>
       {STATUS_LABELS[status] ?? status}
     </span>
@@ -102,7 +103,7 @@ export default function PortalDashboardPage() {
         style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <div className="flex items-center gap-2.5">
           <span className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}>
             {APP_INITIAL}
           </span>
           <span className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>Portal do cliente</span>
@@ -157,7 +158,7 @@ export default function PortalDashboardPage() {
                   )}
                   {e.nextMaintenanceDate && (
                     <div className="flex items-center gap-1.5 text-xs"
-                      style={{ color: new Date(e.nextMaintenanceDate) < new Date() ? 'var(--color-danger-400)' : 'var(--color-brand-500)' }}>
+                      style={{ color: new Date(e.nextMaintenanceDate) < new Date() ? 'var(--color-danger-600)' : 'var(--color-brand-text)' }}>
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="1.2"/>
                         <path d="M6 3v3l2 1.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
@@ -275,7 +276,7 @@ export default function PortalDashboardPage() {
                       </td>
                       <td className="px-4 py-3 text-xs text-right">
                         {row.payUrl && (
-                          <a href={row.payUrl} className="font-semibold" style={{ color: 'var(--color-brand-500)' }}>
+                          <a href={row.payUrl} className="font-semibold" style={{ color: 'var(--color-brand-text)' }}>
                             Pagar →
                           </a>
                         )}

@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { cn } from '@/lib/utils'
+import { formatCurrency, formatUnitPrice } from '@/lib/utils/formatters'
 import { PhotoUploader } from '@/components/features/PhotoUploader'
 import { isValidPhotoUrl } from '@/lib/photos'
 import { useClients } from '@/hooks/useClients'
@@ -192,7 +193,7 @@ export function InterventionForm({
               <option value="">— Sem orçamento —</option>
               {quotesData?.items.map((q) => (
                 <option key={q.id} value={q.id}>
-                  {q.number} · {q.total.toFixed(2)} €
+                  {q.number} · {formatCurrency(q.total)}
                 </option>
               ))}
             </select>
@@ -238,7 +239,7 @@ export function InterventionForm({
                   key={eq.id}
                   type="button"
                   onClick={() => toggleEquipment(eq.id)}
-                  className="flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-all duration-150"
+                  className="flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors duration-100"
                   style={{
                     borderColor: checked ? 'var(--color-brand-500)' : 'var(--color-line)',
                     backgroundColor: checked ? 'var(--color-brand-50)' : 'var(--color-canvas)',
@@ -279,8 +280,8 @@ export function InterventionForm({
             Materiais utilizados
           </h2>
           {materials.length > 0 && (
-            <span className="text-xs font-semibold font-mono" style={{ color: 'var(--color-brand-500)' }}>
-              Total: {materialsCost.toFixed(2)} €
+            <span className="text-xs font-semibold font-mono" style={{ color: 'var(--color-brand-text)' }}>
+              Total: {formatCurrency(materialsCost)}
             </span>
           )}
         </div>
@@ -332,8 +333,8 @@ export function InterventionForm({
             type="button"
             onClick={addMaterial}
             aria-label="Adicionar material"
-            className="col-span-12 sm:col-span-2 rounded-lg py-2 text-sm font-medium transition-all duration-150"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            className="col-span-12 sm:col-span-2 rounded-lg py-2 text-sm font-medium transition-colors duration-100"
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             + Adicionar
           </button>
@@ -358,10 +359,10 @@ export function InterventionForm({
                   <tr key={i} style={{ borderTop: i > 0 ? '1px solid var(--color-line)' : undefined }}>
                     <td className="px-3 py-2" style={{ color: 'var(--color-ink)' }}>{m.name}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.quantity}</td>
-                    <td className="px-3 py-2 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitCost.toFixed(2)}</td>
-                    <td className="px-3 py-2 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitPrice != null ? m.unitPrice.toFixed(2) : '—'}</td>
+                    <td className="px-3 py-2 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{formatUnitPrice(m.unitCost)}</td>
+                    <td className="px-3 py-2 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitPrice != null ? formatUnitPrice(m.unitPrice) : '—'}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>
-                      {(m.quantity * m.unitCost).toFixed(2)} €
+                      {formatCurrency(m.quantity * m.unitCost)}
                     </td>
                     <td className="px-3 py-2 text-center">
                       <button
@@ -427,8 +428,8 @@ export function InterventionForm({
       <button
         type="submit"
         disabled={isLoading}
-        className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110 active:scale-[0.99]"
-        style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+        className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-colors duration-100 disabled:opacity-60"
+        style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
       >
         {isLoading ? 'A guardar...' : submitLabel}
       </button>
@@ -450,7 +451,7 @@ function Field({ label, id, error, children }: { label: string; id?: string; err
 
 const inputCls = (hasError: boolean) =>
   cn(
-    'w-full rounded-lg border px-3 py-2.5 text-sm transition-all duration-150 outline-none',
+    'w-full rounded-lg border px-3 py-2.5 text-sm transition-colors duration-100 outline-none',
     'bg-[var(--color-canvas)] text-[var(--color-ink)]',
     hasError
       ? 'border-red-400 focus:border-red-500 ring-0 focus:ring-2 focus:ring-red-200'

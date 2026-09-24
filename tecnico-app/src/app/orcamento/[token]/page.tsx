@@ -124,7 +124,7 @@ export default function PublicQuotePage({ params }: { params: Promise<{ token: s
               <div className="px-5 py-4 flex flex-wrap items-baseline justify-between gap-2" style={{ borderBottom: '1px solid var(--color-line)' }}>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>Orçamento</p>
-                  <h1 className="text-xl font-bold" style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-jetbrains), monospace' }}>{quote.number}</h1>
+                  <h1 className="text-xl font-bold" style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-code), monospace' }}>{quote.number}</h1>
                   <p className="text-sm" style={{ color: 'var(--color-muted)' }}>Para {quote.clientName}</p>
                 </div>
                 <div className="text-right text-sm" style={{ color: 'var(--color-muted)' }}>
@@ -169,12 +169,12 @@ export default function PublicQuotePage({ params }: { params: Promise<{ token: s
 
             {/* Answer */}
             {awaiting && !rejecting && (
-              <div className="sticky bottom-4 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 rounded-xl border p-4 shadow-lg"
+              <div className="sticky bottom-4 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 rounded-xl border p-4 shadow-md"
                 style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
                 <button
                   onClick={() => setSigning(true)}
                   className="rounded-lg px-5 py-3 font-bold text-white"
-                  style={{ backgroundColor: 'var(--color-success-600)' }}
+                  style={{ backgroundColor: 'var(--color-success-solid)' }}
                 >
                   Aceitar orçamento
                 </button>
@@ -219,7 +219,7 @@ export default function PublicQuotePage({ params }: { params: Promise<{ token: s
                     onClick={() => reject.mutate()}
                     disabled={reject.isPending}
                     className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                    style={{ backgroundColor: 'var(--color-danger-600)' }}
+                    style={{ backgroundColor: 'var(--color-danger-solid)' }}
                   >
                     {reject.isPending ? 'A enviar…' : 'Recusar orçamento'}
                   </button>

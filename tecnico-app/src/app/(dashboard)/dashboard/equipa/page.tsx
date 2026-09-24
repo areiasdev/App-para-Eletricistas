@@ -16,10 +16,10 @@ const roleLabels: Record<UserRole, string> = {
 }
 
 const roleColors: Record<UserRole, { bg: string; text: string }> = {
-  Owner:      { bg: 'color-mix(in srgb, var(--color-brand-500) 15%, transparent)', text: 'var(--color-brand-500)' },
+  Owner:      { bg: 'color-mix(in srgb, var(--color-brand-500) 15%, transparent)', text: 'var(--color-brand-text)' },
   Admin:      { bg: 'var(--color-role-purple-bg)', text: 'var(--color-role-purple-dot)' },
-  Technician: { bg: 'color-mix(in srgb, var(--color-info-500) 15%, transparent)', text: 'var(--color-info-400)' },
-  Commercial: { bg: 'color-mix(in srgb, var(--color-success-500) 15%, transparent)', text: 'var(--color-success-400)' },
+  Technician: { bg: 'color-mix(in srgb, var(--color-info-500) 15%, transparent)', text: 'var(--color-info-600)' },
+  Commercial: { bg: 'color-mix(in srgb, var(--color-success-500) 15%, transparent)', text: 'var(--color-success-600)' },
 }
 
 export default function EquipaPage() {
@@ -99,7 +99,7 @@ export default function EquipaPage() {
             onChange={e => setInviteEmail(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleInvite() }}
             placeholder="email@empresa.pt"
-            className="flex-1 rounded-lg border px-3 py-2.5 text-sm outline-none transition-all duration-150"
+            className="flex-1 rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors duration-100"
             style={{
               borderColor: 'var(--color-line-strong)',
               backgroundColor: 'var(--color-canvas)',
@@ -109,7 +109,7 @@ export default function EquipaPage() {
           <select
             value={inviteRole}
             onChange={e => setInviteRole(e.target.value as UserRole)}
-            className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-all duration-150"
+            className="rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors duration-100"
             style={{
               borderColor: 'var(--color-line-strong)',
               backgroundColor: 'var(--color-canvas)',
@@ -123,8 +123,8 @@ export default function EquipaPage() {
           <button
             onClick={handleInvite}
             disabled={inviteMember.isPending || !inviteEmail.trim()}
-            className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            className="rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors duration-100 disabled:opacity-60"
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             {inviteMember.isPending ? 'A adicionar...' : 'Adicionar'}
           </button>
@@ -132,7 +132,7 @@ export default function EquipaPage() {
 
         {inviteLink && (
           <div className="rounded-lg border p-3 space-y-2" style={{ borderColor: 'color-mix(in srgb, var(--color-success-500) 30%, transparent)', backgroundColor: 'color-mix(in srgb, var(--color-success-500) 5%, transparent)' }}>
-            <p className="text-xs font-semibold" style={{ color: 'var(--color-success-400)' }}>
+            <p className="text-xs font-semibold" style={{ color: 'var(--color-success-600)' }}>
               Link de convite gerado — partilha com o novo membro:
             </p>
             <div className="flex gap-2 items-center">
@@ -142,8 +142,8 @@ export default function EquipaPage() {
               </code>
               <button
                 onClick={() => { navigator.clipboard.writeText(inviteLink); toast.success('Link copiado.') }}
-                className="shrink-0 rounded px-3 py-1 text-xs font-medium transition-all duration-150"
-                style={{ backgroundColor: 'color-mix(in srgb, var(--color-success-500) 15%, transparent)', color: 'var(--color-success-400)' }}
+                className="shrink-0 rounded px-3 py-1 text-xs font-medium transition-colors duration-100"
+                style={{ backgroundColor: 'color-mix(in srgb, var(--color-success-500) 15%, transparent)', color: 'var(--color-success-600)' }}
               >
                 Copiar
               </button>
@@ -221,7 +221,7 @@ export default function EquipaPage() {
                   <select
                     value={member.role}
                     onChange={e => handleRoleChange(member, e.target.value as UserRole)}
-                    className="rounded-lg border px-2 py-1.5 text-xs outline-none transition-all duration-150"
+                    className="rounded-lg border px-2 py-1.5 text-xs outline-none transition-colors duration-100"
                     style={{
                       borderColor: 'var(--color-line-strong)',
                       backgroundColor: 'var(--color-canvas)',
@@ -237,7 +237,7 @@ export default function EquipaPage() {
                   <button
                     onClick={() => handleRemove(member)}
                     disabled={removeMember.isPending}
-                    className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150 disabled:opacity-60"
+                    className="rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors duration-100 disabled:opacity-60"
                     style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}

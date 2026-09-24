@@ -40,7 +40,7 @@ function PayPageInner({ token }: { token: string }) {
       <div className="w-full max-w-sm space-y-6">
         <div className="flex items-center justify-center gap-2">
           <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}>
             {APP_INITIAL}
           </span>
           <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>{APP_NAME}</span>
@@ -73,7 +73,7 @@ function PayPageInner({ token }: { token: string }) {
                 {invoice.issuerCompanyName}
               </p>
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-xl font-bold" style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-jetbrains), monospace' }}>
+                <p className="text-xl font-bold" style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-code), monospace' }}>
                   {invoice.number}
                 </p>
                 <InvoiceStatusBadge status={invoice.status} />
@@ -89,7 +89,7 @@ function PayPageInner({ token }: { token: string }) {
                 <span>Vencimento</span><span>{formatDate(invoice.dueDate)}</span>
               </div>
               <div className="flex justify-between text-base font-bold pt-2" style={{ borderTop: '1px solid var(--color-line)', color: 'var(--color-ink)' }}>
-                <span>Total</span><span style={{ color: 'var(--color-brand-600)' }}>{formatCurrency(invoice.total)}</span>
+                <span>Total</span><span style={{ color: 'var(--color-brand-text)' }}>{formatCurrency(invoice.total)}</span>
               </div>
             </div>
 
@@ -126,8 +126,8 @@ function PayPageInner({ token }: { token: string }) {
                   <button
                     onClick={handlePay}
                     disabled={checkoutLoading}
-                    className="w-full rounded-lg px-4 py-3 text-sm font-bold transition-all duration-150 disabled:opacity-60"
-                    style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+                    className="w-full rounded-lg px-4 py-3 text-sm font-bold transition-colors duration-100 disabled:opacity-60"
+                    style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
                   >
                     {checkoutLoading ? 'A abrir pagamento…' : 'Pagar agora →'}
                   </button>

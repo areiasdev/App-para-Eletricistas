@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { authApi } from '@/lib/api/auth'
 import { Sidebar } from '@/components/shared/Sidebar'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
-import { generateBrandShades } from '@/lib/utils/color'
+import { brandStyleSheet } from '@/lib/utils/color'
 import { useCanManage } from '@/hooks/useCanManage'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -62,12 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // token set at runtime, so a fresh install just needs Perfil filled in, not a rebuild.
   const brandStyle = useMemo(() => {
     if (!user?.brandColor) return null
-    const shades = generateBrandShades(user.brandColor)
-    if (Object.keys(shades).length === 0) return null
-    const vars = Object.entries(shades)
-      .map(([shade, hex]) => `--color-brand-${shade}: ${hex};`)
-      .join(' ')
-    return `:root { ${vars} }`
+    return brandStyleSheet(user.brandColor)
   }, [user?.brandColor])
 
   const needsOnboarding = canManage && !user?.companyName

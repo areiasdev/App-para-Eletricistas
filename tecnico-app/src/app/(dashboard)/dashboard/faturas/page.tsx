@@ -52,7 +52,7 @@ function CsvExport() {
         Exportar CSV
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 z-20 w-72 rounded-xl border p-4 space-y-3 shadow-lg"
+        <div className="absolute right-0 mt-2 z-20 w-72 rounded-xl border p-4 space-y-3 shadow-md"
           style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
           <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Faturas emitidas entre (por omissão: o mês passado):</p>
           <div className="grid grid-cols-2 gap-2">
@@ -61,7 +61,7 @@ function CsvExport() {
           </div>
           <button onClick={download} disabled={busy || !from || !to}
             className="w-full rounded-lg px-3 py-2 text-sm font-semibold disabled:opacity-60"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}>
             {busy ? 'A exportar…' : 'Descarregar'}
           </button>
         </div>
@@ -114,7 +114,7 @@ function FaturasContent() {
           placeholder="Pesquisar por número ou cliente..."
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
-          className="rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150 w-full sm:w-64"
+          className="rounded-lg px-3 py-2 text-sm outline-none transition-colors duration-100 w-full sm:w-64"
           style={{ border: '1.5px solid var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
           onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent)' }}
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -122,7 +122,7 @@ function FaturasContent() {
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value as InvoiceStatus | ''); setPage(1) }}
-          className="rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150"
+          className="rounded-lg px-3 py-2 text-sm outline-none transition-colors duration-100"
           style={{ border: '1.5px solid var(--color-line-strong)', backgroundColor: 'var(--color-card)', color: 'var(--color-ink)' }}
           onFocus={e => { e.currentTarget.style.borderColor = 'var(--color-brand-500)'; e.currentTarget.style.boxShadow = '0 0 0 3px color-mix(in srgb, var(--color-brand-500) 12%, transparent)' }}
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--color-line-strong)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -197,9 +197,9 @@ function FaturasContent() {
                 <td className="px-5 py-3.5">
                   <Link
                     href={`/dashboard/faturas/${invoice.id}`}
-                    className="text-sm font-mono font-medium transition-colors duration-150"
+                    className="text-sm font-mono font-medium whitespace-nowrap transition-colors duration-150"
                     style={{ color: 'var(--color-ink)' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-500)')}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-text)')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-ink)')}
                   >
                     {invoice.number}
@@ -209,7 +209,7 @@ function FaturasContent() {
                 <td className="px-5 py-3.5">
                   <InvoiceStatusBadge status={invoice.status} />
                 </td>
-                <td className="px-5 py-3.5 text-sm font-medium" style={{ color: 'var(--color-ink)' }}>
+                <td className="px-5 py-3.5 text-sm font-medium whitespace-nowrap tabular-nums" style={{ color: 'var(--color-ink)' }}>
                   {formatCurrency(invoice.total)}
                 </td>
                 <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>
@@ -222,7 +222,7 @@ function FaturasContent() {
                       href={`/dashboard/faturas/${invoice.id}`}
                       className="text-xs font-medium transition-colors duration-150"
                       style={{ color: 'var(--color-muted)' }}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-500)')}
+                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-text)')}
                       onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
                     >
                       Ver

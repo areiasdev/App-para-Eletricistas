@@ -60,7 +60,7 @@ export function PhotoUploader({ value, onChange, max = 20 }: PhotoUploaderProps)
           onClick={() => cameraRef.current?.click()}
           disabled={remaining <= 0}
           className="rounded-lg px-4 py-2.5 text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-50"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
             <path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h1.3l1-1.5h4.4l1 1.5h1.3A1.5 1.5 0 0 1 14 5.5v6a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 11.5v-6Z" stroke="currentColor" strokeWidth="1.3"/>

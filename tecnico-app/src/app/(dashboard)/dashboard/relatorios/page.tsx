@@ -1,5 +1,6 @@
 'use client'
 
+import { formatCurrency } from '@/lib/utils/formatters'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi, type ProfitabilityByTechnician, type ProfitabilityByClient } from '@/lib/api/reports'
@@ -8,7 +9,7 @@ import { useCanManage } from '@/hooks/useCanManage'
 import { AccessDenied } from '@/components/shared/AccessDenied'
 
 function fmt(n: number) {
-  return n.toFixed(2).replace('.', ',') + ' €'
+  return formatCurrency(n)
 }
 
 function margin(revenue: number, cost: number) {
@@ -33,7 +34,7 @@ export default function RelatoriosPage() {
     enabled: canManage,
   })
 
-  const inputCls = 'rounded-lg border px-3 py-2 text-sm outline-none transition-all duration-150 bg-[var(--color-canvas)] text-[var(--color-ink)] border-[var(--color-line-strong)]'
+  const inputCls = 'rounded-lg border px-3 py-2 text-sm outline-none transition-colors duration-100 bg-[var(--color-canvas)] text-[var(--color-ink)] border-[var(--color-line-strong)]'
 
   if (!canManage) return <AccessDenied />
 
@@ -62,8 +63,8 @@ export default function RelatoriosPage() {
         </div>
         <button
           onClick={() => refetch()}
-          className="rounded-lg px-5 py-2 text-sm font-semibold transition-all duration-150 hover:brightness-110"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          className="rounded-lg px-5 py-2 text-sm font-semibold transition-colors duration-100"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           Atualizar
         </button>
@@ -98,10 +99,10 @@ export default function RelatoriosPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className="rounded-md px-4 py-1.5 text-xs font-semibold transition-all duration-150"
+            className="rounded-md px-4 py-1.5 text-xs font-semibold transition-colors duration-100"
             style={{
               backgroundColor: tab === t ? 'var(--color-brand-500)' : 'transparent',
-              color: tab === t ? 'var(--color-sidebar)' : 'var(--color-muted)',
+              color: tab === t ? 'var(--color-on-brand)' : 'var(--color-muted)',
             }}
           >
             {t === 'tech' ? 'Por técnico' : 'Por cliente'}
@@ -146,9 +147,9 @@ export default function RelatoriosPage() {
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--color-ink)' }}>{row.technicianName}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{row.totalInterventions}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{row.completedInterventions}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-brand-500)' }}>{fmt(row.materialsCost)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-brand-text)' }}>{fmt(row.materialsCost)}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>{fmt(row.quotedRevenue)}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-success-400)' }}>{margin(row.quotedRevenue, row.materialsCost)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-success-600)' }}>{margin(row.quotedRevenue, row.materialsCost)}</td>
                   </tr>
                 ))
                 : data.byClient.map((row: ProfitabilityByClient, i) => (
@@ -156,9 +157,9 @@ export default function RelatoriosPage() {
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--color-ink)' }}>{row.clientName}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{row.totalInterventions}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{row.completedInterventions}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-brand-500)' }}>{fmt(row.materialsCost)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--color-brand-text)' }}>{fmt(row.materialsCost)}</td>
                     <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>{fmt(row.quotedRevenue)}</td>
-                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-success-400)' }}>{margin(row.quotedRevenue, row.materialsCost)}</td>
+                    <td className="px-4 py-3 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-success-600)' }}>{margin(row.quotedRevenue, row.materialsCost)}</td>
                   </tr>
                 ))
               }

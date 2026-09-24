@@ -48,8 +48,8 @@ export default function ClientesPage() {
         </div>
         <Link
           href="/dashboard/clientes/novo"
-          className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 hover:brightness-110 active:scale-[0.99]"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-100"
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           + Novo Cliente
         </Link>
@@ -61,7 +61,7 @@ export default function ClientesPage() {
         placeholder="Pesquisar por nome, email ou telefone..."
         value={search}
         onChange={(e) => handleSearch(e.target.value)}
-        className="w-full max-w-sm rounded-lg px-3 py-2 text-sm outline-none transition-all duration-150"
+        className="w-full max-w-sm rounded-lg px-3 py-2 text-sm outline-none transition-colors duration-100"
         style={{
           border: '1.5px solid var(--color-line-strong)',
           backgroundColor: 'var(--color-card)',
@@ -108,7 +108,7 @@ export default function ClientesPage() {
                   {debouncedSearch
                     ? 'Nenhum cliente encontrado.'
                     : <>Ainda não tens clientes.{' '}
-                        <Link href="/dashboard/clientes/novo" className="font-medium underline underline-offset-2" style={{ color: 'var(--color-brand-600)' }}>
+                        <Link href="/dashboard/clientes/novo" className="font-medium underline underline-offset-2" style={{ color: 'var(--color-brand-text)' }}>
                           Cria o primeiro
                         </Link>
                       </>}
@@ -128,7 +128,7 @@ export default function ClientesPage() {
                     href={`/dashboard/clientes/${client.id}`}
                     className="text-sm font-medium transition-colors duration-150"
                     style={{ color: 'var(--color-ink)' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-500)')}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-brand-text)')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-ink)')}
                   >
                     {client.name}

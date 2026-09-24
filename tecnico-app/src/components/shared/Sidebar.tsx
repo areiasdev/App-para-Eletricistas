@@ -31,12 +31,12 @@ function SidebarBrand({ onClick }: { onClick?: () => void }) {
       ) : (
         <span
           className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold shrink-0"
-          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+          style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
         >
           {APP_INITIAL}
         </span>
       )}
-      <span className="text-sm font-semibold tracking-tight text-white/90 truncate">
+      <span className="text-sm font-semibold tracking-tight text-[var(--color-sidebar-text)] truncate">
         {user?.companyName || APP_NAME}
       </span>
     </Link>
@@ -188,7 +188,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   return (
     <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--color-sidebar)' }}>
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/8">
+      <div className="px-5 py-5 border-b border-[var(--color-sidebar-line)]">
         <SidebarBrand onClick={onNavClick} />
       </div>
 
@@ -208,15 +208,16 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
               href={item.href}
               onClick={onNavClick}
               className={cn(
-                'group flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150',
+                'group flex items-center gap-3 px-3 py-2 rounded-sm text-sm font-medium transition-colors duration-100',
                 isActive
                   ? 'text-white'
-                  : 'text-white/45 hover:text-white/80 hover:bg-white/6'
+                  : 'text-[var(--color-sidebar-muted)] hover:text-[var(--color-sidebar-text)] hover:bg-[var(--color-sidebar-active)]'
               )}
-              style={isActive ? { backgroundColor: 'color-mix(in srgb, var(--color-brand-500) 15%, transparent)' } : undefined}
+              // Active: flat highlight plus a brand edge — no glow.
+              style={isActive ? { backgroundColor: 'var(--color-sidebar-active)', boxShadow: 'inset 3px 0 0 var(--color-brand-500)' } : undefined}
             >
               <span
-                style={isActive ? { color: 'var(--color-brand-400)' } : undefined}
+                style={isActive ? { color: 'var(--color-sidebar-accent)' } : undefined}
               >
                 {item.icon}
               </span>
@@ -227,7 +228,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
       </nav>
 
       {/* User */}
-      <div className="px-4 py-4 border-t border-white/8">
+      <div className="px-4 py-4 border-t border-[var(--color-sidebar-line)]">
         <div className="flex items-center gap-2.5 mb-3">
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
@@ -236,14 +237,14 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             {user?.fullName?.charAt(0).toUpperCase() ?? '?'}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-medium text-white/80 truncate leading-tight">{user?.fullName}</p>
-            <p className="text-xs text-white/35 truncate leading-tight">{user?.email}</p>
+            <p className="text-xs font-medium text-[var(--color-sidebar-text)] truncate leading-tight">{user?.fullName}</p>
+            <p className="text-xs text-[var(--color-sidebar-muted)] truncate leading-tight">{user?.email}</p>
           </div>
         </div>
         <div className="flex items-center justify-between">
           <button
             onClick={handleLogout}
-            className="text-xs text-white/35 hover:text-white/70 transition-colors duration-150"
+            className="text-xs text-[var(--color-sidebar-muted)] hover:text-[var(--color-sidebar-text)] transition-colors duration-150"
           >
             Terminar sessão →
           </button>
@@ -251,9 +252,9 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
             onClick={toggleTheme}
             title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
             className="w-7 h-7 flex items-center justify-center rounded-md transition-colors duration-150"
-            style={{ color: 'rgba(255,255,255,0.35)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}
+            style={{ color: 'var(--color-sidebar-muted)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-sidebar-text)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-sidebar-muted)')}
           >
             {theme === 'dark' ? (
               <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -295,13 +296,13 @@ export function Sidebar() {
       {/* Mobile top bar */}
       <div
         className="lg:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 h-14 border-b"
-        style={{ backgroundColor: 'var(--color-sidebar)', borderColor: 'rgba(255,255,255,0.08)' }}
+        style={{ backgroundColor: 'var(--color-sidebar)', borderColor: 'var(--color-sidebar-line)' }}
       >
         <SidebarBrand />
         <button
           onClick={() => setMobileOpen(true)}
           className="w-9 h-9 flex items-center justify-center rounded-md transition-colors duration-150"
-          style={{ color: 'rgba(255,255,255,0.6)' }}
+          style={{ color: 'var(--color-sidebar-text)' }}
           aria-label="Abrir menu"
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -324,12 +325,12 @@ export function Sidebar() {
             className="lg:hidden fixed top-0 left-0 bottom-0 z-50 w-64"
             style={{ backgroundColor: 'var(--color-sidebar)' }}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-sidebar-line)]">
               <SidebarBrand onClick={() => setMobileOpen(false)} />
               <button
                 onClick={() => setMobileOpen(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-md"
-                style={{ color: 'rgba(255,255,255,0.5)' }}
+                style={{ color: 'var(--color-sidebar-muted)' }}
                 aria-label="Fechar menu"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

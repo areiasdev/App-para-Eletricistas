@@ -12,16 +12,16 @@ import { interventionsApi, type UpdateInterventionRequest } from '@/lib/api/inte
 import type { Intervention } from '@/types'
 import { useCanManage } from '@/hooks/useCanManage'
 import { InterventionStatusBadge } from '@/components/features/InterventionStatusBadge'
-import { formatDate, formatDateTime } from '@/lib/utils/formatters'
+import { formatDate, formatDateTime, formatCurrency, formatUnitPrice } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
 import type { InterventionStatus } from '@/types'
 
 const nextStatuses: Partial<Record<InterventionStatus, { status: InterventionStatus; label: string; bg: string; color: string }[]>> = {
   Scheduled: [
-    { status: 'InProgress', label: 'Iniciar intervenção', bg: 'var(--color-brand-500)', color: 'var(--color-sidebar)' },
+    { status: 'InProgress', label: 'Iniciar intervenção', bg: 'var(--color-brand-500)', color: 'var(--color-on-brand)' },
   ],
   InProgress: [
-    { status: 'Completed', label: 'Marcar como concluída', bg: 'var(--color-success-600)', color: 'white' },
+    { status: 'Completed', label: 'Marcar como concluída', bg: 'var(--color-success-solid)', color: 'white' },
     { status: 'Scheduled', label: 'Reagendar', bg: 'transparent', color: 'var(--color-muted)' },
   ],
 }
@@ -121,7 +121,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
         <Link
           href="/dashboard/intervencoes"
           className="text-sm mt-2 inline-block transition-colors duration-150"
-          style={{ color: 'var(--color-brand-500)' }}
+          style={{ color: 'var(--color-brand-text)' }}
         >
           Voltar à lista
         </Link>
@@ -180,7 +180,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             <Link
               href={`/dashboard/clientes/${iv.clientId}`}
               className="transition-colors duration-150"
-              style={{ color: 'var(--color-brand-500)' }}
+              style={{ color: 'var(--color-brand-text)' }}
             >
               {iv.clientName}
             </Link>
@@ -191,7 +191,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
           {iv.status !== 'Completed' && (
             <Link
               href={`/dashboard/intervencoes/${id}/editar`}
-              className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
+              className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-100"
               style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -202,7 +202,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
           <button
             onClick={handleDownloadReport}
             disabled={reportLoading}
-            className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+            className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-100 disabled:opacity-60"
             style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
           >
             {reportLoading ? 'A gerar...' : 'Folha de obra (PDF)'}
@@ -210,8 +210,8 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
           {!iv.signedAt && (
             <button
               onClick={() => setSigning(true)}
-              className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150"
-              style={{ backgroundColor: 'var(--color-success-600)', color: 'white' }}
+              className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-100"
+              style={{ backgroundColor: 'var(--color-success-solid)', color: 'white' }}
             >
               Cliente assina
             </button>
@@ -220,8 +220,8 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             <button
               onClick={handleInvoice}
               disabled={createInvoice.isPending}
-              className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 disabled:opacity-60"
-              style={{ backgroundColor: 'var(--color-role-purple-text)', color: 'white' }}
+              className="rounded-lg px-4 py-2 text-sm font-semibold transition-colors duration-100 disabled:opacity-60"
+              style={{ backgroundColor: 'var(--color-role-purple-solid)', color: 'white' }}
               title="Cria a fatura com as horas (preço/hora do Perfil) e os materiais aplicados"
             >
               {createInvoice.isPending ? 'A faturar...' : 'Faturar'}
@@ -230,7 +230,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
           {canManage && (
             <button
               onClick={handleDelete}
-              className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150"
+              className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-100"
               style={{ borderColor: 'var(--color-danger-200)', color: 'var(--color-danger-600)', backgroundColor: 'var(--color-card)' }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-danger-50)')}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
@@ -246,7 +246,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
                 { onError: (err) => toast.error(getErrorMessage(err)) }
               )}
               disabled={updateStatus.isPending}
-              className="rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+              className="rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-100 disabled:opacity-60"
               style={{
                 backgroundColor: a.bg,
                 color: a.color,
@@ -311,7 +311,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
         )}
         {iv.invoiceId && (
           <InfoRow label="Fatura">
-            <Link href={`/dashboard/faturas/${iv.invoiceId}`} className="text-sm font-mono" style={{ color: 'var(--color-brand-500)' }}>
+            <Link href={`/dashboard/faturas/${iv.invoiceId}`} className="text-sm font-mono" style={{ color: 'var(--color-brand-text)' }}>
               {iv.invoiceNumber}
             </Link>
           </InfoRow>
@@ -321,7 +321,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             <Link
               href={`/dashboard/orcamentos/${iv.quoteId}`}
               className="text-sm font-mono transition-colors duration-150"
-              style={{ color: 'var(--color-brand-500)' }}
+              style={{ color: 'var(--color-brand-text)' }}
             >
               {iv.quoteNumber}
             </Link>
@@ -370,8 +370,8 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
               Materiais utilizados ({iv.materials.length})
             </h2>
-            <span className="text-xs font-semibold font-mono" style={{ color: 'var(--color-brand-500)' }}>
-              Total: {iv.materials.reduce((s, m) => s + m.quantity * m.unitCost, 0).toFixed(2)} €
+            <span className="text-xs font-semibold font-mono" style={{ color: 'var(--color-brand-text)' }}>
+              Total: {formatCurrency(iv.materials.reduce((s, m) => s + m.quantity * m.unitCost, 0))}
             </span>
           </div>
           <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--color-line)' }}>
@@ -391,10 +391,10 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
                   <tr key={i} style={{ borderTop: i > 0 ? '1px solid var(--color-line)' : undefined }}>
                     <td className="px-4 py-2.5" style={{ color: 'var(--color-ink)' }}>{m.name}</td>
                     <td className="px-4 py-2.5 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.quantity}</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitCost.toFixed(2)}</td>
-                    <td className="px-4 py-2.5 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitPrice != null ? m.unitPrice.toFixed(2) : '—'}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{formatUnitPrice(m.unitCost)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitPrice != null ? formatUnitPrice(m.unitPrice) : '—'}</td>
                     <td className="px-4 py-2.5 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>
-                      {(m.quantity * m.unitCost).toFixed(2)} €
+                      {formatCurrency((m.quantity * m.unitCost))}
                     </td>
                   </tr>
                 ))}
@@ -414,7 +414,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
           {!editingNotes && iv.status !== 'Completed' && (
             <button
               onClick={handleStartEditNotes}
-              className="text-xs px-3 py-1 rounded-md border transition-all duration-150"
+              className="text-xs px-3 py-1 rounded-md border transition-colors duration-100"
               style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}
               onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-ink)')}
               onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-muted)')}
@@ -431,7 +431,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
               onChange={e => setNotesValue(e.target.value)}
               rows={5}
               placeholder="Observações, materiais usados, próximas ações..."
-              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none resize-none transition-all duration-150"
+              className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none resize-none transition-colors duration-100"
               style={{
                 borderColor: 'var(--color-line-strong)',
                 backgroundColor: 'var(--color-canvas)',
@@ -442,7 +442,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setEditingNotes(false)}
-                className="text-sm px-4 py-2 rounded-lg border transition-all duration-150"
+                className="text-sm px-4 py-2 rounded-lg border transition-colors duration-100"
                 style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-muted)', backgroundColor: 'var(--color-canvas)' }}
               >
                 Cancelar
@@ -450,8 +450,8 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
               <button
                 onClick={handleSaveNotes}
                 disabled={updateIntervention.isPending}
-                className="text-sm px-4 py-2 rounded-lg font-medium transition-all duration-150 disabled:opacity-60"
-                style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+                className="text-sm px-4 py-2 rounded-lg font-medium transition-colors duration-100 disabled:opacity-60"
+                style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
               >
                 {updateIntervention.isPending ? 'A guardar...' : 'Guardar'}
               </button>
@@ -470,7 +470,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
           <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
             Assinatura do cliente
           </h2>
-          <div className="rounded-lg border p-3 inline-block" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-neutral-50)' }}>
+          <div className="rounded-lg border p-3 inline-block" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-paper)' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={iv.clientSignatureUrl} alt="Assinatura do cliente" style={{ maxHeight: 110, maxWidth: 300 }} />
           </div>

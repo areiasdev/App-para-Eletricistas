@@ -63,7 +63,7 @@ export class ErrorBoundary extends Component<Props, State> {
           </div>
           <button
             onClick={this.handleReset}
-            className="rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150 border"
+            className="rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-100 border"
             style={{
               borderColor: 'var(--color-line-strong)',
               color: 'var(--color-ink)',

@@ -202,7 +202,7 @@ export default function PerfilPage() {
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadLogo.isPending}
-                      className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+                      className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-100 disabled:opacity-60"
                       style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
                     >
                       {uploadLogo.isPending ? 'A enviar...' : 'Carregar logótipo'}
@@ -307,8 +307,8 @@ export default function PerfilPage() {
           <button
             type="submit"
             disabled={updateProfile.isPending || !isDirty}
-            className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-all duration-150 disabled:opacity-60 hover:brightness-110 active:scale-[0.99]"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
+            className="rounded-lg px-6 py-2.5 text-sm font-semibold transition-colors duration-100 disabled:opacity-60"
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-on-brand)' }}
           >
             {updateProfile.isPending ? 'A guardar...' : 'Guardar alterações'}
           </button>
@@ -326,7 +326,7 @@ export default function PerfilPage() {
           color: var(--color-ink);
           outline: none;
           transition: border-color 0.15s, box-shadow 0.15s;
-          font-family: var(--font-outfit), system-ui, sans-serif;
+          font-family: var(--font-body), system-ui, sans-serif;
         }
         .form-input:focus {
           border-color: var(--color-brand-500);
