@@ -180,7 +180,7 @@ export default function EquipaPage() {
             <p className="text-sm" style={{ color: 'var(--color-muted)' }}>Ainda não adicionaste nenhum membro.</p>
           </div>
         ) : (
-          <ul className="divide-y" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+          <ul className="divide-y divide-[var(--color-line)]" style={{ backgroundColor: 'var(--color-card)' }}>
             {members.map((member) => {
               const roleColor = roleColors[member.role] ?? roleColors.Technician
               return (

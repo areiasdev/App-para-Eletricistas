@@ -127,6 +127,10 @@ export default function OnboardingPage() {
         nif: values.nif || undefined,
         phone: values.phone || undefined,
         brandColor: user.brandColor ?? DEFAULT_BRAND_COLOR,
+        // The update replaces every company field — carry over what's already saved.
+        iban: profile?.iban,
+        bankName: profile?.bankName,
+        defaultHourlyRate: profile?.defaultHourlyRate,
       },
       {
         onSuccess: () => setStep(2),
@@ -167,6 +171,9 @@ export default function OnboardingPage() {
         nif: profile?.nif,
         phone: profile?.phone,
         brandColor: color,
+        iban: profile?.iban,
+        bankName: profile?.bankName,
+        defaultHourlyRate: profile?.defaultHourlyRate,
       },
       { onError: (err) => toast.error(getErrorMessage(err)) }
     )

@@ -19,6 +19,9 @@ public static class DocumentMath
     /// <summary>Standard Portuguese VAT rate (continente). Default for new lines.</summary>
     public const decimal StandardVatRate = 23m;
 
+    /// <summary>Default unit of measure for a new line ("unidade").</summary>
+    public const string DefaultUnit = "un";
+
     public static decimal Round(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 
     public static decimal LineNet(this IDocumentLine line) => Round(line.Quantity * line.UnitPrice);
@@ -37,4 +40,16 @@ public static class DocumentMath
         var materialized = lines as IReadOnlyCollection<IDocumentLine> ?? lines.ToList();
         return Round(SubTotal(materialized) + VatTotal(materialized) - (discount ?? 0));
     }
+
+    /// <summary>
+    /// VAT summary per rate (art. 36.º CIVA: an invoice must show, for each rate, the taxable
+    /// amount and the tax). Same per-line rounding as <see cref="VatTotal"/>, so the rows add up
+    /// exactly to the document's VAT total.
+    /// </summary>
+    public static IReadOnlyList<(decimal Rate, decimal TaxableBase, decimal Vat)> VatBreakdown(IEnumerable<IDocumentLine> lines) =>
+        lines
+            .GroupBy(l => l.VatRate)
+            .OrderByDescending(g => g.Key)
+            .Select(g => (g.Key, g.Sum(LineNet), g.Sum(LineVat)))
+            .ToList();
 }

@@ -7,6 +7,8 @@ export interface InterventionMaterial {
   name: string
   quantity: number
   unitCost: number
+  /** Price charged to the client; falls back to unitCost when invoicing if empty. */
+  unitPrice?: number | null
 }
 
 export interface InterventionEquipment {
@@ -34,6 +36,12 @@ export interface Intervention {
   quoteNumber?: string
   equipment: InterventionEquipment[]
   createdAt: string
+  laborHours?: number | null
+  clientSignatureUrl?: string | null
+  signedByName?: string | null
+  signedAt?: string | null
+  invoiceId?: string | null
+  invoiceNumber?: string | null
 }
 
 export interface TeamMember {
@@ -101,6 +109,10 @@ export interface Quote {
   lines: QuoteLine[]
   createdAt: string
   emailSentAt?: string
+  /** Set when the client answered through the online approval link. */
+  clientDecisionAt?: string | null
+  acceptedByName?: string | null
+  rejectionReason?: string | null
 }
 
 export interface QuoteLine {
@@ -110,6 +122,7 @@ export interface QuoteLine {
   unitPrice: number
   vatRate: number
   lineTotal: number
+  unit: string
 }
 
 export interface Invoice {
@@ -139,6 +152,7 @@ export interface InvoiceLine {
   unitPrice: number
   vatRate: number
   lineTotal: number
+  unit: string
 }
 
 export interface Equipment {
@@ -154,6 +168,7 @@ export interface Equipment {
   clientId: string
   clientName: string
   createdAt: string
+  maintenanceIntervalMonths?: number | null
 }
 
 export interface PaginatedResult<T> {

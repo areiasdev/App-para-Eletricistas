@@ -4,7 +4,12 @@ import { use, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { useIntervention, useUpdateIntervention, useUpdateInterventionStatus, useDeleteIntervention } from '@/hooks/useInterventions'
+import { useIntervention, useUpdateIntervention, useUpdateInterventionStatus, useDeleteIntervention, useSignIntervention } from '@/hooks/useInterventions'
+import { useCreateInvoiceFromIntervention } from '@/hooks/useInvoices'
+import { SignatureModal } from '@/components/features/SignatureModal'
+import { PhotoUploader } from '@/components/features/PhotoUploader'
+import { interventionsApi, type UpdateInterventionRequest } from '@/lib/api/interventions'
+import type { Intervention } from '@/types'
 import { useCanManage } from '@/hooks/useCanManage'
 import { InterventionStatusBadge } from '@/components/features/InterventionStatusBadge'
 import { formatDate, formatDateTime } from '@/lib/utils/formatters'
@@ -30,6 +35,10 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
   const updateIntervention = useUpdateIntervention(id)
   const deleteIntervention = useDeleteIntervention()
 
+  const signIntervention = useSignIntervention(id)
+  const createInvoice = useCreateInvoiceFromIntervention()
+  const [signing, setSigning] = useState(false)
+  const [reportLoading, setReportLoading] = useState(false)
   const [editingNotes, setEditingNotes] = useState(false)
   const [notesValue, setNotesValue] = useState('')
 
@@ -49,16 +58,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
   const handleSaveNotes = () => {
     if (!iv) return
     updateIntervention.mutate(
-      {
-        title: iv.title,
-        description: iv.description,
-        scheduledAt: iv.scheduledAt,
-        technicianNotes: notesValue || undefined,
-        quoteId: iv.quoteId,
-        equipmentIds: iv.equipment.map((e) => e.id),
-        photos: iv.photos,
-        materials: iv.materials,
-      },
+      toUpdateRequest(iv, { technicianNotes: notesValue || undefined }),
       {
         onSuccess: () => {
           setEditingNotes(false)
@@ -67,6 +67,41 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
         onError: (err) => toast.error(getErrorMessage(err)),
       }
     )
+  }
+
+  const handleSavePhotos = (photos: string[]) => {
+    if (!iv) return
+    updateIntervention.mutate(toUpdateRequest(iv, { photos }), {
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
+  }
+
+  const handleSign = (signatureDataUrl: string, signerName: string) => {
+    signIntervention.mutate({ signedByName: signerName, signatureDataUrl }, {
+      onSuccess: () => {
+        setSigning(false)
+        toast.success('Folha de obra assinada e intervenção concluída.')
+      },
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
+  }
+
+  const handleDownloadReport = async () => {
+    setReportLoading(true)
+    try {
+      await interventionsApi.downloadReport(id)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setReportLoading(false)
+    }
+  }
+
+  const handleInvoice = () => {
+    createInvoice.mutate(id, {
+      onSuccess: (invoice) => router.push(`/dashboard/faturas/${invoice.id}`),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
   }
 
   if (isLoading) {
@@ -101,8 +136,24 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
     !!iv.scheduledAt &&
     new Date(iv.scheduledAt) < new Date()
 
+  const canInvoice = canManage && iv.status === 'Completed' && !iv.invoiceId
+
   return (
     <div className="max-w-3xl space-y-6">
+      {signing && (
+        <SignatureModal
+          title="Assinatura do cliente"
+          subtitle={`Folha de obra · ${iv.title}`}
+          requireName
+          defaultName={iv.clientName}
+          declaration="Declaro que os trabalhos descritos foram executados. Ao assinar, a intervenção fica concluída."
+          confirmLabel="Assinar e concluir"
+          onConfirm={handleSign}
+          onClose={() => setSigning(false)}
+          isLoading={signIntervention.isPending}
+        />
+      )}
+
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--color-muted)' }}>
         <Link
@@ -117,8 +168,8 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
         <span style={{ color: 'var(--color-ink)' }}>{iv.title}</span>
       </div>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      {/* Header — stacks on phones so the title keeps full width and the actions wrap */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold" style={{ color: 'var(--color-ink)' }}>{iv.title}</h1>
@@ -136,7 +187,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2 justify-end shrink-0">
+        <div className="flex flex-wrap gap-2 sm:justify-end sm:max-w-[60%]">
           {iv.status !== 'Completed' && (
             <Link
               href={`/dashboard/intervencoes/${id}/editar`}
@@ -147,6 +198,34 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             >
               Editar
             </Link>
+          )}
+          <button
+            onClick={handleDownloadReport}
+            disabled={reportLoading}
+            className="rounded-lg border px-4 py-2 text-sm font-medium transition-all duration-150 disabled:opacity-60"
+            style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
+          >
+            {reportLoading ? 'A gerar...' : 'Folha de obra (PDF)'}
+          </button>
+          {!iv.signedAt && (
+            <button
+              onClick={() => setSigning(true)}
+              className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150"
+              style={{ backgroundColor: 'var(--color-success-600)', color: 'white' }}
+            >
+              Cliente assina
+            </button>
+          )}
+          {canInvoice && (
+            <button
+              onClick={handleInvoice}
+              disabled={createInvoice.isPending}
+              className="rounded-lg px-4 py-2 text-sm font-semibold transition-all duration-150 disabled:opacity-60"
+              style={{ backgroundColor: 'var(--color-role-purple-text)', color: 'white' }}
+              title="Cria a fatura com as horas (preço/hora do Perfil) e os materiais aplicados"
+            >
+              {createInvoice.isPending ? 'A faturar...' : 'Faturar'}
+            </button>
           )}
           {canManage && (
             <button
@@ -220,6 +299,23 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
             <span className="text-sm" style={{ color: 'var(--color-ink)' }}>{formatDateTime(iv.completedAt)}</span>
           </InfoRow>
         )}
+        {iv.assignedToName && (
+          <InfoRow label="Técnico">
+            <span className="text-sm" style={{ color: 'var(--color-ink)' }}>{iv.assignedToName}</span>
+          </InfoRow>
+        )}
+        {iv.laborHours != null && iv.laborHours > 0 && (
+          <InfoRow label="Horas de trabalho">
+            <span className="text-sm" style={{ color: 'var(--color-ink)' }}>{iv.laborHours.toLocaleString('pt-PT')} h</span>
+          </InfoRow>
+        )}
+        {iv.invoiceId && (
+          <InfoRow label="Fatura">
+            <Link href={`/dashboard/faturas/${iv.invoiceId}`} className="text-sm font-mono" style={{ color: 'var(--color-brand-500)' }}>
+              {iv.invoiceNumber}
+            </Link>
+          </InfoRow>
+        )}
         {iv.quoteNumber && (
           <InfoRow label="Orçamento">
             <Link
@@ -285,8 +381,9 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
                 <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
                   <th className="text-left px-4 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Material</th>
                   <th className="text-right px-4 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Qtd.</th>
-                  <th className="text-right px-4 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>€/un.</th>
-                  <th className="text-right px-4 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Total</th>
+                  <th className="text-right px-4 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Custo/un.</th>
+                  <th className="text-right px-4 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Venda/un.</th>
+                  <th className="text-right px-4 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Custo total</th>
                 </tr>
               </thead>
               <tbody>
@@ -295,6 +392,7 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
                     <td className="px-4 py-2.5" style={{ color: 'var(--color-ink)' }}>{m.name}</td>
                     <td className="px-4 py-2.5 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.quantity}</td>
                     <td className="px-4 py-2.5 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitCost.toFixed(2)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitPrice != null ? m.unitPrice.toFixed(2) : '—'}</td>
                     <td className="px-4 py-2.5 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>
                       {(m.quantity * m.unitCost).toFixed(2)} €
                     </td>
@@ -366,50 +464,48 @@ export default function IntervencaoDetailPage({ params }: { params: Promise<{ id
         )}
       </div>
 
-      {/* Photo gallery */}
-      {iv.photos.length > 0 && (
-        <div className="rounded-xl border p-6 space-y-4" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+      {/* Signature */}
+      {iv.clientSignatureUrl && (
+        <div className="rounded-xl border p-6 space-y-3" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
           <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
-            Fotos ({iv.photos.length})
+            Assinatura do cliente
           </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {iv.photos.map((url, i) => (
-              <a
-                key={i}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block rounded-lg overflow-hidden border aspect-video relative group"
-                style={{ borderColor: 'var(--color-line)' }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={url}
-                  alt={`Foto ${i + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                  onError={e => {
-                    const parent = e.currentTarget.parentElement
-                    if (parent) {
-                      e.currentTarget.style.display = 'none'
-                      parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-xs" style="background:var(--color-canvas);color:var(--color-muted)">Sem pré-visualização</div>`
-                    }
-                  }}
-                />
-                <div
-                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center justify-center"
-                  style={{ backgroundColor: 'rgba(0,0,0,0.35)' }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 3H3v14h14v-7M13 3h4v4M20 0l-8 8" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </a>
-            ))}
+          <div className="rounded-lg border p-3 inline-block" style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-neutral-50)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={iv.clientSignatureUrl} alt="Assinatura do cliente" style={{ maxHeight: 110, maxWidth: 300 }} />
           </div>
+          <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+            {iv.signedByName}{iv.signedAt ? ` — ${formatDateTime(iv.signedAt)}` : ''}
+          </p>
         </div>
       )}
+
+      {/* Photos — added straight from the phone camera, saved immediately */}
+      <div className="rounded-xl border p-6 space-y-4" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+        <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
+          Fotos ({iv.photos.length})
+        </h2>
+        <PhotoUploader value={iv.photos} onChange={handleSavePhotos} />
+      </div>
     </div>
   )
+}
+
+/** Full update payload from the loaded job, so a partial edit never clears other fields. */
+function toUpdateRequest(iv: Intervention, changes: Partial<UpdateInterventionRequest>): UpdateInterventionRequest {
+  return {
+    title: iv.title,
+    description: iv.description,
+    scheduledAt: iv.scheduledAt,
+    technicianNotes: iv.technicianNotes,
+    quoteId: iv.quoteId,
+    equipmentIds: iv.equipment.map((e) => e.id),
+    photos: iv.photos,
+    materials: iv.materials,
+    assignedToUserId: iv.assignedToUserId,
+    laborHours: iv.laborHours,
+    ...changes,
+  }
 }
 
 function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {

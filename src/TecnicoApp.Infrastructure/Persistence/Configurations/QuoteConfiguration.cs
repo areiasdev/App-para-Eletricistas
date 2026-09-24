@@ -13,6 +13,10 @@ public class QuoteConfiguration : IEntityTypeConfiguration<Quote>
         builder.Property(q => q.Status).HasConversion<string>();
         builder.Property(q => q.Discount).HasColumnType("decimal(10,2)");
         builder.Property(q => q.Notes).HasMaxLength(2000);
+        builder.Property(q => q.ApprovalTokenHash).HasMaxLength(64);
+        builder.HasIndex(q => q.ApprovalTokenHash);
+        builder.Property(q => q.AcceptedByName).HasMaxLength(200);
+        builder.Property(q => q.RejectionReason).HasMaxLength(1000);
 
         builder.HasMany(q => q.Lines)
                .WithOne(l => l.Quote)

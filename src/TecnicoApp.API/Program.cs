@@ -159,6 +159,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "X-Csrf-Token")
               .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+              // Lets the browser read the server-chosen file name of PDF/CSV downloads.
+              .WithExposedHeaders("Content-Disposition")
               .SetPreflightMaxAge(TimeSpan.FromHours(2))
               .AllowCredentials()));
 
@@ -291,6 +293,13 @@ recurringJobManager.AddOrUpdate<InvoiceDueReminderJob>(
     "15 8 * * *",
     jobOptions);
 
+// Nudges the owner about quotes sent a week ago that the client hasn't answered.
+recurringJobManager.AddOrUpdate<QuoteFollowUpJob>(
+    "quote-follow-ups",
+    job => job.RunAsync(default),
+    "45 8 * * 1-5",
+    jobOptions);
+
 // Reminds clients (not the technician) about tomorrow's scheduled intervention.
 recurringJobManager.AddOrUpdate<AppointmentReminderJob>(
     "appointment-reminders",
@@ -300,14 +309,14 @@ recurringJobManager.AddOrUpdate<AppointmentReminderJob>(
 
 app.Run();
 
-// Replaces the {token} segment of public token-based routes (currently only the
-// invoice pay link, /api/v1/invoices/public/{token}[/checkout]) with a fixed
+// Replaces the {token} segment of public token-based routes (invoice pay link
+// /api/v1/invoices/public/{token}[/checkout] and quote approval /api/v1/quotes/public/{token}[/…]) with a fixed
 // placeholder before it's ever handed to the logger.
 static string RedactTokenSegments(string path)
 {
     return System.Text.RegularExpressions.Regex.Replace(
         path,
-        "(?<=/invoices/public/)[^/]+",
+        "(?<=/(invoices|quotes)/public/)[^/]+",
         "[REDACTED]");
 }
 

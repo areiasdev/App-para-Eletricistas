@@ -22,6 +22,7 @@ export default function NovoOrcamentoPage() {
           quantity: Number(l.quantity),
           unitPrice: Number(l.unitPrice),
           vatRate: Number(l.vatRate),
+          unit: l.unit || undefined,
         })),
       },
       {

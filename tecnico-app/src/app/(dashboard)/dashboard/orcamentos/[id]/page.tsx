@@ -4,12 +4,12 @@ import { use, useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { useQuote, useUpdateQuoteStatus, useSignQuote, useDeleteQuote, useSendQuoteEmail } from '@/hooks/useQuotes'
+import { useQuote, useUpdateQuoteStatus, useSignQuote, useDeleteQuote, useSendQuoteEmail, useDuplicateQuote } from '@/hooks/useQuotes'
 import { useCreateInvoiceFromQuote } from '@/hooks/useInvoices'
 import { useCanManage } from '@/hooks/useCanManage'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
 import { SignatureModal } from '@/components/features/SignatureModal'
-import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils/formatters'
+import { formatDate, formatDateTime, formatCurrency, formatQuantity, formatUnitPrice } from '@/lib/utils/formatters'
 import { quotesApi } from '@/lib/api/quotes'
 import { getErrorMessage } from '@/lib/api/client'
 import type { QuoteStatus } from '@/types'
@@ -118,6 +118,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   const signQuote = useSignQuote()
   const deleteQuote = useDeleteQuote()
   const sendEmail = useSendQuoteEmail()
+  const duplicateQuote = useDuplicateQuote()
   const createInvoice = useCreateInvoiceFromQuote()
   const [pdfLoading, setPdfLoading] = useState(false)
   const [showSignModal, setShowSignModal] = useState(false)
@@ -156,12 +157,19 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
   }
 
   const handleSendEmail = () => {
+    // The backend marks a draft as Sent in the same request and includes the online
+    // approval link in the email.
     sendEmail.mutate(id, {
-      onSuccess: () => {
-        // Auto-advance status Draft → Sent — the client received the quote
-        if (quote?.status === 'Draft') {
-          updateStatus.mutate({ id, status: 'Sent' })
-        }
+      onSuccess: () => toast.success(emailSent ? 'Orçamento reenviado.' : 'Orçamento enviado ao cliente.'),
+      onError: (err) => toast.error(getErrorMessage(err)),
+    })
+  }
+
+  const handleDuplicate = () => {
+    duplicateQuote.mutate(id, {
+      onSuccess: (copy) => {
+        toast.success(`Criado ${copy.number} a partir deste orçamento.`)
+        router.push(`/dashboard/orcamentos/${copy.id}/editar`)
       },
       onError: (err) => toast.error(getErrorMessage(err)),
     })
@@ -213,7 +221,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
     <>
       {showSignModal && (
         <SignatureModal
-          quoteNumber={quote.number}
+          subtitle={quote.number}
           onConfirm={handleSign}
           onClose={() => setShowSignModal(false)}
           isLoading={signQuote.isPending}
@@ -281,16 +289,33 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
             {/* Send email */}
             <button
               onClick={handleSendEmail}
-              disabled={sendEmail.isPending || emailSent}
+              disabled={sendEmail.isPending}
+              title={emailSent ? 'Enviar novamente (o link de aprovação mantém-se válido)' : 'Enviar por email com link para aceitar online'}
               className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
               style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
-              onMouseEnter={(e) => { if (!sendEmail.isPending && !emailSent) e.currentTarget.style.backgroundColor = 'var(--color-canvas)' }}
+              onMouseEnter={(e) => { if (!sendEmail.isPending) e.currentTarget.style.backgroundColor = 'var(--color-canvas)' }}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
             >
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
                 <path d="M1 2l12 5-12 5V9l8-2-8-2V2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
               </svg>
-              {sendEmail.isPending ? 'A enviar...' : emailSent ? 'Enviado ✓' : 'Enviar'}
+              {sendEmail.isPending ? 'A enviar...' : emailSent ? 'Reenviar' : 'Enviar'}
+            </button>
+
+            {/* Duplicate — reuse for a similar job or revise a sent/rejected quote */}
+            <button
+              onClick={handleDuplicate}
+              disabled={duplicateQuote.isPending}
+              className="rounded-lg border px-3 py-2 text-sm font-medium inline-flex items-center gap-1.5 transition-all duration-150 disabled:opacity-60"
+              style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-canvas)')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-card)')}
+            >
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <rect x="4" y="4" width="8.5" height="8.5" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
+                <path d="M9.5 4V2.5A1 1 0 0 0 8.5 1.5h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1H4" stroke="currentColor" strokeWidth="1.3"/>
+              </svg>
+              {duplicateQuote.isPending ? 'A duplicar...' : 'Duplicar'}
             </button>
 
             {/* Sign */}
@@ -378,7 +403,30 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               <path d="M1.5 7l3.5 3.5 7.5-7" stroke="var(--color-success-600)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <p className="text-sm font-medium" style={{ color: 'var(--color-success-700)' }}>
-              Orçamento enviado com sucesso por email para o cliente.
+              {quote.status === 'Sent'
+                ? `Enviado por email a ${formatDateTime(quote.emailSentAt!)} — o cliente pode aceitar e assinar online a partir do link no email.`
+                : `Enviado por email a ${formatDateTime(quote.emailSentAt!)}.`}
+            </p>
+          </div>
+        )}
+
+        {/* Online answer from the client */}
+        {quote.clientDecisionAt && (quote.status === 'Accepted' || quote.status === 'Invoiced') && (
+          <div className="rounded-xl px-5 py-3.5" style={{ backgroundColor: 'var(--color-success-50)', border: '1px solid var(--color-success-200)' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-success-700)' }}>
+              Aceite online por {quote.acceptedByName} a {formatDateTime(quote.clientDecisionAt)}.
+              {quote.status === 'Accepted' && canManage && ' Já podes agendar a intervenção e faturar.'}
+            </p>
+          </div>
+        )}
+        {quote.status === 'Rejected' && (
+          <div className="rounded-xl px-5 py-3.5" style={{ backgroundColor: 'var(--color-danger-50)', border: '1px solid var(--color-danger-200)' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-danger-700)' }}>
+              Recusado pelo cliente{quote.clientDecisionAt ? ` a ${formatDateTime(quote.clientDecisionAt)}` : ''}.
+              {quote.rejectionReason && <> Motivo: «{quote.rejectionReason}»</>}
+            </p>
+            <p className="text-xs mt-1" style={{ color: 'var(--color-danger-600)' }}>
+              Usa <strong>Duplicar</strong> para preparar uma proposta revista.
             </p>
           </div>
         )}
@@ -394,7 +442,7 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               <path d="M7 4v3M7 9.5v.5" stroke="var(--color-brand-600)" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
             <p className="text-sm" style={{ color: 'var(--color-brand-700)' }}>
-              Descarrega o PDF e envia ao cliente. Depois marca como <strong>Enviado</strong>.
+              Carrega em <strong>Enviar</strong>: o cliente recebe o PDF e um link para aceitar e assinar online — o estado atualiza-se sozinho.
             </p>
           </div>
         )}
@@ -437,8 +485,8 @@ export default function OrcamentoDetailPage({ params }: { params: Promise<{ id: 
               {quote.lines.map((line) => (
                 <tr key={line.id} style={{ borderBottom: '1px solid var(--color-line)' }}>
                   <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-ink)' }}>{line.description}</td>
-                  <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{line.quantity}</td>
-                  <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{formatCurrency(line.unitPrice)}</td>
+                  <td className="px-5 py-3.5 text-sm whitespace-nowrap" style={{ color: 'var(--color-muted)' }}>{formatQuantity(line.quantity, line.unit)}</td>
+                  <td className="px-5 py-3.5 text-sm whitespace-nowrap" style={{ color: 'var(--color-muted)' }}>{formatUnitPrice(line.unitPrice)}</td>
                   <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{line.vatRate}%</td>
                   <td className="px-5 py-3.5 text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>{formatCurrency(line.lineTotal)}</td>
                 </tr>

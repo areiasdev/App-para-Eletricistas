@@ -7,7 +7,9 @@ using TecnicoApp.Application.Features.Interventions.Commands.CreateIntervention;
 using TecnicoApp.Application.Features.Interventions.Commands.DeleteIntervention;
 using TecnicoApp.Application.Features.Interventions.Commands.UpdateIntervention;
 using TecnicoApp.Application.Features.Interventions.Commands.UpdateInterventionStatus;
+using TecnicoApp.Application.Features.Interventions.Commands.SignIntervention;
 using TecnicoApp.Application.Features.Interventions.DTOs;
+using TecnicoApp.Application.Features.Interventions.Queries.GenerateInterventionReport;
 using TecnicoApp.Application.Features.Interventions.Queries.GetInterventionById;
 using TecnicoApp.Application.Features.Interventions.Queries.GetInterventions;
 using TecnicoApp.Domain.Enums;
@@ -25,12 +27,15 @@ public class InterventionsController(IMediator mediator) : ControllerBase
         [FromQuery] string? search,
         [FromQuery] InterventionStatus? status,
         [FromQuery] Guid? clientId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] Guid? assignedToUserId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default)
     {
         var result = await mediator.Send(
-            new GetInterventionsQuery(page, pageSize, search, status, clientId), ct);
+            new GetInterventionsQuery(page, pageSize, search, status, clientId, from, to, assignedToUserId), ct);
         return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
     }
 
@@ -67,7 +72,7 @@ public class InterventionsController(IMediator mediator) : ControllerBase
         var command = new UpdateInterventionCommand(
             id, request.Title, request.Description, request.ScheduledAt,
             request.TechnicianNotes, request.QuoteId, request.EquipmentIds, request.Photos,
-            request.Materials, request.AssignedToUserId);
+            request.Materials, request.AssignedToUserId, request.LaborHours);
 
         var result = await mediator.Send(command, ct);
         return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
@@ -83,6 +88,27 @@ public class InterventionsController(IMediator mediator) : ControllerBase
     {
         var result = await mediator.Send(new UpdateInterventionStatusCommand(id, request.Status), ct);
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
+    }
+
+    [HttpPost("{id:guid}/sign")]
+    [ProducesResponseType(typeof(InterventionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<InterventionDto>> Sign(
+        Guid id, [FromBody] SignInterventionRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new SignInterventionCommand(id, request.SignedByName, request.SignatureDataUrl), ct);
+        return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
+    }
+
+    [HttpGet("{id:guid}/report")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadReport(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GenerateInterventionReportQuery(id), ct);
+        return result.IsSuccess
+            ? File(result.Value.Bytes, "application/pdf", result.Value.FileName)
+            : result.ToActionResult(this).Result!;
     }
 
     [HttpDelete("{id:guid}")]
@@ -104,7 +130,10 @@ public record UpdateInterventionRequest(
     IReadOnlyList<Guid> EquipmentIds,
     IReadOnlyList<string>? Photos,
     IReadOnlyList<TecnicoApp.Application.Features.Interventions.Commands.CreateIntervention.InterventionMaterialRequest>? Materials,
-    Guid? AssignedToUserId
+    Guid? AssignedToUserId,
+    decimal? LaborHours = null
 );
 
 public record UpdateInterventionStatusRequest(InterventionStatus Status);
+
+public record SignInterventionRequest(string SignedByName, string SignatureDataUrl);

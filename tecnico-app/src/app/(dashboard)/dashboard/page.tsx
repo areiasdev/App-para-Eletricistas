@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi } from '@/lib/api/dashboard'
 import { QuoteStatusBadge } from '@/components/features/QuoteStatusBadge'
-import { InterventionStatusBadge } from '@/components/features/InterventionStatusBadge'
 import { formatCurrency, formatDate } from '@/lib/utils/formatters'
 import { useAuthStore } from '@/stores/authStore'
 
@@ -97,30 +96,48 @@ export default function DashboardPage() {
               href="/dashboard/clientes"
             />
             <StatCard
-              label="Orçamentos"
-              value={data?.totalQuotes ?? 0}
-              sub={`${data?.draftQuotes ?? 0} rascunhos · ${data?.sentQuotes ?? 0} enviados`}
-              href="/dashboard/orcamentos"
+              label="Receita faturada"
+              value={formatCurrency(data?.totalRevenue ?? 0)}
+              sub={`${data?.totalQuotes ?? 0} orçamentos no total`}
+              href="/dashboard/faturas"
             />
             <StatCard
               label="A receber"
-              value={formatCurrency(data?.pendingRevenue ?? 0)}
-              sub={`${data?.acceptedQuotes ?? 0} aceite${(data?.acceptedQuotes ?? 0) !== 1 ? 's' : ''}`}
+              value={formatCurrency(data?.outstandingAmount ?? 0)}
+              sub="faturas emitidas por pagar"
+              href="/dashboard/faturas?status=Issued"
               accent
             />
             <StatCard
-              label="Receita total"
-              value={formatCurrency(data?.totalRevenue ?? 0)}
-              sub="orçamentos faturados"
+              label="Vencidas"
+              value={formatCurrency(data?.overdueAmount ?? 0)}
+              sub={`${data?.overdueInvoices ?? 0} fatura${(data?.overdueInvoices ?? 0) !== 1 ? 's' : ''} em atraso`}
+              href="/dashboard/faturas?status=Overdue"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <StatCard
+              label="Por faturar"
+              value={formatCurrency(data?.pendingRevenue ?? 0)}
+              sub={`${data?.acceptedQuotes ?? 0} orçamento${(data?.acceptedQuotes ?? 0) !== 1 ? 's' : ''} aceite${(data?.acceptedQuotes ?? 0) !== 1 ? 's' : ''}`}
+              href="/dashboard/orcamentos?status=Accepted"
+            />
+            <StatCard
+              label="À espera de resposta"
+              value={data?.sentQuotes ?? 0}
+              sub="orçamentos enviados"
+              href="/dashboard/orcamentos?status=Sent"
             />
           </div>
 
           {/* Interventions row */}
           <div className="grid grid-cols-3 gap-4">
             <StatCard
-              label="Intervenções"
-              value={data?.totalInterventions ?? 0}
-              href="/dashboard/intervencoes"
+              label="Hoje"
+              value={data?.interventionsToday ?? 0}
+              sub="intervenções por fazer"
+              href="/dashboard/agenda"
             />
             <StatCard
               label="Agendadas"

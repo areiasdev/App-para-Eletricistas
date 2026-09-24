@@ -33,6 +33,10 @@ public class Invoice : BaseEntity
     // invoice back up by this id when Stripe reports the payment as completed.
     public string? StripeCheckoutSessionId { get; set; }
 
+    /// <summary>Set when the invoice was created from a completed job instead of a quote.</summary>
+    public Guid? InterventionId { get; set; }
+    public Intervention? Intervention { get; set; }
+
     public ICollection<InvoiceLine> Lines { get; set; } = [];
 
     // Propriedades calculadas — não persistidas (see DocumentMath for the rounding rules)

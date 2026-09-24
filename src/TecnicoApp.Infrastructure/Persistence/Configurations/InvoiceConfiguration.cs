@@ -32,6 +32,12 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.HasIndex(i => new { i.UserId, i.CreatedAt });
         builder.HasIndex(i => i.Number).IsUnique();
         builder.HasIndex(i => i.QuoteId);
+
+        builder.HasOne(i => i.Intervention)
+               .WithMany()
+               .HasForeignKey(i => i.InterventionId)
+               .OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(i => i.InterventionId);
         // Looked up by the Stripe webhook to find the invoice a completed Checkout Session belongs to.
         builder.HasIndex(i => i.StripeCheckoutSessionId);
         builder.HasQueryFilter(i => !i.IsDeleted);

@@ -37,10 +37,23 @@ public class GetInterventionsQueryHandler(IAppDbContext db, ICurrentUserService 
         if (request.ClientId.HasValue)
             query = query.Where(i => i.ClientId == request.ClientId.Value);
 
+        if (request.From.HasValue)
+            query = query.Where(i => i.ScheduledAt >= request.From.Value);
+
+        if (request.To.HasValue)
+            query = query.Where(i => i.ScheduledAt < request.To.Value);
+
+        if (request.AssignedToUserId.HasValue)
+            query = query.Where(i => i.AssignedToUserId == request.AssignedToUserId.Value);
+
+        // Agenda (date range) reads chronologically; the default list shows newest first.
+        var ordered = request.From.HasValue || request.To.HasValue
+            ? query.OrderBy(i => i.ScheduledAt)
+            : query.OrderByDescending(i => i.ScheduledAt ?? i.CreatedAt);
+
         var totalCount = await query.CountAsync(cancellationToken);
 
-        var items = await query
-            .OrderByDescending(i => i.ScheduledAt ?? i.CreatedAt)
+        var items = await ordered
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .Select(i => new InterventionListItemDto(
@@ -52,7 +65,9 @@ public class GetInterventionsQueryHandler(IAppDbContext db, ICurrentUserService 
                 i.ClientId,
                 i.Client.Name,
                 i.Equipment.Count,
-                i.CreatedAt
+                i.CreatedAt,
+                i.AssignedToUserId,
+                db.Users.Where(u => u.Id == i.AssignedToUserId).Select(u => u.FullName).FirstOrDefault()
             ))
             .ToListAsync(cancellationToken);
 

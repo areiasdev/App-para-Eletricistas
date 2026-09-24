@@ -8,7 +8,7 @@ import { useInterventions, useDeleteIntervention } from '@/hooks/useIntervention
 import { useDebouncedValue } from '@/hooks/useDebouncedValue'
 import { useCanManage } from '@/hooks/useCanManage'
 import { InterventionStatusBadge } from '@/components/features/InterventionStatusBadge'
-import { formatDate, formatDateTime } from '@/lib/utils/formatters'
+import { formatDateTime } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
 import type { InterventionStatus } from '@/types'
 import type { InterventionListItem } from '@/lib/api/interventions'

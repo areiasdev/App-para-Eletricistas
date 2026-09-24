@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Interventions.DTOs;
 using TecnicoApp.Application.Common.Extensions;
+using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Interventions.Queries.GetInterventionById;
 
@@ -41,26 +42,11 @@ public class GetInterventionByIdQueryHandler(IAppDbContext db, ICurrentUserServi
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        return Result.Success(new InterventionDto(
-            intervention.Id,
-            intervention.Title,
-            intervention.Description,
-            intervention.Status,
-            intervention.ScheduledAt,
-            intervention.CompletedAt,
-            intervention.TechnicianNotes,
-            intervention.Photos,
-            intervention.Materials,
-            intervention.ClientId,
-            intervention.Client.Name,
-            intervention.QuoteId,
-            intervention.Quote?.Number,
-            intervention.AssignedToUserId,
-            assignedToName,
-            intervention.Equipment
-                .Select(e => new InterventionEquipmentDto(e.Id, e.Type, e.Brand, e.Model))
-                .ToList(),
-            intervention.CreatedAt
-        ));
+        var invoice = await db.Invoices.AsNoTracking()
+            .Where(i => i.InterventionId == intervention.Id && i.Status != InvoiceStatus.Cancelled)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return Result.Success(intervention.ToDto(
+            intervention.Client.Name, intervention.Quote?.Number, assignedToName, invoice));
     }
 }

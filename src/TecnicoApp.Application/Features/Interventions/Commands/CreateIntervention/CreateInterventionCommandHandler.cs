@@ -79,7 +79,7 @@ public class CreateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
         }
 
         var materials = request.Materials?
-            .Select(m => new InterventionMaterial(m.Name, m.Quantity, m.UnitCost))
+            .Select(m => new InterventionMaterial(m.Name, m.Quantity, m.UnitCost, m.UnitPrice))
             .ToList() ?? [];
 
         var intervention = new Intervention
@@ -94,29 +94,12 @@ public class CreateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
             Equipment = equipment,
             Photos = request.Photos?.ToList() ?? [],
             Materials = materials,
+            LaborHours = request.LaborHours,
         };
 
         db.Interventions.Add(intervention);
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new InterventionDto(
-            intervention.Id,
-            intervention.Title,
-            intervention.Description,
-            intervention.Status,
-            intervention.ScheduledAt,
-            intervention.CompletedAt,
-            intervention.TechnicianNotes,
-            intervention.Photos,
-            intervention.Materials,
-            intervention.ClientId,
-            client.Name,
-            intervention.QuoteId,
-            null,
-            intervention.AssignedToUserId,
-            null,
-            equipment.Select(e => new InterventionEquipmentDto(e.Id, e.Type, e.Brand, e.Model)).ToList(),
-            intervention.CreatedAt
-        ));
+        return Result.Success(intervention.ToDto(client.Name));
     }
 }

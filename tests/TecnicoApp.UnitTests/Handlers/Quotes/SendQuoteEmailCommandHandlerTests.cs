@@ -1,3 +1,4 @@
+using TecnicoApp.Infrastructure.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -46,7 +47,7 @@ public class SendQuoteEmailCommandHandlerTests
         var notificationService = Substitute.For<INotificationService>();
         var logger = Substitute.For<ILogger<SendQuoteEmailCommandHandler>>();
 
-        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, logger);
+        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, new QuoteApprovalLinkService(FakeConfig.Create()), Substitute.For<IAppSettings>(), logger);
 
         var result = await handler.Handle(new SendQuoteEmailCommand(quote.Id), CancellationToken.None);
 
@@ -80,7 +81,7 @@ public class SendQuoteEmailCommandHandlerTests
         var notificationService = Substitute.For<INotificationService>();
         var logger = Substitute.For<ILogger<SendQuoteEmailCommandHandler>>();
 
-        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, logger);
+        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, new QuoteApprovalLinkService(FakeConfig.Create()), Substitute.For<IAppSettings>(), logger);
 
         var result = await handler.Handle(new SendQuoteEmailCommand(foreignQuote.Id), CancellationToken.None);
 
@@ -116,7 +117,7 @@ public class SendQuoteEmailCommandHandlerTests
         var notificationService = Substitute.For<INotificationService>();
         var logger = Substitute.For<ILogger<SendQuoteEmailCommandHandler>>();
 
-        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, logger);
+        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, new QuoteApprovalLinkService(FakeConfig.Create()), Substitute.For<IAppSettings>(), logger);
 
         var result = await handler.Handle(new SendQuoteEmailCommand(quote.Id), CancellationToken.None);
 
@@ -153,7 +154,7 @@ public class SendQuoteEmailCommandHandlerTests
         var notificationService = Substitute.For<INotificationService>();
         var logger = Substitute.For<ILogger<SendQuoteEmailCommandHandler>>();
 
-        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, logger);
+        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, new QuoteApprovalLinkService(FakeConfig.Create()), Substitute.For<IAppSettings>(), logger);
 
         var result = await handler.Handle(new SendQuoteEmailCommand(quote.Id), CancellationToken.None);
 
@@ -193,7 +194,7 @@ public class SendQuoteEmailCommandHandlerTests
             .Returns(Task.FromException(new Exception("Twilio down")));
         var logger = Substitute.For<ILogger<SendQuoteEmailCommandHandler>>();
 
-        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, logger);
+        var handler = new SendQuoteEmailCommandHandler(db, currentUser, pdfService, emailService, fileStorage, notificationService, new QuoteApprovalLinkService(FakeConfig.Create()), Substitute.For<IAppSettings>(), logger);
 
         var result = await handler.Handle(new SendQuoteEmailCommand(quote.Id), CancellationToken.None);
 

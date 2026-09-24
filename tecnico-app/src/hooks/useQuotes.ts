@@ -67,6 +67,14 @@ export function useSendQuoteEmail() {
   })
 }
 
+export function useDuplicateQuote() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => quotesApi.duplicate(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QUOTES_KEY] }),
+  })
+}
+
 export function useDeleteQuote() {
   const qc = useQueryClient()
   return useMutation({

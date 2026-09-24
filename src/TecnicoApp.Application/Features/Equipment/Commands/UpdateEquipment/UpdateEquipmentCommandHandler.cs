@@ -32,25 +32,13 @@ public class UpdateEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
         equipment.SerialNumber = request.SerialNumber;
         equipment.InstalledAt = request.InstalledAt;
         equipment.NextMaintenance = request.NextMaintenance;
+        equipment.MaintenanceIntervalMonths = request.MaintenanceIntervalMonths;
         equipment.Notes = request.Notes;
         equipment.Photos = request.Photos?.ToList() ?? equipment.Photos;
         equipment.ModifiedBy = currentUser.Email;
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new EquipmentDto(
-            equipment.Id,
-            equipment.Type,
-            equipment.Brand,
-            equipment.Model,
-            equipment.SerialNumber,
-            equipment.InstalledAt,
-            equipment.NextMaintenance,
-            equipment.Notes,
-            equipment.Photos,
-            equipment.ClientId,
-            equipment.Client.Name,
-            equipment.CreatedAt
-        ));
+        return Result.Success(equipment.ToDto(equipment.Client.Name));
     }
 }

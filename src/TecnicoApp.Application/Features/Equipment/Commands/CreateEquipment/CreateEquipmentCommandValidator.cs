@@ -1,4 +1,5 @@
 using FluentValidation;
+using TecnicoApp.Application.Common.Security;
 
 namespace TecnicoApp.Application.Features.Equipment.Commands.CreateEquipment;
 
@@ -15,14 +16,15 @@ public class CreateEquipmentCommandValidator : AbstractValidator<CreateEquipment
         RuleFor(x => x.SerialNumber).MaximumLength(100).When(x => x.SerialNumber != null);
         RuleFor(x => x.Notes).MaximumLength(2000).When(x => x.Notes != null);
         RuleForEach(x => x.Photos)
-            .Must(url =>
-                Uri.TryCreate(url, UriKind.Absolute, out var uri) &&
-                (uri.Scheme == Uri.UriSchemeHttps || uri.Host == "localhost"))
-            .WithMessage("As fotos devem ser URLs HTTPS válidos.")
-            .MaximumLength(2048)
+            .Must(ImageFiles.IsValidPhotoUrl)
+            .WithMessage("As fotos devem ser carregadas na aplicação ou ser URLs HTTPS válidos.")
             .When(x => x.Photos is { Count: > 0 });
         RuleFor(x => x.Photos)
             .Must(p => p == null || p.Count <= 20)
             .WithMessage("Máximo de 20 fotos por equipamento.");
+
+        RuleFor(x => x.MaintenanceIntervalMonths)
+            .InclusiveBetween(1, 120).When(x => x.MaintenanceIntervalMonths.HasValue)
+            .WithMessage("A periodicidade deve estar entre 1 e 120 meses.");
     }
 }

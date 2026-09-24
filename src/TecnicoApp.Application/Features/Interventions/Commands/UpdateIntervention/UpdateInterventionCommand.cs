@@ -15,5 +15,6 @@ public record UpdateInterventionCommand(
     IReadOnlyList<Guid> EquipmentIds,
     IReadOnlyList<string>? Photos,
     IReadOnlyList<InterventionMaterialRequest>? Materials,
-    Guid? AssignedToUserId
+    Guid? AssignedToUserId,
+    decimal? LaborHours = null
 ) : IRequest<Result<InterventionDto>>;

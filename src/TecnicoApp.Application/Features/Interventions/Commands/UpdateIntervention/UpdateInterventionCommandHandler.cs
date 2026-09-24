@@ -91,9 +91,10 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
         intervention.TechnicianNotes = request.TechnicianNotes;
         intervention.Photos = request.Photos?.ToList() ?? intervention.Photos;
         intervention.Materials = request.Materials?
-            .Select(m => new InterventionMaterial(m.Name, m.Quantity, m.UnitCost))
+            .Select(m => new InterventionMaterial(m.Name, m.Quantity, m.UnitCost, m.UnitPrice))
             .ToList() ?? intervention.Materials;
         intervention.QuoteId = request.QuoteId;
+        intervention.LaborHours = request.LaborHours;
         // Only the owner/admin can (re)assign work to someone else — a technician can only
         // ever assign to themselves. Matches CreateInterventionCommandHandler's rule.
         intervention.AssignedToUserId = userId != ownerId ? userId : request.AssignedToUserId;
@@ -101,26 +102,6 @@ public class UpdateInterventionCommandHandler(IAppDbContext db, ICurrentUserServ
 
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new InterventionDto(
-            intervention.Id,
-            intervention.Title,
-            intervention.Description,
-            intervention.Status,
-            intervention.ScheduledAt,
-            intervention.CompletedAt,
-            intervention.TechnicianNotes,
-            intervention.Photos,
-            intervention.Materials,
-            intervention.ClientId,
-            intervention.Client.Name,
-            intervention.QuoteId,
-            intervention.Quote?.Number,
-            intervention.AssignedToUserId,
-            null,
-            intervention.Equipment
-                .Select(e => new InterventionEquipmentDto(e.Id, e.Type, e.Brand, e.Model))
-                .ToList(),
-            intervention.CreatedAt
-        ));
+        return Result.Success(intervention.ToDto(intervention.Client.Name, intervention.Quote?.Number));
     }
 }

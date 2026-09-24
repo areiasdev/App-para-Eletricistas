@@ -58,3 +58,14 @@ export function useSendInvoiceEmail() {
     mutationFn: (id: string) => invoicesApi.sendEmail(id),
   })
 }
+
+export function useCreateInvoiceFromIntervention() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (interventionId: string) => invoicesApi.createFromIntervention(interventionId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [INVOICES_KEY] })
+      qc.invalidateQueries({ queryKey: ['interventions'] })
+    },
+  })
+}

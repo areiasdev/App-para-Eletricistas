@@ -1,5 +1,6 @@
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
+using TecnicoApp.Domain.Common;
 
 namespace TecnicoApp.Infrastructure.Services;
 
@@ -19,6 +20,13 @@ internal static class PdfStyle
     public const string MutedHex  = "#6b7280";
     public const string LineHex   = "#e5e7eb";
     public const string CanvasHex = "#f7f7f4";
+
+    /// <summary>"12,5 m" — trailing zeros dropped, unit appended unless it's the plain default.</summary>
+    public static string FormatQuantity(decimal quantity, string? unit)
+    {
+        var number = quantity.ToString("0.###", TecnicoApp.Application.Common.Formatting.PtFormat.Culture);
+        return string.IsNullOrWhiteSpace(unit) ? number : $"{number} {unit}";
+    }
 
     public static string ResolveBrandColor(string? issuerBrandColorHex) =>
         string.IsNullOrWhiteSpace(issuerBrandColorHex) ? AmberHex : issuerBrandColorHex;

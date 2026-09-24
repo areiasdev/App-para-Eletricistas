@@ -12,7 +12,8 @@ public record EquipmentDto(
     IReadOnlyList<string> Photos,
     Guid ClientId,
     string ClientName,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    int? MaintenanceIntervalMonths = null
 );
 
 public record EquipmentListItemDto(

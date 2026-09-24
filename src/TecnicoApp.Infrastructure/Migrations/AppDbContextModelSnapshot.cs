@@ -173,6 +173,9 @@ namespace TecnicoApp.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("MaintenanceIntervalMonths")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Model")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -222,6 +225,9 @@ namespace TecnicoApp.Infrastructure.Migrations
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ClientSignatureUrl")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -234,6 +240,9 @@ namespace TecnicoApp.Infrastructure.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
+
+                    b.Property<decimal?>("LaborHours")
+                        .HasColumnType("decimal(8,2)");
 
                     b.Property<string>("Materials")
                         .IsRequired()
@@ -257,6 +266,13 @@ namespace TecnicoApp.Infrastructure.Migrations
 
                     b.Property<DateTime?>("ScheduledAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("SignedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("SignedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -302,6 +318,9 @@ namespace TecnicoApp.Infrastructure.Migrations
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("InterventionId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -351,6 +370,8 @@ namespace TecnicoApp.Infrastructure.Migrations
 
                     b.HasIndex("ClientId");
 
+                    b.HasIndex("InterventionId");
+
                     b.HasIndex("Number")
                         .IsUnique();
 
@@ -389,8 +410,18 @@ namespace TecnicoApp.Infrastructure.Migrations
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("text");
 
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(10,3)");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("un");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(12,4)");
@@ -411,6 +442,20 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("AcceptedByName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("ApprovalTokenExpiresAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("ApprovalTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("ClientDecisionAt")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<Guid>("ClientId")
                         .HasColumnType("uuid");
 
@@ -421,6 +466,9 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .HasColumnType("decimal(10,2)");
 
                     b.Property<DateTime?>("EmailSentAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime?>("FollowUpSentAt")
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<bool>("IsDeleted")
@@ -444,6 +492,10 @@ namespace TecnicoApp.Infrastructure.Migrations
                     b.Property<string>("PdfUrl")
                         .HasColumnType("text");
 
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<string>("SignatureUrl")
                         .HasColumnType("text");
 
@@ -461,6 +513,8 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovalTokenHash");
 
                     b.HasIndex("ClientId");
 
@@ -495,11 +549,21 @@ namespace TecnicoApp.Infrastructure.Migrations
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("text");
 
+                    b.Property<int>("Position")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(10,3)");
 
                     b.Property<Guid>("QuoteId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("un");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(12,4)");
@@ -587,6 +651,9 @@ namespace TecnicoApp.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal?>("DefaultHourlyRate")
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -761,6 +828,11 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TecnicoApp.Domain.Entities.Intervention", "Intervention")
+                        .WithMany()
+                        .HasForeignKey("InterventionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TecnicoApp.Domain.Entities.Quote", "Quote")
                         .WithMany()
                         .HasForeignKey("QuoteId")
@@ -773,6 +845,8 @@ namespace TecnicoApp.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Client");
+
+                    b.Navigation("Intervention");
 
                     b.Navigation("Quote");
 

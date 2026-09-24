@@ -22,7 +22,13 @@ public record InterventionDto(
     Guid? AssignedToUserId,
     string? AssignedToName,
     IReadOnlyList<InterventionEquipmentDto> Equipment,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    decimal? LaborHours = null,
+    string? ClientSignatureUrl = null,
+    string? SignedByName = null,
+    DateTime? SignedAt = null,
+    Guid? InvoiceId = null,
+    string? InvoiceNumber = null
 );
 
 public record InterventionListItemDto(
@@ -34,5 +40,7 @@ public record InterventionListItemDto(
     Guid ClientId,
     string ClientName,
     int EquipmentCount,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    Guid? AssignedToUserId = null,
+    string? AssignedToName = null
 );

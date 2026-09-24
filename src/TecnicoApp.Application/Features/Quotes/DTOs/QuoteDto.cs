@@ -1,3 +1,4 @@
+using TecnicoApp.Domain.Common;
 using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Quotes.DTOs;
@@ -8,8 +9,9 @@ public record QuoteLineDto(
     decimal Quantity,
     decimal UnitPrice,
     decimal VatRate,
-    decimal LineTotal
-);
+    decimal LineTotal,
+    string Unit = DocumentMath.DefaultUnit
+) : IDocumentLine;
 
 public record QuoteDto(
     Guid Id,
@@ -27,7 +29,11 @@ public record QuoteDto(
     decimal Total,
     IReadOnlyList<QuoteLineDto> Lines,
     DateTime CreatedAt,
-    DateTime? EmailSentAt
+    DateTime? EmailSentAt,
+    string? SignatureUrl = null,
+    DateTime? ClientDecisionAt = null,
+    string? AcceptedByName = null,
+    string? RejectionReason = null
 );
 
 public record QuoteListItemDto(

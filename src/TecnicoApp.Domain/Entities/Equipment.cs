@@ -8,6 +8,10 @@ public class Equipment : BaseEntity
     public string? SerialNumber { get; set; }
     public DateTime? InstalledAt { get; set; }
     public DateTime? NextMaintenance { get; set; }
+
+    /// <summary>Recurring maintenance period. When a job on this equipment is completed,
+    /// NextMaintenance moves forward by this many months automatically.</summary>
+    public int? MaintenanceIntervalMonths { get; set; }
     public string? Notes { get; set; }
     public List<string> Photos { get; set; } = [];
 

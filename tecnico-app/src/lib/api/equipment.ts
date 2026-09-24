@@ -23,6 +23,7 @@ export interface CreateEquipmentRequest {
   nextMaintenance?: string
   notes?: string
   photos?: string[]
+  maintenanceIntervalMonths?: number | null
 }
 
 export interface UpdateEquipmentRequest {
@@ -34,6 +35,7 @@ export interface UpdateEquipmentRequest {
   nextMaintenance?: string
   notes?: string
   photos?: string[]
+  maintenanceIntervalMonths?: number | null
 }
 
 export const equipmentApi = {

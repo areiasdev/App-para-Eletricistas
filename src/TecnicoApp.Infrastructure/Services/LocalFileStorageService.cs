@@ -9,6 +9,9 @@ namespace TecnicoApp.Infrastructure.Services;
 public class LocalFileStorageService(IWebHostEnvironment env) : IFileStorageService
 {
     private const string RelativeFolder = "uploads/logos";
+    private const string PhotosFolder = "uploads/photos";
+
+    private string WebRoot => env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
 
     public async Task<string> SaveLogoAsync(Guid userId, byte[] content, string extension, CancellationToken cancellationToken = default)
     {
@@ -28,9 +31,22 @@ public class LocalFileStorageService(IWebHostEnvironment env) : IFileStorageServ
         return $"/{RelativeFolder}/{fileName}";
     }
 
-    public async Task<byte[]?> ReadLogoBytesAsync(string? logoUrl, CancellationToken cancellationToken = default)
+    public async Task<string> SavePhotoAsync(Guid ownerId, byte[] content, string extension, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(logoUrl))
+        var folder = Path.Combine(WebRoot, PhotosFolder, ownerId.ToString("N"));
+        Directory.CreateDirectory(folder);
+
+        // Random 128-bit name: photos are served publicly (like logos) so the URL itself must
+        // not be guessable or enumerable.
+        var fileName = $"{Guid.NewGuid():N}{extension}";
+        await File.WriteAllBytesAsync(Path.Combine(folder, fileName), content, cancellationToken);
+
+        return $"/{PhotosFolder}/{ownerId:N}/{fileName}";
+    }
+
+    public async Task<byte[]?> ReadUploadBytesAsync(string? logoUrl, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(logoUrl) || !logoUrl.StartsWith('/'))
             return null;
 
         var webRoot = env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");

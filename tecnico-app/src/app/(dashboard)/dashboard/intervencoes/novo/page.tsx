@@ -23,6 +23,7 @@ export default function NovaIntervencaoPage() {
         photos: values.photos ?? [],
         materials: materials.length > 0 ? materials : undefined,
         assignedToUserId: values.assignedToUserId || undefined,
+        laborHours: values.laborHours ?? null,
       },
       {
         onSuccess: (iv) => router.push(`/dashboard/intervencoes/${iv.id}`),

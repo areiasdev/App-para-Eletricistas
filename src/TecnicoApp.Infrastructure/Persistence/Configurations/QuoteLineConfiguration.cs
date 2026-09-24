@@ -14,6 +14,7 @@ public class QuoteLineConfiguration : IEntityTypeConfiguration<QuoteLine>
         // 4 decimals: trade price lists quote per metre/unit below the cent (e.g. cable at 0,4575 €/m).
         builder.Property(l => l.UnitPrice).HasColumnType("decimal(12,4)");
         builder.Property(l => l.VatRate).HasColumnType("decimal(5,2)");
+        builder.Property(l => l.Unit).IsRequired().HasMaxLength(10).HasDefaultValue("un");
         builder.HasQueryFilter(l => !l.IsDeleted);
     }
 }

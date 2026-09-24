@@ -6,7 +6,7 @@ using Xunit;
 
 namespace TecnicoApp.UnitTests.Services;
 
-// LocalFileStorageService.SaveLogoAsync/ReadLogoBytesAsync operate on real disk paths — this
+// LocalFileStorageService.SaveLogoAsync/ReadUploadBytesAsync operate on real disk paths — this
 // is what actually feeds the "logo works in PDFs but 404s on the site" bug: the write side
 // (tested here) is fine on its own; the read-over-HTTP path is a hosting/StaticFiles concern
 // (fixed in Program.cs, not unit-testable at this layer).
@@ -63,36 +63,36 @@ public class LocalFileStorageServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task ReadLogoBytesAsync_returns_the_saved_bytes()
+    public async Task ReadUploadBytesAsync_returns_the_saved_bytes()
     {
         var service = CreateService();
         var userId = Guid.NewGuid();
         byte[] content = [10, 20, 30];
 
         var url = await service.SaveLogoAsync(userId, content, ".png", CancellationToken.None);
-        var read = await service.ReadLogoBytesAsync(url, CancellationToken.None);
+        var read = await service.ReadUploadBytesAsync(url, CancellationToken.None);
 
         read.Should().BeEquivalentTo(content);
     }
 
     [Fact]
-    public async Task ReadLogoBytesAsync_returns_null_for_a_missing_file()
+    public async Task ReadUploadBytesAsync_returns_null_for_a_missing_file()
     {
         var service = CreateService();
-        var read = await service.ReadLogoBytesAsync("/uploads/logos/does-not-exist.png", CancellationToken.None);
+        var read = await service.ReadUploadBytesAsync("/uploads/logos/does-not-exist.png", CancellationToken.None);
         read.Should().BeNull();
     }
 
     [Fact]
-    public async Task ReadLogoBytesAsync_returns_null_for_null_or_empty_input()
+    public async Task ReadUploadBytesAsync_returns_null_for_null_or_empty_input()
     {
         var service = CreateService();
-        (await service.ReadLogoBytesAsync(null, CancellationToken.None)).Should().BeNull();
-        (await service.ReadLogoBytesAsync("", CancellationToken.None)).Should().BeNull();
+        (await service.ReadUploadBytesAsync(null, CancellationToken.None)).Should().BeNull();
+        (await service.ReadUploadBytesAsync("", CancellationToken.None)).Should().BeNull();
     }
 
     [Fact]
-    public async Task ReadLogoBytesAsync_blocks_path_traversal_outside_wwwroot()
+    public async Task ReadUploadBytesAsync_blocks_path_traversal_outside_wwwroot()
     {
         // Security-relevant: a logoUrl containing ".." must never resolve outside webRoot,
         // even though logoUrl is normally server-generated and not directly user-supplied.
@@ -103,7 +103,7 @@ public class LocalFileStorageServiceTests : IDisposable
         {
             await File.WriteAllTextAsync(secretFile, "top secret");
 
-            var read = await service.ReadLogoBytesAsync($"/../{Path.GetFileName(secretFile)}", CancellationToken.None);
+            var read = await service.ReadUploadBytesAsync($"/../{Path.GetFileName(secretFile)}", CancellationToken.None);
 
             read.Should().BeNull();
         }

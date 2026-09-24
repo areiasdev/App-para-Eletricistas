@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useInvoice, useUpdateInvoiceStatus, useInvoicePayLink, useSendInvoiceEmail } from '@/hooks/useInvoices'
 import { useCanManage } from '@/hooks/useCanManage'
 import { InvoiceStatusBadge } from '@/components/features/InvoiceStatusBadge'
-import { formatDate, formatCurrency } from '@/lib/utils/formatters'
+import { formatDate, formatCurrency, formatQuantity, formatUnitPrice } from '@/lib/utils/formatters'
 import { invoicesApi } from '@/lib/api/invoices'
 import { getErrorMessage } from '@/lib/api/client'
 
@@ -124,7 +124,7 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2 justify-end shrink-0">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           {/* PDF */}
           <button
             onClick={handleDownloadPdf}
@@ -215,8 +215,8 @@ export default function FaturaDetailPage({ params }: { params: Promise<{ id: str
             {invoice.lines.map((line) => (
               <tr key={line.id} style={{ borderBottom: '1px solid var(--color-line)' }}>
                 <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-ink)' }}>{line.description}</td>
-                <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{line.quantity}</td>
-                <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{formatCurrency(line.unitPrice)}</td>
+                <td className="px-5 py-3.5 text-sm whitespace-nowrap" style={{ color: 'var(--color-muted)' }}>{formatQuantity(line.quantity, line.unit)}</td>
+                <td className="px-5 py-3.5 text-sm whitespace-nowrap" style={{ color: 'var(--color-muted)' }}>{formatUnitPrice(line.unitPrice)}</td>
                 <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-muted)' }}>{line.vatRate}%</td>
                 <td className="px-5 py-3.5 text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>{formatCurrency(line.lineTotal)}</td>
               </tr>

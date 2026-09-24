@@ -4,17 +4,37 @@ import { useEffect, useRef, useState } from 'react'
 import SignatureCanvas from 'react-signature-canvas'
 
 interface SignatureModalProps {
-  quoteNumber: string
-  onConfirm: (dataUrl: string) => void
+  title?: string
+  /** Document reference shown under the title (quote number, job title…). */
+  subtitle: string
+  /** Asks for the signer's name too (job sheets, online acceptance). */
+  requireName?: boolean
+  defaultName?: string
+  /** Legal line shown above the buttons, e.g. what the signer is agreeing to. */
+  declaration?: string
+  confirmLabel?: string
+  onConfirm: (dataUrl: string, signerName: string) => void
   onClose: () => void
   isLoading?: boolean
 }
 
-export function SignatureModal({ quoteNumber, onConfirm, onClose, isLoading }: SignatureModalProps) {
+export function SignatureModal({
+  title = 'Assinar Orçamento',
+  subtitle,
+  requireName = false,
+  defaultName = '',
+  declaration,
+  confirmLabel = 'Confirmar assinatura',
+  onConfirm,
+  onClose,
+  isLoading,
+}: SignatureModalProps) {
   const padRef = useRef<SignatureCanvas>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [isEmpty, setIsEmpty] = useState(true)
+  const [signerName, setSignerName] = useState(defaultName)
+  const canConfirm = !isEmpty && (!requireName || signerName.trim().length > 0)
 
   // Escape-to-close, Tab focus trap, initial focus, and focus restore on unmount —
   // this is the only true modal dialog in the app, reachable from a normal user flow.
@@ -58,9 +78,9 @@ export function SignatureModal({ quoteNumber, onConfirm, onClose, isLoading }: S
   }
 
   const handleConfirm = () => {
-    if (!padRef.current || isEmpty) return
+    if (!padRef.current || !canConfirm) return
     const dataUrl = padRef.current.getTrimmedCanvas().toDataURL('image/png')
-    onConfirm(dataUrl)
+    onConfirm(dataUrl, signerName.trim())
   }
 
   return (
@@ -82,10 +102,10 @@ export function SignatureModal({ quoteNumber, onConfirm, onClose, isLoading }: S
         <div className="flex items-center justify-between">
           <div>
             <h2 id="signature-modal-title" className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>
-              Assinar Orçamento
+              {title}
             </h2>
             <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>
-              {quoteNumber}
+              {subtitle}
             </p>
           </div>
           <button
@@ -99,6 +119,23 @@ export function SignatureModal({ quoteNumber, onConfirm, onClose, isLoading }: S
             ✕
           </button>
         </div>
+
+        {requireName && (
+          <div>
+            <label htmlFor="signer-name" className="text-sm font-medium block mb-1" style={{ color: 'var(--color-ink)' }}>
+              Nome de quem assina *
+            </label>
+            <input
+              id="signer-name"
+              value={signerName}
+              onChange={(e) => setSignerName(e.target.value)}
+              autoComplete="name"
+              maxLength={200}
+              className="form-input"
+              style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
+            />
+          </div>
+        )}
 
         {/* Canvas area */}
         <div
@@ -120,6 +157,10 @@ export function SignatureModal({ quoteNumber, onConfirm, onClose, isLoading }: S
         <p className="text-xs text-center" style={{ color: 'var(--color-subtle)' }}>
           Assine com o rato ou dedo dentro da área acima
         </p>
+
+        {declaration && (
+          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>{declaration}</p>
+        )}
 
         {/* Actions */}
         <div className="flex justify-between items-center">
@@ -145,11 +186,11 @@ export function SignatureModal({ quoteNumber, onConfirm, onClose, isLoading }: S
             <button
               type="button"
               onClick={handleConfirm}
-              disabled={isEmpty || isLoading}
+              disabled={!canConfirm || isLoading}
               className="rounded-lg px-5 py-2 text-sm font-semibold transition-all duration-150 disabled:opacity-50"
               style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
             >
-              {isLoading ? 'A guardar...' : 'Confirmar assinatura'}
+              {isLoading ? 'A guardar...' : confirmLabel}
             </button>
           </div>
         </div>

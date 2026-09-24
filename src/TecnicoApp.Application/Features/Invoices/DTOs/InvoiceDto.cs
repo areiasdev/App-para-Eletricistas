@@ -1,3 +1,4 @@
+using TecnicoApp.Domain.Common;
 using TecnicoApp.Domain.Enums;
 
 namespace TecnicoApp.Application.Features.Invoices.DTOs;
@@ -8,8 +9,9 @@ public record InvoiceLineDto(
     decimal Quantity,
     decimal UnitPrice,
     decimal VatRate,
-    decimal LineTotal
-);
+    decimal LineTotal,
+    string Unit = DocumentMath.DefaultUnit
+) : IDocumentLine;
 
 public record InvoiceDto(
     Guid Id,

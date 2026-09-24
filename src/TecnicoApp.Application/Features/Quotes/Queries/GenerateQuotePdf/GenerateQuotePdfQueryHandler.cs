@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using TecnicoApp.Application.Common.Documents;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Quotes.DTOs;
 using TecnicoApp.Application.Common.Extensions;
@@ -33,32 +34,9 @@ public class GenerateQuotePdfQueryHandler(
         if (quote.UserId != ownerId)
             return Result.Forbidden();
 
-        var lines = quote.Lines.ToLineDtos();
+        var logoBytes = await fileStorage.ReadUploadBytesAsync(quote.User.LogoUrl, cancellationToken);
 
-        var logoBytes = await fileStorage.ReadLogoBytesAsync(quote.User.LogoUrl, cancellationToken);
-
-        var pdfData = new QuotePdfData(
-            Number: quote.Number,
-            CreatedAt: quote.CreatedAt,
-            ValidUntil: quote.ValidUntil,
-            Notes: quote.Notes,
-            ClientName: quote.Client.Name,
-            ClientEmail: quote.Client.Email,
-            ClientPhone: quote.Client.Phone,
-            ClientNif: quote.Client.Nif,
-            IssuerName: quote.User.FullName,
-            IssuerCompany: quote.User.CompanyName,
-            IssuerEmail: quote.User.Email,
-            IssuerPhone: quote.User.Phone,
-            IssuerNif: quote.User.Nif,
-            IssuerLogoBytes: logoBytes,
-            IssuerBrandColorHex: quote.User.BrandColor,
-            Lines: lines,
-            SubTotal: quote.SubTotal,
-            VatTotal: quote.VatTotal,
-            Discount: quote.Discount,
-            Total: quote.Total
-        );
+        var pdfData = PdfDataFactory.ForQuote(quote, quote.User, logoBytes);
 
         var bytes = pdfService.GenerateQuotePdf(pdfData);
         return Result.Success(new QuotePdfResult(bytes, quote.Number));

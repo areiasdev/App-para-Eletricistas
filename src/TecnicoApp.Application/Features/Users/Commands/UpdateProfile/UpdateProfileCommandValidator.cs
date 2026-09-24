@@ -34,5 +34,9 @@ public class UpdateProfileCommandValidator : AbstractValidator<UpdateProfileComm
         RuleFor(x => x.BankName)
             .MaximumLength(100).WithMessage("O nome do banco não pode ter mais de 100 caracteres.")
             .When(x => x.BankName is not null);
+
+        RuleFor(x => x.DefaultHourlyRate)
+            .InclusiveBetween(0, 10_000).When(x => x.DefaultHourlyRate.HasValue)
+            .WithMessage("O preço/hora deve estar entre 0 e 10 000 €.");
     }
 }

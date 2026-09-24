@@ -17,6 +17,7 @@ public class UpdateInterventionStatusCommandHandler(IAppDbContext db, ICurrentUs
         var ownerId = await db.ResolveOwnerIdAsync(currentUser.UserId, cancellationToken);
 
         var intervention = await db.Interventions
+            .Include(i => i.Equipment)
             .FirstOrDefaultAsync(i => i.Id == request.Id, cancellationToken);
 
         if (intervention is null)
@@ -36,11 +37,15 @@ public class UpdateInterventionStatusCommandHandler(IAppDbContext db, ICurrentUs
         if (!valid)
             return Result.Error($"Transição inválida: {intervention.Status} → {request.Status}.");
 
-        intervention.Status = request.Status;
         if (request.Status == InterventionStatus.Completed)
-            intervention.CompletedAt = DateTime.UtcNow;
-        else if (request.Status != InterventionStatus.Completed)
+        {
+            intervention.Complete(DateTime.UtcNow);
+        }
+        else
+        {
+            intervention.Status = request.Status;
             intervention.CompletedAt = null;
+        }
 
         intervention.ModifiedBy = currentUser.Email;
         await db.SaveChangesAsync(cancellationToken);

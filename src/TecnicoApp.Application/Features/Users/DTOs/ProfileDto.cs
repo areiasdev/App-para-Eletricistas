@@ -10,5 +10,6 @@ public record ProfileDto(
     string? LogoUrl,
     string? BrandColor,
     string? Iban,
-    string? BankName
+    string? BankName,
+    decimal? DefaultHourlyRate = null
 );
