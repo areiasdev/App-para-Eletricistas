@@ -25,6 +25,7 @@ export default function EditarOrcamentoPage({ params }: { params: Promise<{ id: 
           quantity: Number(l.quantity),
           unitPrice: Number(l.unitPrice),
           vatRate: Number(l.vatRate),
+          unit: l.unit || undefined,
         })),
       },
       { onSuccess: () => router.push(`/dashboard/orcamentos/${id}`) }
@@ -79,6 +80,7 @@ export default function EditarOrcamentoPage({ params }: { params: Promise<{ id: 
               quantity: l.quantity,
               unitPrice: l.unitPrice,
               vatRate: l.vatRate,
+              unit: l.unit,
             })),
           }}
           onSubmit={handleSubmit}

@@ -9,6 +9,9 @@ import { InvoiceStatusBadge } from '@/components/features/InvoiceStatusBadge'
 import { formatDate, formatCurrency } from '@/lib/utils/formatters'
 import { getErrorMessage } from '@/lib/api/client'
 import type { InvoiceStatus } from '@/types'
+import { invoicesApi } from '@/lib/api/invoices'
+import { toast } from 'sonner'
+import { useCanManage } from '@/hooks/useCanManage'
 
 const statusOptions: { value: InvoiceStatus | ''; label: string }[] = [
   { value: '', label: 'Todos' },
@@ -18,13 +21,64 @@ const statusOptions: { value: InvoiceStatus | ''; label: string }[] = [
   { value: 'Cancelled', label: 'Cancelada' },
 ]
 
+/** Invoices for a date range as an Excel-ready CSV — what the accountant asks for every month. */
+function CsvExport() {
+  const today = new Date()
+  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const [open, setOpen] = useState(false)
+  const [from, setFrom] = useState(iso(new Date(today.getFullYear(), today.getMonth() - 1, 1)))
+  const [to, setTo] = useState(iso(new Date(today.getFullYear(), today.getMonth(), 0)))
+  const [busy, setBusy] = useState(false)
+
+  const download = async () => {
+    setBusy(true)
+    try {
+      await invoicesApi.exportCsv(from, to)
+      setOpen(false)
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="rounded-lg border px-3 py-2 text-sm font-medium"
+        style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)', backgroundColor: 'var(--color-card)' }}
+      >
+        Exportar CSV
+      </button>
+      {open && (
+        <div className="absolute right-0 mt-2 z-20 w-72 rounded-xl border p-4 space-y-3 shadow-lg"
+          style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
+          <p className="text-xs" style={{ color: 'var(--color-muted)' }}>Faturas emitidas entre (por omissão: o mês passado):</p>
+          <div className="grid grid-cols-2 gap-2">
+            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="form-input" aria-label="De" />
+            <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="form-input" aria-label="Até" />
+          </div>
+          <button onClick={download} disabled={busy || !from || !to}
+            className="w-full rounded-lg px-3 py-2 text-sm font-semibold disabled:opacity-60"
+            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
+            {busy ? 'A exportar…' : 'Descarregar'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function FaturasContent() {
+  const canManage = useCanManage()
   const searchParams = useSearchParams()
   const clientIdFilter = searchParams.get('clientId') ?? undefined
 
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search, 300)
-  const [status, setStatus] = useState<InvoiceStatus | ''>('')
+  // Deep-linkable (?status=Overdue) — used by the dashboard's receivables cards.
+  const [status, setStatus] = useState<InvoiceStatus | ''>((searchParams.get('status') ?? '') as InvoiceStatus | '')
   const [page, setPage] = useState(1)
 
   const { data, isLoading, isError, error } = useInvoices({
@@ -50,6 +104,7 @@ function FaturasContent() {
             {data ? `${data.totalCount} fatura${data.totalCount !== 1 ? 's' : ''}` : ' '}
           </p>
         </div>
+        {canManage && <CsvExport />}
       </div>
 
       {/* Filters */}

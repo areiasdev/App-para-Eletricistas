@@ -20,6 +20,7 @@ export default function NovoEquipamentoPage() {
         serialNumber: values.serialNumber || undefined,
         installedAt: values.installedAt || undefined,
         nextMaintenance: values.nextMaintenance || undefined,
+        maintenanceIntervalMonths: values.maintenanceIntervalMonths ?? null,
         notes: values.notes,
         photos: values.photos ?? [],
       },

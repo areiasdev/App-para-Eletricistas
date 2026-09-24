@@ -12,6 +12,9 @@ export function useInterventions(params?: {
   search?: string
   status?: InterventionStatus
   clientId?: string
+  from?: string
+  to?: string
+  assignedToUserId?: string
   page?: number
   pageSize?: number
 }) {
@@ -58,6 +61,15 @@ export function useDeleteIntervention() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => interventionsApi.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  })
+}
+
+export function useSignIntervention(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ signedByName, signatureDataUrl }: { signedByName: string; signatureDataUrl: string }) =>
+      interventionsApi.sign(id, signedByName, signatureDataUrl),
     onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
   })
 }

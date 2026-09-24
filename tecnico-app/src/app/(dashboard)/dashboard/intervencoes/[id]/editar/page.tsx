@@ -24,8 +24,10 @@ export default function EditarIntervencaoPage({ params }: { params: Promise<{ id
         quoteId: values.quoteId || undefined,
         equipmentIds: values.equipmentIds,
         photos: values.photos ?? [],
-        materials: materials.length > 0 ? materials : undefined,
+        // Always send the list (even empty) — omitting it would keep the old materials on the server.
+        materials,
         assignedToUserId: values.assignedToUserId || undefined,
+        laborHours: values.laborHours ?? null,
       },
       {
         onSuccess: () => router.push(`/dashboard/intervencoes/${id}`),
@@ -103,6 +105,7 @@ export default function EditarIntervencaoPage({ params }: { params: Promise<{ id
           equipmentIds: iv.equipment.map((e) => e.id),
           photos: iv.photos ?? [],
           assignedToUserId: iv.assignedToUserId ?? '',
+          laborHours: iv.laborHours ?? undefined,
         }}
         defaultMaterials={iv.materials ?? []}
         onSubmit={handleSubmit}

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useClients } from '@/hooks/useClients'
 import { FormField } from '@/components/ui/FormField'
+import { PhotoUploader } from '@/components/features/PhotoUploader'
+import { isValidPhotoUrl } from '@/lib/photos'
 
 const equipmentSchema = z.object({
   clientId: z.string().min(1, 'Seleciona um cliente.'),
@@ -15,26 +16,13 @@ const equipmentSchema = z.object({
   serialNumber: z.string().max(100).optional().or(z.literal('')),
   installedAt: z.string().optional(),
   nextMaintenance: z.string().optional(),
+  maintenanceIntervalMonths: z.number().int().min(1).max(120).optional(),
   notes: z.string().optional(),
   photos: z
-    .array(
-      z
-        .string()
-        .url('URL inválido')
-        .refine(isHttpsOrLocalhostUrl, 'As fotos devem ser URLs HTTPS válidos.'),
-    )
+    .array(z.string().refine(isValidPhotoUrl, 'Foto inválida.'))
     .max(20, 'Máximo de 20 fotos por equipamento.')
     .optional(),
 })
-
-function isHttpsOrLocalhostUrl(value: string): boolean {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'https:' || url.hostname === 'localhost'
-  } catch {
-    return false
-  }
-}
 
 export type EquipmentFormValues = z.infer<typeof equipmentSchema>
 
@@ -67,18 +55,6 @@ export function EquipmentForm({
   })
 
   const photos = watch('photos') ?? []
-  const [photoInput, setPhotoInput] = useState('')
-
-  const addPhoto = () => {
-    const url = photoInput.trim()
-    if (!url) return
-    setValue('photos', [...photos, url])
-    setPhotoInput('')
-  }
-
-  const removePhoto = (i: number) => {
-    setValue('photos', photos.filter((_, idx) => idx !== i))
-  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -183,6 +159,28 @@ export function EquipmentForm({
                 Receberás um alerta 7 dias antes.
               </p>
             </FormField>
+
+            <FormField label="Periodicidade da manutenção" id="ef-interval" error={errors.maintenanceIntervalMonths?.message}>
+              <select
+                id="ef-interval"
+                {...register('maintenanceIntervalMonths', {
+                  setValueAs: (v) => (v === '' || v === undefined || v === null ? undefined : Number(v)),
+                })}
+                className="form-input"
+                style={{ borderColor: 'var(--color-line-strong)' }}
+              >
+                <option value="">Sem periodicidade</option>
+                <option value="1">Mensal</option>
+                <option value="3">Trimestral</option>
+                <option value="6">Semestral</option>
+                <option value="12">Anual</option>
+                <option value="24">Bienal</option>
+                <option value="60">5 em 5 anos</option>
+              </select>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-subtle)' }}>
+                Ao concluir uma intervenção neste equipamento, a próxima manutenção é marcada automaticamente.
+              </p>
+            </FormField>
           </div>
 
           <FormField label="Notas" id="ef-notes" error={errors.notes?.message}>
@@ -206,46 +204,7 @@ export function EquipmentForm({
           </h2>
         </div>
         <div className="p-5 space-y-3">
-          <p className="text-xs" style={{ color: 'var(--color-subtle)' }}>
-            Adiciona URLs de fotos do equipamento (ex: Google Drive, Dropbox, Imgur).
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={photoInput}
-              onChange={e => setPhotoInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPhoto() } }}
-              placeholder="https://exemplo.com/foto.jpg"
-              className="form-input flex-1"
-              style={{ borderColor: 'var(--color-line-strong)' }}
-            />
-            <button
-              type="button"
-              onClick={addPhoto}
-              className="rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150"
-              style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-            >
-              Adicionar
-            </button>
-          </div>
-          {photos.length > 0 && (
-            <ul className="space-y-2">
-              {photos.map((url, i) => (
-                <li key={i} className="flex items-center gap-2 rounded-lg border px-3 py-2"
-                  style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
-                  <span className="text-xs truncate flex-1" style={{ color: 'var(--color-ink)' }}>{url}</span>
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(i)}
-                    className="shrink-0 text-xs px-2 py-0.5 rounded transition-colors duration-150"
-                    style={{ color: 'var(--color-danger-600)' }}
-                  >
-                    Remover
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <PhotoUploader value={photos} onChange={(urls) => setValue('photos', urls, { shouldDirty: true })} />
         </div>
       </section>
 

@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { cn } from '@/lib/utils'
+import { PhotoUploader } from '@/components/features/PhotoUploader'
+import { isValidPhotoUrl } from '@/lib/photos'
 import { useClients } from '@/hooks/useClients'
 import { useEquipmentList } from '@/hooks/useEquipment'
 import { useQuotes } from '@/hooks/useQuotes'
@@ -20,26 +22,13 @@ const interventionSchema = z.object({
   quoteId: z.string().optional(),
   equipmentIds: z.array(z.string()),
   photos: z
-    .array(
-      z
-        .string()
-        .url('URL inválido')
-        .refine(isHttpsOrLocalhostUrl, 'As fotos devem ser URLs HTTPS válidos.'),
-    )
+    .array(z.string().refine(isValidPhotoUrl, 'Foto inválida.'))
     .max(20, 'Máximo de 20 fotos por intervenção.')
     .refine((urls) => new Set(urls).size === urls.length, 'Não são permitidas fotos duplicadas.')
     .optional(),
   assignedToUserId: z.string().optional(),
+  laborHours: z.number().min(0).max(1000).optional(),
 })
-
-function isHttpsOrLocalhostUrl(value: string): boolean {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'https:' || url.hostname === 'localhost'
-  } catch {
-    return false
-  }
-}
 
 export type InterventionFormValues = z.infer<typeof interventionSchema>
 
@@ -67,35 +56,27 @@ export function InterventionForm({
   const clientId = watch('clientId')
   const selectedEquipmentIds = watch('equipmentIds') ?? []
   const photos = watch('photos') ?? []
-  const [photoInput, setPhotoInput] = useState('')
 
   // Materials state — managed outside RHF (complex nested object)
   const [materials, setMaterials] = useState<InterventionMaterial[]>(defaultMaterials)
   const [matName, setMatName] = useState('')
   const [matQty, setMatQty] = useState('1')
   const [matCost, setMatCost] = useState('')
-
-  const addPhoto = () => {
-    const url = photoInput.trim()
-    if (!url) return
-    setValue('photos', [...photos, url])
-    setPhotoInput('')
-  }
-
-  const removePhoto = (i: number) => {
-    setValue('photos', photos.filter((_, idx) => idx !== i))
-  }
+  const [matPrice, setMatPrice] = useState('')
 
   const addMaterial = () => {
     const name = matName.trim()
-    // B2: clamp to 2 decimal places to avoid float precision issues
-    const qty = Math.round(parseFloat(matQty) * 100) / 100
-    const cost = Math.round(parseFloat(matCost) * 100) / 100
+    // Clamp to the precision the backend stores, to avoid float noise (0.1 + 0.2…)
+    const qty = Math.round(parseFloat(matQty) * 1000) / 1000
+    const cost = Math.round(parseFloat(matCost) * 10000) / 10000
+    const price = matPrice.trim() === '' ? null : Math.round(parseFloat(matPrice) * 10000) / 10000
     if (!name || isNaN(qty) || qty <= 0 || isNaN(cost) || cost < 0) return
-    setMaterials(prev => [...prev, { name, quantity: qty, unitCost: cost }])
+    if (price !== null && (isNaN(price) || price < 0)) return
+    setMaterials(prev => [...prev, { name, quantity: qty, unitCost: cost, unitPrice: price }])
     setMatName('')
     setMatQty('1')
     setMatCost('')
+    setMatPrice('')
   }
 
   const removeMaterial = (i: number) => {
@@ -311,7 +292,7 @@ export function InterventionForm({
             value={matName}
             onChange={e => setMatName(e.target.value)}
             placeholder="Descrição (ex: Tubo PVC 32mm)"
-            className={cn(inputCls(false), 'col-span-12 sm:col-span-6')}
+            className={cn(inputCls(false), 'col-span-12 sm:col-span-4')}
           />
           <input
             type="number"
@@ -319,27 +300,42 @@ export function InterventionForm({
             value={matQty}
             onChange={e => setMatQty(e.target.value)}
             placeholder="Qtd."
-            min="0.01"
-            step="0.01"
-            className={cn(inputCls(false), 'col-span-5 sm:col-span-2')}
+            inputMode="decimal"
+            min="0.001"
+            step="0.001"
+            className={cn(inputCls(false), 'col-span-4 sm:col-span-2')}
           />
           <input
             type="number"
             aria-label="Custo por unidade"
             value={matCost}
             onChange={e => setMatCost(e.target.value)}
-            placeholder="€/un."
+            placeholder="Custo €/un."
+            inputMode="decimal"
             min="0"
-            step="0.01"
-            className={cn(inputCls(false), 'col-span-5 sm:col-span-2')}
+            step="0.0001"
+            className={cn(inputCls(false), 'col-span-4 sm:col-span-2')}
+          />
+          <input
+            type="number"
+            aria-label="Preço de venda por unidade"
+            title="Preço cobrado ao cliente ao faturar a intervenção (se vazio, usa o custo)"
+            value={matPrice}
+            onChange={e => setMatPrice(e.target.value)}
+            placeholder="Venda €/un."
+            inputMode="decimal"
+            min="0"
+            step="0.0001"
+            className={cn(inputCls(false), 'col-span-4 sm:col-span-2')}
           />
           <button
             type="button"
             onClick={addMaterial}
-            className="col-span-2 rounded-lg text-sm font-medium transition-all duration-150"
+            aria-label="Adicionar material"
+            className="col-span-12 sm:col-span-2 rounded-lg py-2 text-sm font-medium transition-all duration-150"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            +
+            + Adicionar
           </button>
         </div>
 
@@ -351,7 +347,8 @@ export function InterventionForm({
                 <tr style={{ backgroundColor: 'var(--color-canvas)', borderBottom: '1px solid var(--color-line)' }}>
                   <th className="text-left px-3 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Material</th>
                   <th className="text-right px-3 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Qtd.</th>
-                  <th className="text-right px-3 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>€/un.</th>
+                  <th className="text-right px-3 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Custo/un.</th>
+                  <th className="text-right px-3 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Venda/un.</th>
                   <th className="text-right px-3 py-2 text-xs font-semibold" style={{ color: 'var(--color-muted)' }}>Total</th>
                   <th className="px-3 py-2 w-8" />
                 </tr>
@@ -362,6 +359,7 @@ export function InterventionForm({
                     <td className="px-3 py-2" style={{ color: 'var(--color-ink)' }}>{m.name}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.quantity}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitCost.toFixed(2)}</td>
+                    <td className="px-3 py-2 text-right font-mono text-xs" style={{ color: 'var(--color-muted)' }}>{m.unitPrice != null ? m.unitPrice.toFixed(2) : '—'}</td>
                     <td className="px-3 py-2 text-right font-mono text-xs font-semibold" style={{ color: 'var(--color-ink)' }}>
                       {(m.quantity * m.unitCost).toFixed(2)} €
                     </td>
@@ -387,8 +385,26 @@ export function InterventionForm({
       {/* Technician notes */}
       <div className="rounded-xl border p-6 space-y-4" style={{ backgroundColor: 'var(--color-card)', borderColor: 'var(--color-line)' }}>
         <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
-          Notas técnicas
+          Trabalho realizado
         </h2>
+        <Field label="Horas de trabalho" id="if-laborHours" error={errors.laborHours?.message}>
+          <input
+            id="if-laborHours"
+            type="number"
+            inputMode="decimal"
+            step="0.25"
+            min="0"
+            placeholder="Ex.: 2,5"
+            {...register('laborHours', {
+              setValueAs: (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+            })}
+            className={cn(inputCls(!!errors.laborHours), 'max-w-40')}
+          />
+          <p className="mt-1.5 text-xs" style={{ color: 'var(--color-subtle)' }}>
+            Faturadas ao preço/hora definido no Perfil.
+          </p>
+        </Field>
+
         <Field label="Notas do técnico" id="if-technicianNotes" error={errors.technicianNotes?.message}>
           <textarea
             id="if-technicianNotes"
@@ -405,45 +421,7 @@ export function InterventionForm({
         <h2 className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-muted)' }}>
           Fotos
         </h2>
-        <p className="text-xs" style={{ color: 'var(--color-subtle)' }}>
-          Adiciona URLs de fotos (ex: Google Drive, Dropbox, Imgur).
-        </p>
-        <div className="flex gap-2">
-          <input
-            type="url"
-            value={photoInput}
-            onChange={e => setPhotoInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPhoto() } }}
-            placeholder="https://exemplo.com/foto.jpg"
-            className={cn(inputCls(false), 'flex-1')}
-          />
-          <button
-            type="button"
-            onClick={addPhoto}
-            className="rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150"
-            style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
-          >
-            Adicionar
-          </button>
-        </div>
-        {photos.length > 0 && (
-          <ul className="space-y-2">
-            {photos.map((url, i) => (
-              <li key={i} className="flex items-center gap-2 rounded-lg border px-3 py-2"
-                style={{ borderColor: 'var(--color-line)', backgroundColor: 'var(--color-canvas)' }}>
-                <span className="text-xs truncate flex-1" style={{ color: 'var(--color-ink)' }}>{url}</span>
-                <button
-                  type="button"
-                  onClick={() => removePhoto(i)}
-                  className="shrink-0 text-xs px-2 py-0.5 rounded transition-colors duration-150"
-                  style={{ color: 'var(--color-danger-600)' }}
-                >
-                  Remover
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+        <PhotoUploader value={photos} onChange={(urls) => setValue('photos', urls, { shouldDirty: true })} />
       </div>
 
       <button

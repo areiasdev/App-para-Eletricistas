@@ -11,6 +11,7 @@ export interface Profile {
   brandColor?: string
   iban?: string
   bankName?: string
+  defaultHourlyRate?: number | null
 }
 
 export interface UpdateProfileRequest {
@@ -21,6 +22,8 @@ export interface UpdateProfileRequest {
   brandColor?: string
   iban?: string
   bankName?: string
+  /** Labour rate (€/h, excl. VAT) used when invoicing a job's hours. */
+  defaultHourlyRate?: number | null
 }
 
 export const usersApi = {

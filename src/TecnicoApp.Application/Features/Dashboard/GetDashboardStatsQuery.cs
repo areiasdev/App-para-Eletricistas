@@ -23,7 +23,7 @@ public record DashboardStatsDto(
     int DraftQuotes,
     int SentQuotes,
     int AcceptedQuotes,
-    decimal TotalRevenue,        // Invoiced quotes
+    decimal TotalRevenue,        // Non-cancelled invoices (from quotes and from jobs)
     decimal PendingRevenue,      // Accepted quotes not yet invoiced
     int TotalInterventions,
     int ScheduledInterventions,
@@ -70,9 +70,6 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
                 Draft = g.Count(q => q.Status == QuoteStatus.Draft),
                 Sent = g.Count(q => q.Status == QuoteStatus.Sent),
                 Accepted = g.Count(q => q.Status == QuoteStatus.Accepted),
-                TotalRevenue = g
-                    .Where(q => q.Status == QuoteStatus.Invoiced)
-                    .Sum(q => (decimal?)q.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (q.Discount ?? 0)) ?? 0m,
                 PendingRevenue = g
                     .Where(q => q.Status == QuoteStatus.Accepted)
                     .Sum(q => (decimal?)q.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (q.Discount ?? 0)) ?? 0m,
@@ -127,11 +124,11 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
                 (int)(e.NextMaintenance!.Value.Date - today).TotalDays))
             .ToListAsync(cancellationToken);
 
-        // Receivables — the number an owner checks first every morning.
-        var receivables = await db.Invoices
+        // Invoiced revenue and receivables — from the invoices themselves, so jobs invoiced
+        // directly (without a quote) count too. Receivables are what an owner checks every morning.
+        var invoiceTotals = await db.Invoices
             .AsNoTracking()
-            .Where(i => i.UserId == ownerId &&
-                        (i.Status == InvoiceStatus.Issued || i.Status == InvoiceStatus.Overdue))
+            .Where(i => i.UserId == ownerId && i.Status != InvoiceStatus.Cancelled)
             .Select(i => new
             {
                 i.Status,
@@ -139,6 +136,9 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
                 Total = i.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (i.Discount ?? 0),
             })
             .ToListAsync(cancellationToken);
+        var receivables = invoiceTotals
+            .Where(i => i.Status is InvoiceStatus.Issued or InvoiceStatus.Overdue)
+            .ToList();
 
         var tomorrow = today.AddDays(1);
         var interventionsToday = await db.Interventions
@@ -152,7 +152,7 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
             quoteCounts?.Draft ?? 0,
             quoteCounts?.Sent ?? 0,
             quoteCounts?.Accepted ?? 0,
-            quoteCounts?.TotalRevenue ?? 0m,
+            invoiceTotals.Sum(i => i.Total),
             quoteCounts?.PendingRevenue ?? 0m,
             interventionCounts?.Total ?? 0,
             interventionCounts?.Scheduled ?? 0,

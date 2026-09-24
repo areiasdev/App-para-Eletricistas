@@ -101,3 +101,20 @@ export const getErrorMessage = (error: unknown): string => {
   }
   return 'Ocorreu um erro inesperado. Tenta novamente.'
 }
+
+/**
+ * Downloads an authenticated file (PDF, CSV). Uses the server's Content-Disposition filename
+ * when present, so names like "folha-de-obra-2026-09-24-1A2B3C4D.pdf" come through.
+ */
+export async function downloadFile(path: string, fallbackName: string, params?: Record<string, string>) {
+  const response = await api.get(path, { responseType: 'blob', params })
+  const disposition: string | undefined = response.headers['content-disposition']
+  const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i)
+  const name = match ? decodeURIComponent(match[1]) : fallbackName
+  const url = URL.createObjectURL(response.data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  a.click()
+  URL.revokeObjectURL(url)
+}

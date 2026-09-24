@@ -33,6 +33,11 @@ export interface DashboardStats {
   inProgressInterventions: number
   recentQuotes: RecentQuote[]
   upcomingMaintenance: UpcomingMaintenance[]
+  /** Issued + overdue invoices still to be paid. */
+  outstandingAmount: number
+  overdueInvoices: number
+  overdueAmount: number
+  interventionsToday: number
 }
 
 export const dashboardApi = {

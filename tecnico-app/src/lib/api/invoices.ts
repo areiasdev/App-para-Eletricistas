@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, downloadFile } from './client'
 import type { Invoice, InvoiceStatus, PaginatedResult } from '@/types'
 
 export interface InvoiceListItem {
@@ -29,18 +29,17 @@ export const invoicesApi = {
   createFromQuote: (quoteId: string) =>
     api.post<Invoice>(`/invoices/from-quote/${quoteId}`).then((r) => r.data),
 
+  createFromIntervention: (interventionId: string) =>
+    api.post<Invoice>(`/invoices/from-intervention/${interventionId}`).then((r) => r.data),
+
+  /** CSV (Excel-ready, ";" separated) of invoices issued between the dates — for the accountant. */
+  exportCsv: (from: string, to: string) =>
+    downloadFile('/invoices/export', `faturas-${from}-a-${to}.csv`, { from, to }),
+
   updateStatus: (id: string, status: InvoiceStatus) =>
     api.patch(`/invoices/${id}/status`, { status }),
 
-  downloadPdf: async (id: string, number: string) => {
-    const response = await api.get(`/invoices/${id}/pdf`, { responseType: 'blob' })
-    const url = URL.createObjectURL(response.data)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `fatura-${number}.pdf`
-    a.click()
-    URL.revokeObjectURL(url)
-  },
+  downloadPdf: (id: string, number: string) => downloadFile(`/invoices/${id}/pdf`, `fatura-${number}.pdf`),
 
   getPayLink: (id: string) =>
     api.post<{ url: string }>(`/invoices/${id}/pay-link`).then((r) => r.data.url),

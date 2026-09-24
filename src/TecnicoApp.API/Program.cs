@@ -159,6 +159,8 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .WithHeaders("Content-Type", "Authorization", "X-Requested-With", "X-Csrf-Token")
               .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+              // Lets the browser read the server-chosen file name of PDF/CSV downloads.
+              .WithExposedHeaders("Content-Disposition")
               .SetPreflightMaxAge(TimeSpan.FromHours(2))
               .AllowCredentials()));
 

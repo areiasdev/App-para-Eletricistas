@@ -32,5 +32,9 @@ public static class QuoteMappings
             quote.Total,
             quote.Lines.ToLineDtos(),
             quote.CreatedAt,
-            quote.EmailSentAt);
+            quote.EmailSentAt,
+            quote.SignatureUrl,
+            quote.ClientDecisionAt,
+            quote.AcceptedByName,
+            quote.RejectionReason);
 }

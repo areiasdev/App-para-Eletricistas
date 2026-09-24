@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, downloadFile } from './client'
 import type { Intervention, InterventionMaterial, InterventionStatus, PaginatedResult } from '@/types'
 
 export interface InterventionListItem {
@@ -11,6 +11,8 @@ export interface InterventionListItem {
   clientName: string
   equipmentCount: number
   createdAt: string
+  assignedToUserId?: string | null
+  assignedToName?: string | null
 }
 
 export interface CreateInterventionRequest {
@@ -23,6 +25,7 @@ export interface CreateInterventionRequest {
   photos?: string[]
   materials?: InterventionMaterial[]
   assignedToUserId?: string
+  laborHours?: number | null
 }
 
 export interface UpdateInterventionRequest {
@@ -35,6 +38,7 @@ export interface UpdateInterventionRequest {
   photos?: string[]
   materials?: InterventionMaterial[]
   assignedToUserId?: string
+  laborHours?: number | null
 }
 
 export const interventionsApi = {
@@ -42,6 +46,9 @@ export const interventionsApi = {
     search?: string
     status?: InterventionStatus
     clientId?: string
+    from?: string
+    to?: string
+    assignedToUserId?: string
     page?: number
     pageSize?: number
   }) =>
@@ -62,4 +69,9 @@ export const interventionsApi = {
     api.patch(`/interventions/${id}/status`, { status }),
 
   delete: (id: string) => api.delete(`/interventions/${id}`),
+
+  sign: (id: string, signedByName: string, signatureDataUrl: string) =>
+    api.post<Intervention>(`/interventions/${id}/sign`, { signedByName, signatureDataUrl }).then((r) => r.data),
+
+  downloadReport: (id: string) => downloadFile(`/interventions/${id}/report`, 'folha-de-obra.pdf'),
 }

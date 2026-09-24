@@ -22,6 +22,7 @@ const profileSchema = z.object({
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Cor inválida.'),
   iban: z.string().regex(/^PT50\d{21}$/, 'IBAN inválido. Deve começar por PT50 seguido de 21 dígitos.').optional().or(z.literal('')),
   bankName: z.string().max(100).optional().or(z.literal('')),
+  defaultHourlyRate: z.number().min(0).max(10000).optional(),
 })
 
 type ProfileFormValues = z.infer<typeof profileSchema>
@@ -76,12 +77,13 @@ export default function PerfilPage() {
         brandColor: profile.brandColor ?? DEFAULT_BRAND_COLOR,
         iban: profile.iban ?? '',
         bankName: profile.bankName ?? '',
+        defaultHourlyRate: profile.defaultHourlyRate ?? undefined,
       })
     }
   }, [profile, reset])
 
   const onSubmit = (values: ProfileFormValues) => {
-    updateProfile.mutate(values, {
+    updateProfile.mutate({ ...values, defaultHourlyRate: values.defaultHourlyRate ?? null }, {
       onSuccess: () => toast.success('Perfil atualizado.'),
       onError: (err) => toast.error(getErrorMessage(err)),
     })
@@ -272,6 +274,24 @@ export default function PerfilPage() {
                   <input
                     {...register('bankName')}
                     placeholder="Ex: Banco Silva"
+                    className="form-input"
+                    style={{ borderColor: 'var(--color-line-strong)' }}
+                  />
+                </FormField>
+                <FormField
+                  label="Preço/hora da mão de obra (€, sem IVA)"
+                  error={errors.defaultHourlyRate?.message}
+                  hint="Usado ao faturar as horas de uma intervenção."
+                >
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.5"
+                    min="0"
+                    placeholder="Ex: 35"
+                    {...register('defaultHourlyRate', {
+                      setValueAs: (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+                    })}
                     className="form-input"
                     style={{ borderColor: 'var(--color-line-strong)' }}
                   />

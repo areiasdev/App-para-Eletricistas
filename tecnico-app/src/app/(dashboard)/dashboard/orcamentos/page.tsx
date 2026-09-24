@@ -28,7 +28,8 @@ function OrcamentosContent() {
 
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search, 300)
-  const [status, setStatus] = useState<QuoteStatus | ''>('')
+  // Deep-linkable (?status=Sent) — used by the dashboard and the follow-up email.
+  const [status, setStatus] = useState<QuoteStatus | ''>((searchParams.get('status') ?? '') as QuoteStatus | '')
   const [page, setPage] = useState(1)
 
   const { data, isLoading, isError, error } = useQuotes({

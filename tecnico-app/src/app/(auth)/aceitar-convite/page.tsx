@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAcceptInvite } from '@/hooks/useTeam'
 import { getErrorMessage } from '@/lib/api/client'
@@ -9,7 +9,6 @@ import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
 function AceitarConviteInner() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const token = searchParams.get('token') ?? ''
 
   const [fullName, setFullName] = useState('')

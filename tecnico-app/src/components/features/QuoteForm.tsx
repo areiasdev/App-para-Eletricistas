@@ -7,12 +7,14 @@ import { formatCurrency } from '@/lib/utils/formatters'
 import { useClients } from '@/hooks/useClients'
 import { FormField } from '@/components/ui/FormField'
 import { DEFAULT_VAT_RATE, VAT_RATES } from '@/lib/vat'
+import { DEFAULT_UNIT, UNITS } from '@/lib/units'
 
 const lineSchema = z.object({
   description: z.string().min(1, 'Obrigatório').max(500),
   quantity: z.number().positive('> 0'),
   unitPrice: z.number().min(0, '>= 0'),
   vatRate: z.number().min(0).max(100),
+  unit: z.string().max(10).optional(),
 })
 
 const quoteSchema = z
@@ -44,10 +46,22 @@ export function calculateQuoteTotals(
   lines: { quantity: number; unitPrice: number; vatRate: number }[] | undefined,
   discount: number | undefined
 ) {
-  const subTotal = lines?.reduce((sum, l) => sum + (Number(l.quantity) * Number(l.unitPrice)), 0) ?? 0
-  const vatTotal = lines?.reduce((sum, l) => sum + (Number(l.quantity) * Number(l.unitPrice) * (Number(l.vatRate) / 100)), 0) ?? 0
-  const total = subTotal + vatTotal - (Number(discount) || 0)
-  return { subTotal, vatTotal, total }
+  // Each line rounded to the cent before summing — same rule as the backend's DocumentMath, so
+  // the preview here matches the saved quote and the PDF exactly.
+  const subTotal = lines?.reduce((sum, l) => sum + roundCents(Number(l.quantity) * Number(l.unitPrice)), 0) ?? 0
+  const vatTotal = lines?.reduce((sum, l) => sum + roundCents(Number(l.quantity) * Number(l.unitPrice) * (Number(l.vatRate) / 100)), 0) ?? 0
+  const total = roundCents(subTotal + vatTotal - (Number(discount) || 0))
+  return { subTotal: roundCents(subTotal), vatTotal: roundCents(vatTotal), total }
+}
+
+/**
+ * Half away from zero to the cent, like the backend's decimal rounding. Floats can't hold values
+ * such as 1.005 exactly (it's 1.00499999…), so the scaled value is first snapped to 12 significant
+ * digits — that recovers the decimal the user typed before rounding.
+ */
+export function roundCents(value: number) {
+  const scaled = Number((Math.abs(value) * 100).toPrecision(12))
+  return (Math.sign(value) * Math.round(scaled)) / 100
 }
 
 interface QuoteFormProps {
@@ -69,7 +83,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
   } = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
     defaultValues: {
-      lines: [{ description: '', quantity: 1, unitPrice: 0, vatRate: DEFAULT_VAT_RATE }],
+      lines: [{ description: '', quantity: 1, unitPrice: 0, vatRate: DEFAULT_VAT_RATE, unit: DEFAULT_UNIT }],
       ...defaultValues,
     },
   })
@@ -160,7 +174,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
           </h2>
           <button
             type="button"
-            onClick={() => append({ description: '', quantity: 1, unitPrice: 0, vatRate: DEFAULT_VAT_RATE })}
+            onClick={() => append({ description: '', quantity: 1, unitPrice: 0, vatRate: DEFAULT_VAT_RATE, unit: DEFAULT_UNIT })}
             className="text-xs font-semibold flex items-center gap-1 transition-colors duration-150"
             style={{ color: 'var(--color-brand-600)' }}
           >
@@ -175,7 +189,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
         <div
           className="hidden sm:grid px-5 py-2 text-xs font-semibold uppercase tracking-wide"
           style={{
-            gridTemplateColumns: '1fr 80px 100px 80px 90px 32px',
+            gridTemplateColumns: '1fr 72px 64px 96px 72px 90px 32px',
             gap: '8px',
             color: 'var(--color-subtle)',
             borderBottom: '1px solid var(--color-line)',
@@ -183,6 +197,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
         >
           <span>Descrição</span>
           <span>Qtd.</span>
+          <span>Unid.</span>
           <span>Preço unit.</span>
           <span>IVA</span>
           <span className="text-right">Total</span>
@@ -193,15 +208,19 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
           <p className="px-5 py-2 text-xs" style={{ color: 'var(--color-danger-600)' }}>{errors.lines.root.message}</p>
         )}
 
-        <div className="divide-y" style={{ borderColor: 'var(--color-line)' }}>
+        <datalist id="quote-units">
+          {UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+        </datalist>
+
+        <div className="divide-y divide-[var(--color-line)]">
           {fields.map((field, index) => {
             const qty = Number(lines?.[index]?.quantity) || 0
             const price = Number(lines?.[index]?.unitPrice) || 0
             const vat = Number(lines?.[index]?.vatRate) || 0
-            const lineTotal = qty * price * (1 + vat / 100)
+            const lineTotal = roundCents(qty * price * (1 + vat / 100))
 
             return (
-              <div key={field.id} className="px-5 py-3 space-y-2 sm:space-y-0 sm:grid sm:items-center" style={{ gridTemplateColumns: '1fr 80px 100px 80px 90px 32px', gap: '8px' }}>
+              <div key={field.id} className="px-5 py-3 space-y-2 sm:space-y-0 sm:grid sm:items-center" style={{ gridTemplateColumns: '1fr 72px 64px 96px 72px 90px 32px', gap: '8px' }}>
                 {/* Description */}
                 <div>
                   <label className="text-xs font-medium sm:hidden mb-1 block" style={{ color: 'var(--color-muted)' }}>Descrição</label>
@@ -224,10 +243,23 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
                   <label className="text-xs font-medium sm:hidden mb-1 block" style={{ color: 'var(--color-muted)' }}>Qtd.</label>
                   <input
                     type="number"
-                    step="0.01"
-                    min="0.01"
+                    inputMode="decimal"
+                    step="0.001"
+                    min="0.001"
                     {...register(`lines.${index}.quantity`, { valueAsNumber: true })}
                     className="form-input text-right"
+                    style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
+                  />
+                </div>
+
+                {/* Unit */}
+                <div>
+                  <label className="text-xs font-medium sm:hidden mb-1 block" style={{ color: 'var(--color-muted)' }}>Unidade</label>
+                  <input
+                    list="quote-units"
+                    maxLength={10}
+                    {...register(`lines.${index}.unit`)}
+                    className="form-input"
                     style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
                   />
                 </div>
@@ -237,7 +269,8 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
                   <label className="text-xs font-medium sm:hidden mb-1 block" style={{ color: 'var(--color-muted)' }}>Preço unit.</label>
                   <input
                     type="number"
-                    step="0.01"
+                    inputMode="decimal"
+                    step="0.0001"
                     min="0"
                     placeholder="0.00"
                     {...register(`lines.${index}.unitPrice`, { valueAsNumber: true })}

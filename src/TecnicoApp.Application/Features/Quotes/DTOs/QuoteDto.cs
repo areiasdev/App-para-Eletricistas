@@ -29,7 +29,11 @@ public record QuoteDto(
     decimal Total,
     IReadOnlyList<QuoteLineDto> Lines,
     DateTime CreatedAt,
-    DateTime? EmailSentAt
+    DateTime? EmailSentAt,
+    string? SignatureUrl = null,
+    DateTime? ClientDecisionAt = null,
+    string? AcceptedByName = null,
+    string? RejectionReason = null
 );
 
 public record QuoteListItemDto(

@@ -1,4 +1,4 @@
-import { api } from './client'
+import { api, downloadFile } from './client'
 import type { Quote, QuoteStatus, PaginatedResult } from '@/types'
 
 export interface QuoteListItem {
@@ -16,6 +16,7 @@ export interface QuoteLineRequest {
   quantity: number
   unitPrice: number
   vatRate: number
+  unit?: string
 }
 
 export interface CreateQuoteRequest {
@@ -55,17 +56,11 @@ export const quotesApi = {
   sign: (id: string, signatureDataUrl: string) =>
     api.post(`/quotes/${id}/sign`, { signatureDataUrl }),
 
-  downloadPdf: async (id: string, number: string) => {
-    const response = await api.get(`/quotes/${id}/pdf`, { responseType: 'blob' })
-    const url = URL.createObjectURL(response.data)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `orcamento-${number}.pdf`
-    a.click()
-    URL.revokeObjectURL(url)
-  },
+  downloadPdf: (id: string, number: string) => downloadFile(`/quotes/${id}/pdf`, `orcamento-${number}.pdf`),
 
   sendEmail: (id: string) => api.post(`/quotes/${id}/send-email`),
+
+  duplicate: (id: string) => api.post<Quote>(`/quotes/${id}/duplicate`).then((r) => r.data),
 
   delete: (id: string) => api.delete(`/quotes/${id}`),
 }

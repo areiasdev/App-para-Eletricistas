@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEquipment, useDeleteEquipment } from '@/hooks/useEquipment'
 import { useCanManage } from '@/hooks/useCanManage'
 import { formatDate } from '@/lib/utils/formatters'
+import { photoSrc } from '@/lib/photos'
 
 export default function EquipamentoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -130,6 +131,9 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
         {equipment.nextMaintenance && (
           <InfoRow label="Próx. manutenção" value={formatDate(equipment.nextMaintenance)} />
         )}
+        {equipment.maintenanceIntervalMonths && (
+          <InfoRow label="Periodicidade" value={`A cada ${equipment.maintenanceIntervalMonths} ${equipment.maintenanceIntervalMonths === 1 ? 'mês' : 'meses'}`} />
+        )}
         {equipment.notes && <InfoRow label="Notas" value={equipment.notes} />}
         <InfoRow label="Registado em" value={formatDate(equipment.createdAt)} />
       </div>
@@ -144,7 +148,7 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
             {equipment.photos.map((url, i) => (
               <a
                 key={i}
-                href={url}
+                href={photoSrc(url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block rounded-lg overflow-hidden border aspect-video relative group"
@@ -152,7 +156,7 @@ export default function EquipamentoDetailPage({ params }: { params: Promise<{ id
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={url}
+                  src={photoSrc(url)}
                   alt={`Foto ${i + 1}`}
                   className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                   onError={e => {

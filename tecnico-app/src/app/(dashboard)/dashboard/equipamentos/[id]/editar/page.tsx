@@ -22,6 +22,7 @@ export default function EditarEquipamentoPage({ params }: { params: Promise<{ id
         serialNumber: values.serialNumber || undefined,
         installedAt: values.installedAt || undefined,
         nextMaintenance: values.nextMaintenance || undefined,
+        maintenanceIntervalMonths: values.maintenanceIntervalMonths ?? null,
         notes: values.notes,
         photos: values.photos ?? [],
       },
@@ -73,6 +74,7 @@ export default function EditarEquipamentoPage({ params }: { params: Promise<{ id
             installedAt: equipment.installedAt
               ? new Date(equipment.installedAt).toISOString().split('T')[0]
               : '',
+            maintenanceIntervalMonths: equipment.maintenanceIntervalMonths ?? undefined,
             nextMaintenance: equipment.nextMaintenance
               ? new Date(equipment.nextMaintenance).toISOString().split('T')[0]
               : '',
