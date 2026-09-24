@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using TecnicoApp.Application.Common.Email;
 using TecnicoApp.Application.Common.Interfaces;
 
 namespace TecnicoApp.Application.Features.Auth.Commands.ForgotPassword;
@@ -34,24 +35,19 @@ public sealed class ForgotPasswordCommandHandler(
         await db.SaveChangesAsync(cancellationToken);
 
         var resetLink = $"{appSettings.BaseUrl}/redefinir-password?token={token}&email={Uri.EscapeDataString(user.Email)}";
-        var safeFullName = System.Net.WebUtility.HtmlEncode(user.FullName);
+        var branding = new EmailBranding(appSettings.ProductName);
+        var body = $"""
+            <p style="margin:0 0 16px;">Olá {EmailLayout.Encode(user.FullName)},</p>
+            <p style="margin:0 0 24px;">Recebemos um pedido para redefinir a password da tua conta.</p>
+            {EmailLayout.Button(branding, resetLink, "Redefinir password")}
+            <p style="margin:0;color:#6b7280;font-size:13px;">Este link expira em 1 hora. Se não fizeste este pedido, ignora este email.</p>
+            """;
 
         await emailService.SendAsync(new EmailMessage(
             To: user.Email,
             ToName: user.FullName,
-            Subject: "Redefinir a tua password — TécnicoApp",
-            HtmlBody: $"""
-                <p>Olá {safeFullName},</p>
-                <p>Recebemos um pedido para redefinir a password da tua conta.</p>
-                <p>
-                  <a href="{resetLink}"
-                     style="background:#f59e0b;color:#17171a;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">
-                    Redefinir password
-                  </a>
-                </p>
-                <p>Este link expira em 1 hora. Se não fizeste este pedido, ignora este email.</p>
-                <p>— Equipa TécnicoApp</p>
-                """
+            Subject: $"Redefinir a tua password — {appSettings.ProductName}",
+            HtmlBody: EmailLayout.Render(branding, body, appSettings.ProductName)
         ), cancellationToken);
 
         return Result.Success();

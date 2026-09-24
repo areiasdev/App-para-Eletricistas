@@ -133,4 +133,22 @@ public class CreateQuoteCommandValidatorTests
         var result = _validator.Validate(Valid() with { Discount = null });
         result.IsValid.Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData(0.4575, true)]     // cable per metre — 4 decimals must be accepted
+    [InlineData(0.45755, false)]   // 5 decimals would be silently rounded by the DB column
+    public void Unit_price_precision_matches_database_column(double unitPrice, bool expectedValid)
+    {
+        var line = ValidLine() with { UnitPrice = (decimal)unitPrice };
+        _validator.Validate(Valid() with { Lines = [line] }).IsValid.Should().Be(expectedValid);
+    }
+
+    [Theory]
+    [InlineData(2.125, true)]
+    [InlineData(2.1255, false)]
+    public void Quantity_precision_matches_database_column(double quantity, bool expectedValid)
+    {
+        var line = ValidLine() with { Quantity = (decimal)quantity };
+        _validator.Validate(Valid() with { Lines = [line] }).IsValid.Should().Be(expectedValid);
+    }
 }

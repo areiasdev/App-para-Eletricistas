@@ -46,7 +46,9 @@ public class GetQuotesQueryHandler(IAppDbContext db, ICurrentUserService current
                 q.Number,
                 q.Status,
                 q.Client.Name,
-                q.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100)) - (q.Discount ?? 0),
+                // Same per-line rounding as DocumentMath (Postgres round() is half-away-from-zero),
+                // so the list total matches the detail page and PDF to the cent.
+                q.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (q.Discount ?? 0),
                 q.ValidUntil,
                 q.CreatedAt
             ))

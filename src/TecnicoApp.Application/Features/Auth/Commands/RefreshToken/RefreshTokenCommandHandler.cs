@@ -24,7 +24,7 @@ public sealed class RefreshTokenCommandHandler(
 
         var newRefreshToken = tokenService.GenerateRefreshToken();
         user.RefreshTokenHash = tokenService.HashRefreshToken(newRefreshToken);
-        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
+        user.RefreshTokenExpiresAt = DateTime.UtcNow.Add(tokenService.RefreshTokenLifetime);
         user.ModifiedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync(cancellationToken);

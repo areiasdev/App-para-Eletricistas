@@ -90,4 +90,29 @@ public class CreateQuoteCommandHandlerTests
         first.Value.Number.Should().EndWith("0001");
         second.Value.Number.Should().EndWith("0002");
     }
+
+    [Fact]
+    public async Task Handle_soft_deleted_quote_still_consumes_its_number()
+    {
+        using var db = TestDb.Create();
+
+        var owner = new User { Email = "owner@x.pt", PasswordHash = "h", FullName = "Owner" };
+        var client = new Client { Name = "Cliente A", UserId = owner.Id };
+        db.Users.Add(owner);
+        db.Clients.Add(client);
+        var year = DateTime.UtcNow.Year;
+        db.Quotes.AddRange(
+            new Quote { Number = $"ORC-{year}-0001", ClientId = client.Id, UserId = owner.Id },
+            new Quote { Number = $"ORC-{year}-0002", ClientId = client.Id, UserId = owner.Id, IsDeleted = true });
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        var currentUser = Substitute.For<ICurrentUserService>();
+        currentUser.UserId.Returns(owner.Id);
+        var handler = new CreateQuoteCommandHandler(db, currentUser, Substitute.For<ILogger<CreateQuoteCommandHandler>>());
+
+        var result = await handler.Handle(ValidFor(client.Id), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Number.Should().Be($"ORC-{year}-0003", "the deleted draft still holds ORC-…-0002 in the unique index");
+    }
 }

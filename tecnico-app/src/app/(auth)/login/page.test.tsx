@@ -6,8 +6,9 @@ import { http, HttpResponse } from 'msw'
 import { server } from '@/test/msw/server'
 import { useAuthStore } from '@/stores/authStore'
 import LoginPage from './page'
+import { API_BASE_URL } from '@/lib/config'
 
-const BASE_URL = 'http://localhost:5000/api/v1'
+const BASE_URL = `${API_BASE_URL}/api/v1`
 
 const push = vi.fn()
 vi.mock('next/navigation', () => ({

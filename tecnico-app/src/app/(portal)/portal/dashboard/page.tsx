@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { portal, setPortalToken } from '@/lib/api/portal'
 import { usePortalStore } from '@/stores/portalStore'
 import { formatDate } from '@/lib/utils/formatters'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
   Scheduled:   { bg: 'color-mix(in srgb, var(--color-brand-500) 12%, transparent)',  text: 'var(--color-brand-500)' },
@@ -102,7 +103,7 @@ export default function PortalDashboardPage() {
         <div className="flex items-center gap-2.5">
           <span className="flex items-center justify-center w-7 h-7 rounded-md text-sm font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
-            T
+            {APP_INITIAL}
           </span>
           <span className="text-sm font-semibold" style={{ color: 'var(--color-ink)' }}>Portal do cliente</span>
         </div>
@@ -290,7 +291,7 @@ export default function PortalDashboardPage() {
 
         <footer className="text-center pt-4">
           <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-            Portal de cliente · TécnicoApp
+            Portal de cliente · {APP_NAME}
           </p>
         </footer>
       </main>

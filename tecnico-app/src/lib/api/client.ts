@@ -1,10 +1,10 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/authStore'
+import { API_BASE_URL } from '@/lib/config'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
 
 export const api: AxiosInstance = axios.create({
-  baseURL: `${BASE_URL}/api/v1`,
+  baseURL: `${API_BASE_URL}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
   // withCredentials is required so the httpOnly refresh token cookie is sent
   // on every request (and received when the backend sets it).
@@ -35,11 +35,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    // 403 Forbidden — user is authenticated but lacks permission; redirect to dashboard
-    if (error.response?.status === 403) {
-      if (typeof window !== 'undefined') window.location.href = '/dashboard'
-      return Promise.reject(error)
-    }
+    // 403 Forbidden is a normal, expected answer (e.g. a technician trying an Owner/Admin-only
+    // action, or registration being closed) — reject so the caller can show why. A blanket
+    // redirect to /dashboard here used to swallow every one of those messages.
 
     // Exclude all /auth/* endpoints — a failed login/register attempt returns 401/409
     // for its own reasons (wrong password, etc.) and must never trigger a silent-refresh
@@ -64,7 +62,7 @@ api.interceptors.response.use(
       // POST to /auth/refresh — no body, refresh token comes from httpOnly cookie.
       // X-Csrf-Token proves this request came from our own JS (double-submit CSRF check).
       const { data } = await axios.post(
-        `${BASE_URL}/api/v1/auth/refresh`,
+        `${API_BASE_URL}/api/v1/auth/refresh`,
         {},
         {
           withCredentials: true,
@@ -94,7 +92,9 @@ export const getErrorMessage = (error: unknown): string => {
       const first = Object.values(data.errors)[0]
       if (Array.isArray(first) && first.length > 0) return first[0] as string
     }
-    if (data?.detail) return data.detail
+    // Ardalis.Result prefixes business errors with "Next error(s) occurred:* " — strip it.
+    if (data?.detail) return String(data.detail).replace(/^Next error\(s\) occurred:\s*\*\s*/, '').trim()
+    if (error.response?.status === 403) return 'Não tens permissão para realizar esta ação.'
     if (data?.title && data.title !== 'One or more validation errors occurred.')
       return data.title
     if (typeof data === 'string') return data

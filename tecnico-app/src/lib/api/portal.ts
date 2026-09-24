@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { api } from './client'
+import { API_BASE_URL } from '@/lib/config'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
 
 // Separate axios instance — uses portal JWT, not the regular auth token
 let _portalToken: string | null = null
@@ -11,7 +11,7 @@ export function setPortalToken(token: string | null) {
 }
 
 const portalApi = axios.create({
-  baseURL: `${BASE_URL}/api/v1/portal`,
+  baseURL: `${API_BASE_URL}/api/v1/portal`,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -78,7 +78,7 @@ export interface PortalInvoiceDto {
 export const portal = {
   login: (token: string) =>
     axios
-      .post<PortalLoginResponse>(`${BASE_URL}/api/v1/portal/login`, { token })
+      .post<PortalLoginResponse>(`${API_BASE_URL}/api/v1/portal/login`, { token })
       .then((r) => r.data),
 
   me: () => portalApi.get<PortalClientDto>('/me').then((r) => r.data),

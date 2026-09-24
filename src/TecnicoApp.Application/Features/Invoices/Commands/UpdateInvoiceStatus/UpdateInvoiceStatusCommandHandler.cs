@@ -55,6 +55,19 @@ public class UpdateInvoiceStatusCommandHandler(IAppDbContext db, ICurrentUserSer
         if (request.Status == InvoiceStatus.Paid)
             invoice.PaidAt = DateTime.UtcNow;
 
+        // Cancelling the invoice releases its source quote so it can be invoiced again
+        // (e.g. to fix a wrong line). Without this the quote stayed "Invoiced" forever and
+        // CreateInvoiceFromQuote — which requires Accepted — could never re-issue it.
+        if (request.Status == InvoiceStatus.Cancelled && invoice.QuoteId is { } quoteId)
+        {
+            var quote = await db.Quotes.FirstOrDefaultAsync(q => q.Id == quoteId, cancellationToken);
+            if (quote is { Status: QuoteStatus.Invoiced })
+            {
+                quote.Status = QuoteStatus.Accepted;
+                quote.ModifiedBy = currentUser.Email;
+            }
+        }
+
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

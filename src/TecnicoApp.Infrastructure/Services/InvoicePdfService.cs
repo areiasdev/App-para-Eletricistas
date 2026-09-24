@@ -1,4 +1,5 @@
 using QuestPDF.Fluent;
+using TecnicoApp.Application.Common.Formatting;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using TecnicoApp.Application.Common.Interfaces;
@@ -35,7 +36,7 @@ public class InvoicePdfService
 
                 page.Header().Element(ComposeHeader(d));
                 page.Content().Element(ComposeContent(d));
-                page.Footer().Element(PdfStyle.ComposeFooter(NonCertifiedDisclaimer));
+                page.Footer().Element(PdfStyle.ComposeFooter(d.IssuerCompany ?? d.IssuerName, NonCertifiedDisclaimer));
             });
         }).GeneratePdf();
     }
@@ -168,14 +169,13 @@ public class InvoicePdfService
 
                     table.Cell().Element(c => Cell(c, line.Description));
                     table.Cell().Element(c => CellRight(c, line.Quantity.ToString("G")));
-                    table.Cell().Element(c => CellRight(c, line.UnitPrice.ToString("C", new System.Globalization.CultureInfo("pt-PT"))));
+                    table.Cell().Element(c => CellRight(c, PtFormat.Currency(line.UnitPrice)));
                     table.Cell().Element(c => CellRight(c, $"{line.VatRate}%"));
-                    table.Cell().Element(c => CellRight(c, line.LineTotal.ToString("C", new System.Globalization.CultureInfo("pt-PT"))));
+                    table.Cell().Element(c => CellRight(c, PtFormat.Currency(line.LineTotal)));
                 }
             });
 
             // Totals
-            var ptCulture = new System.Globalization.CultureInfo("pt-PT");
             col.Item().PaddingTop(12).AlignRight().Width(200).Column(totals =>
             {
                 void TotalRow(string label, string value, bool bold = false)
@@ -195,15 +195,15 @@ public class InvoicePdfService
                     });
                 }
 
-                TotalRow("Subtotal", d.SubTotal.ToString("C", ptCulture));
-                TotalRow("IVA", d.VatTotal.ToString("C", ptCulture));
+                TotalRow("Subtotal", PtFormat.Currency(d.SubTotal));
+                TotalRow("IVA", PtFormat.Currency(d.VatTotal));
 
                 if (d.Discount.HasValue && d.Discount > 0)
-                    TotalRow("Desconto", $"-{d.Discount.Value.ToString("C", ptCulture)}");
+                    TotalRow("Desconto", $"-{PtFormat.Currency(d.Discount.Value)}");
 
                 totals.Item().PaddingTop(6).BorderTop(1).BorderColor(LineHex).PaddingBottom(0);
                 totals.Item().PaddingTop(6);
-                TotalRow("TOTAL", d.Total.ToString("C", ptCulture), bold: true);
+                TotalRow("TOTAL", PtFormat.Currency(d.Total), bold: true);
             });
 
             // Bank details — only rendered if at least one of IBAN/bank name is set

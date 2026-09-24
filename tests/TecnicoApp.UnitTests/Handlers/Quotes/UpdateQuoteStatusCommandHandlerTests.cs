@@ -40,7 +40,7 @@ public class UpdateQuoteStatusCommandHandlerTests
     [InlineData(QuoteStatus.Draft, QuoteStatus.Sent, true)]
     [InlineData(QuoteStatus.Sent, QuoteStatus.Accepted, true)]
     [InlineData(QuoteStatus.Sent, QuoteStatus.Rejected, true)]
-    [InlineData(QuoteStatus.Accepted, QuoteStatus.Invoiced, true)]
+    [InlineData(QuoteStatus.Accepted, QuoteStatus.Invoiced, false)] // only via CreateInvoiceFromQuote
     [InlineData(QuoteStatus.Sent, QuoteStatus.Draft, true)]        // allowed recall
     [InlineData(QuoteStatus.Draft, QuoteStatus.Accepted, false)]   // can't skip Sent
     [InlineData(QuoteStatus.Draft, QuoteStatus.Rejected, false)]

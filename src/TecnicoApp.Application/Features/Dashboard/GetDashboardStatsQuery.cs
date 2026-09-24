@@ -68,10 +68,10 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
                 Accepted = g.Count(q => q.Status == QuoteStatus.Accepted),
                 TotalRevenue = g
                     .Where(q => q.Status == QuoteStatus.Invoiced)
-                    .Sum(q => (decimal?)q.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100m)) - (q.Discount ?? 0)) ?? 0m,
+                    .Sum(q => (decimal?)q.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (q.Discount ?? 0)) ?? 0m,
                 PendingRevenue = g
                     .Where(q => q.Status == QuoteStatus.Accepted)
-                    .Sum(q => (decimal?)q.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100m)) - (q.Discount ?? 0)) ?? 0m,
+                    .Sum(q => (decimal?)q.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (q.Discount ?? 0)) ?? 0m,
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -85,7 +85,7 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
                 q.Number,
                 q.Status,
                 q.Client.Name,
-                q.Lines.Sum(l => l.Quantity * l.UnitPrice * (1 + l.VatRate / 100m)) - (q.Discount ?? 0),
+                q.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (q.Discount ?? 0),
                 q.CreatedAt))
             .ToListAsync(cancellationToken);
 

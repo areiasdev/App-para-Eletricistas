@@ -91,4 +91,21 @@ public class MarkInvoicePaidFromWebhookCommandHandlerTests
 
         db.Invoices.Single().Status.Should().Be(InvoiceStatus.Cancelled);
     }
+
+    [Fact]
+    public async Task Handle_superseded_session_still_marks_invoice_paid_via_client_reference_id()
+    {
+        // Customer opened checkout twice: the invoice now stores the second session's id, but
+        // they paid in the first tab. The payment must still land on the invoice.
+        using var db = TestDb.Create();
+        var (_, _, invoice) = SeedInvoice(db);
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new MarkInvoicePaidFromWebhookCommandHandler(db);
+        await handler.Handle(new MarkInvoicePaidFromWebhookCommand("cs_test_older_session", invoice.Id), CancellationToken.None);
+
+        var saved = db.Invoices.Single();
+        saved.Status.Should().Be(InvoiceStatus.Paid);
+        saved.PaidAt.Should().NotBeNull();
+    }
 }

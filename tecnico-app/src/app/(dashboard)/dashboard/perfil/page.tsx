@@ -9,8 +9,8 @@ import { useProfile, useUpdateProfile, useUploadLogo } from '@/hooks/useProfile'
 import { useCanManage } from '@/hooks/useCanManage'
 import { getErrorMessage } from '@/lib/api/client'
 import { validateNif } from '@/lib/utils/formatters'
+import { API_BASE_URL } from '@/lib/config'
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000')
 
 const DEFAULT_BRAND_COLOR = 'var(--color-brand-500)'
 
@@ -183,7 +183,7 @@ export default function PerfilPage() {
                   >
                     {profile?.logoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`${API_BASE}${profile.logoUrl}?v=${Date.now()}`} alt="Logótipo" className="w-full h-full object-contain" />
+                      <img src={`${API_BASE_URL}${profile.logoUrl}?v=${Date.now()}`} alt="Logótipo" className="w-full h-full object-contain" />
                     ) : (
                       <span className="text-xs" style={{ color: 'var(--color-subtle)' }}>Sem logo</span>
                     )}

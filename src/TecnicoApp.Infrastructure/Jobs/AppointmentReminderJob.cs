@@ -1,6 +1,7 @@
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TecnicoApp.Application.Common.Formatting;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
 using TecnicoApp.Infrastructure.Persistence;
@@ -58,7 +59,7 @@ public class AppointmentReminderJob(
 
             try
             {
-                var scheduledStr = intervention.ScheduledAt!.Value.ToString("dd/MM/yyyy 'às' HH:mm");
+                var scheduledStr = PtFormat.DateTime(intervention.ScheduledAt!.Value);
                 var message =
                     $"Olá {client.Name}, lembramos que tens uma intervenção agendada " +
                     $"({intervention.Title}) para amanhã, dia {scheduledStr}.";

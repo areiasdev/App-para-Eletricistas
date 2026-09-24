@@ -50,14 +50,17 @@ public class WebhooksController(ISender sender, IConfiguration configuration) : 
         if (stripeEvent.Type == EventTypes.CheckoutSessionCompleted)
         {
             if (stripeEvent.Data.Object is Stripe.Checkout.Session { PaymentStatus: "paid" } session)
-                await sender.Send(new MarkInvoicePaidFromWebhookCommand(session.Id), ct);
+                await sender.Send(ToCommand(session), ct);
         }
         else if (stripeEvent.Type == EventTypes.CheckoutSessionAsyncPaymentSucceeded)
         {
             if (stripeEvent.Data.Object is Stripe.Checkout.Session session)
-                await sender.Send(new MarkInvoicePaidFromWebhookCommand(session.Id), ct);
+                await sender.Send(ToCommand(session), ct);
         }
 
         return Ok();
     }
+
+    private static MarkInvoicePaidFromWebhookCommand ToCommand(Stripe.Checkout.Session session) =>
+        new(session.Id, Guid.TryParse(session.ClientReferenceId, out var invoiceId) ? invoiceId : null);
 }

@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { portal, setPortalToken } from '@/lib/api/portal'
 import { usePortalStore } from '@/stores/portalStore'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
 function PortalLoginInner() {
   const searchParams = useSearchParams()
@@ -40,9 +41,9 @@ function PortalLoginInner() {
         <div className="flex items-center justify-center gap-2">
           <span className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}>
-            T
+            {APP_INITIAL}
           </span>
-          <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>TécnicoApp</span>
+          <span className="text-lg font-bold" style={{ color: 'var(--color-ink)' }}>{APP_NAME}</span>
         </div>
 
         {loading && (

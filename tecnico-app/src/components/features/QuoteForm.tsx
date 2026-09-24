@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { formatCurrency } from '@/lib/utils/formatters'
 import { useClients } from '@/hooks/useClients'
 import { FormField } from '@/components/ui/FormField'
+import { DEFAULT_VAT_RATE, VAT_RATES } from '@/lib/vat'
 
 const lineSchema = z.object({
   description: z.string().min(1, 'Obrigatório').max(500),
@@ -68,7 +69,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
   } = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
     defaultValues: {
-      lines: [{ description: '', quantity: 1, unitPrice: 0, vatRate: 23 }],
+      lines: [{ description: '', quantity: 1, unitPrice: 0, vatRate: DEFAULT_VAT_RATE }],
       ...defaultValues,
     },
   })
@@ -159,7 +160,7 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
           </h2>
           <button
             type="button"
-            onClick={() => append({ description: '', quantity: 1, unitPrice: 0, vatRate: 23 })}
+            onClick={() => append({ description: '', quantity: 1, unitPrice: 0, vatRate: DEFAULT_VAT_RATE })}
             className="text-xs font-semibold flex items-center gap-1 transition-colors duration-150"
             style={{ color: 'var(--color-brand-600)' }}
           >
@@ -253,10 +254,9 @@ export function QuoteForm({ defaultValues, onSubmit, isLoading, submitLabel = 'G
                     className="form-input"
                     style={{ borderColor: 'var(--color-line-strong)', color: 'var(--color-ink)' }}
                   >
-                    <option value={0}>0%</option>
-                    <option value={6}>6%</option>
-                    <option value={13}>13%</option>
-                    <option value={23}>23%</option>
+                    {VAT_RATES.map((rate) => (
+                      <option key={rate.value} value={rate.value} title={rate.label}>{rate.value}%</option>
+                    ))}
                   </select>
                 </div>
 

@@ -27,6 +27,10 @@ RUN groupadd --system --gid 1001 appgroup && \
     useradd --system --uid 1001 --gid appgroup appuser
 
 COPY --from=build --chown=appuser:appgroup /app/publish .
+# Uploaded logos live under wwwroot/uploads, which docker-compose.prod.yml mounts as a volume
+# so they survive `up --build`. Create it owned by appuser: a volume mounted on a path missing
+# from the image is created root-owned and the non-root process couldn't write to it.
+RUN mkdir -p /app/wwwroot/uploads && chown -R appuser:appgroup /app/wwwroot
 USER appuser
 
 ENV ASPNETCORE_URLS=http://+:8080

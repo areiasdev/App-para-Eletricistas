@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TecnicoApp.Application.Common.Email;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Domain.Enums;
 
@@ -64,35 +65,22 @@ public class ClientPortalController(
 
         // Send email
         var portalUrl = $"{appSettings.BaseUrl}/portal/login?token={rawToken}";
-        var html = $"""
-            <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1a1a1a">
-              <div style="margin-bottom:24px">
-                <span style="background:#f59e0b;color:#1c1917;font-size:14px;font-weight:700;
-                  padding:6px 10px;border-radius:6px">T TécnicoApp</span>
-              </div>
-              <h1 style="font-size:22px;font-weight:700;margin-bottom:8px">
-                O seu portal de cliente está disponível
-              </h1>
-              <p style="color:#555;margin-bottom:24px">
-                Pode consultar os seus equipamentos, intervenções e orçamentos a qualquer momento.
-                O acesso é válido por 7 dias.
-              </p>
-              <a href="{portalUrl}"
-                style="display:inline-block;background:#f59e0b;color:#1c1917;font-weight:700;
-                  font-size:15px;padding:12px 28px;border-radius:8px;text-decoration:none">
-                Aceder ao portal →
-              </a>
-              <p style="color:#999;font-size:12px;margin-top:32px">
-                Se não reconhece este email, pode ignorá-lo com segurança.
-              </p>
-            </div>
+        var owner = ownerId == callingUser.Id
+            ? callingUser
+            : await db.Users.AsNoTracking().FirstAsync(u => u.Id == ownerId, ct);
+        var branding = EmailBranding.ForCompany(owner);
+        var body = $"""
+            <h1 style="font-size:22px;font-weight:700;margin:0 0 8px;color:#1a1a1a;">O seu portal de cliente está disponível</h1>
+            <p style="margin:0 0 24px;">Pode consultar os seus equipamentos, intervenções e orçamentos com <strong>{EmailLayout.Encode(branding.SenderName)}</strong> a qualquer momento. O acesso é válido por 7 dias.</p>
+            {EmailLayout.Button(branding, portalUrl, "Aceder ao portal →")}
+            <p style="margin:0;color:#9ca3af;font-size:12px;">Se não reconhece este email, pode ignorá-lo com segurança.</p>
             """;
 
         await emailService.SendAsync(new EmailMessage(
             To: client.Email,
             ToName: client.Name,
-            Subject: "Acesso ao seu portal de cliente — TécnicoApp",
-            HtmlBody: html), ct);
+            Subject: EmailLayout.SubjectSafe($"Acesso ao seu portal de cliente — {branding.SenderName}"),
+            HtmlBody: EmailLayout.Render(branding, body, $"Enviado por {branding.SenderName}")), ct);
 
         return Ok(new { message = $"Email enviado para {client.Email}." });
     }

@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
+import { API_BASE_URL } from '@/lib/config'
 
-const BASE_URL = 'http://localhost:5000/api/v1'
+const BASE_URL = `${API_BASE_URL}/api/v1`
 
 // Default handlers — individual tests override these with server.use(...) as needed.
 export const handlers = [

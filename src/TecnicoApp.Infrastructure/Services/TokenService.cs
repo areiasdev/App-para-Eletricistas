@@ -35,6 +35,11 @@ public sealed class TokenService(IConfiguration configuration) : ITokenService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    private const int DefaultRefreshTokenDays = 30;
+
+    public TimeSpan RefreshTokenLifetime => TimeSpan.FromDays(
+        int.TryParse(configuration["Jwt:RefreshTokenDays"], out var days) && days > 0 ? days : DefaultRefreshTokenDays);
+
     public string GenerateRefreshToken()
         => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 

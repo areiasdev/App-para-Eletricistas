@@ -19,7 +19,6 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
 
             var problem = new
             {
-                type = "https://tecnicoapp.pt/errors/validation",
                 title = "Erro de validação",
                 status = 400,
                 errors = ex.Errors,
@@ -35,7 +34,6 @@ public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddlewa
 
             var problem = new
             {
-                type = "https://tecnicoapp.pt/errors/internal",
                 title = "Ocorreu um erro inesperado.",
                 status = 500,
                 traceId = context.TraceIdentifier

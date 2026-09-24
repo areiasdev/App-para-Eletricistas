@@ -2,6 +2,8 @@ using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TecnicoApp.Application.Common.Email;
+using TecnicoApp.Application.Common.Formatting;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Quotes.DTOs;
 using TecnicoApp.Application.Common.Extensions;
@@ -44,9 +46,7 @@ public class SendQuoteEmailCommandHandler(
         if (user is null) return Result.Unauthorized();
 
         // Generate PDF
-        var lineDtos = quote.Lines.Select(l => new QuoteLineDto(
-            l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
-            Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero))).ToList();
+        var lineDtos = quote.Lines.ToLineDtos();
 
         var logoBytes = await fileStorage.ReadLogoBytesAsync(user.LogoUrl, cancellationToken);
 
@@ -58,7 +58,7 @@ public class SendQuoteEmailCommandHandler(
             ClientName: quote.Client.Name,
             ClientEmail: quote.Client.Email,
             ClientPhone: quote.Client.Phone,
-            ClientNif: null,
+            ClientNif: quote.Client.Nif,
             IssuerName: user.FullName,
             IssuerCompany: user.CompanyName,
             IssuerEmail: user.Email,
@@ -81,63 +81,17 @@ public class SendQuoteEmailCommandHandler(
             return Result.Error("Não foi possível gerar o PDF do orçamento.");
         }
 
-        // Build HTML email — HTML-encode user-supplied strings to prevent injection
-        var issuerDisplay = System.Net.WebUtility.HtmlEncode(user.CompanyName ?? user.FullName);
-        var clientDisplayName = System.Net.WebUtility.HtmlEncode(quote.Client.Name);
-        var totalFormatted = quote.Total.ToString("C", new System.Globalization.CultureInfo("pt-PT"));
-        var validStr = quote.ValidUntil.HasValue
-            ? quote.ValidUntil.Value.ToString("d 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("pt-PT"))
-            : "—";
-
-        var html = $"""
-            <!DOCTYPE html>
-            <html lang="pt">
-            <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-            <body style="margin:0;padding:0;background:#f7f7f4;font-family:'Helvetica Neue',Arial,sans-serif;">
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f4;padding:40px 0;">
-                <tr><td align="center">
-                  <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
-                    <tr>
-                      <td style="background:#17171a;padding:24px 32px;text-align:center;">
-                        <span style="color:#f59e0b;font-size:20px;font-weight:700;">T TécnicoApp</span>
-                      </td>
-                    </tr>
-                    <tr><td style="padding:32px;">
-                      <p style="margin:0 0 8px;color:#6b7280;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Orçamento</p>
-                      <p style="margin:0 0 24px;color:#1a1a1a;font-size:28px;font-weight:700;font-family:monospace;">{quote.Number}</p>
-                      <p style="margin:0 0 16px;color:#374151;font-size:15px;">Olá {clientDisplayName},</p>
-                      <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
-                        <strong>{issuerDisplay}</strong> enviou-te um orçamento. Encontras o PDF em anexo com todos os detalhes.
-                      </p>
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:24px;">
-                        <tr><td style="padding:16px 20px;">
-                          <table width="100%">
-                            <tr>
-                              <td style="color:#6b7280;font-size:13px;padding:4px 0;">Total</td>
-                              <td align="right" style="color:#1a1a1a;font-size:16px;font-weight:700;padding:4px 0;">{totalFormatted}</td>
-                            </tr>
-                            <tr>
-                              <td style="color:#6b7280;font-size:13px;padding:4px 0;">Válido até</td>
-                              <td align="right" style="color:#374151;font-size:13px;padding:4px 0;">{validStr}</td>
-                            </tr>
-                          </table>
-                        </td></tr>
-                      </table>
-                      <p style="margin:0 0 8px;color:#6b7280;font-size:13px;line-height:1.6;">
-                        Para qualquer questão, contacta diretamente <strong>{issuerDisplay}</strong>.
-                        <!-- issuerDisplay and clientDisplayName are HTML-encoded -->
-                      </p>
-                    </td></tr>
-                    <tr>
-                      <td style="background:#f9fafb;padding:16px 32px;text-align:center;border-top:1px solid #e5e7eb;">
-                        <p style="margin:0;color:#9ca3af;font-size:11px;">Enviado via TécnicoApp &middot; tecnicoapp.pt</p>
-                      </td>
-                    </tr>
-                  </table>
-                </td></tr>
-              </table>
-            </body>
-            </html>
+        var branding = EmailBranding.ForCompany(user);
+        var totalFormatted = PtFormat.Currency(quote.Total);
+        var body = $"""
+            <p style="margin:0 0 8px;color:#6b7280;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Orçamento</p>
+            <p style="margin:0 0 24px;color:#1a1a1a;font-size:28px;font-weight:700;font-family:monospace;">{EmailLayout.Encode(quote.Number)}</p>
+            <p style="margin:0 0 16px;">Olá {EmailLayout.Encode(quote.Client.Name)},</p>
+            <p style="margin:0 0 24px;"><strong>{EmailLayout.Encode(branding.SenderName)}</strong> enviou-te um orçamento. Encontras o PDF em anexo com todos os detalhes.</p>
+            {EmailLayout.SummaryTable(
+                ("Total", totalFormatted),
+                ("Válido até", quote.ValidUntil.HasValue ? PtFormat.LongDate(quote.ValidUntil.Value) : "—"))}
+            <p style="margin:0;color:#6b7280;font-size:13px;">Para qualquer questão, contacta diretamente <strong>{EmailLayout.Encode(branding.SenderName)}</strong>.</p>
             """;
 
         var attachment = new EmailAttachment(
@@ -145,13 +99,11 @@ public class SendQuoteEmailCommandHandler(
             Content: pdfBytes,
             ContentType: "application/pdf");
 
-        // Use plain issuerDisplay (non-HTML-encoded) for plain-text subject
-        var issuerPlain = user.CompanyName ?? user.FullName;
         await emailService.SendAsync(new EmailMessage(
             To: quote.Client.Email,
             ToName: quote.Client.Name,
-            Subject: $"Orçamento {quote.Number} de {issuerPlain.Replace('\n', ' ').Replace('\r', ' ')}",
-            HtmlBody: html,
+            Subject: EmailLayout.SubjectSafe($"Orçamento {quote.Number} de {branding.SenderName}"),
+            HtmlBody: EmailLayout.Render(branding, body, $"Enviado por {branding.SenderName}"),
             Attachments: [attachment]
         ), cancellationToken);
 
@@ -168,7 +120,7 @@ public class SendQuoteEmailCommandHandler(
             try
             {
                 var waMessage =
-                    $"Olá {quote.Client.Name}, {issuerPlain} enviou-te um orçamento ({quote.Number}) " +
+                    $"Olá {quote.Client.Name}, {branding.SenderName} enviou-te um orçamento ({quote.Number}) " +
                     $"no valor de {totalFormatted}. Consulta o teu email para o PDF.";
 
                 await notificationService.SendWhatsAppAsync(quote.Client.Phone, waMessage, cancellationToken);

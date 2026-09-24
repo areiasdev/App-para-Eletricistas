@@ -39,9 +39,7 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
 
         // Generate quote number: ORC-YYYY-NNNN
         var year = DateTime.UtcNow.Year;
-        var count = await db.Quotes
-            .CountAsync(q => q.UserId == ownerId && q.CreatedAt.Year == year, cancellationToken);
-        var number = DocumentNumberExtensions.FormatDocumentNumber("ORC", year, count);
+        var number = await db.NextQuoteNumberAsync(ownerId, year, cancellationToken);
 
         var quote = new Quote
         {
@@ -70,35 +68,12 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
             // Unique constraint violation on Number — concurrent request generated same number
             logger.LogWarning("Quote number conflict for {Number}, retrying.", number);
             db.Quotes.Remove(quote);
-            var retryCount = await db.Quotes
-                .CountAsync(q => q.UserId == ownerId && q.CreatedAt.Year == year, cancellationToken);
-            quote.Number = DocumentNumberExtensions.FormatDocumentNumber("ORC", year, retryCount);
+            quote.Number = await db.NextQuoteNumberAsync(ownerId, year, cancellationToken);
             db.Quotes.Add(quote);
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        var dto = new QuoteDto(
-            quote.Id,
-            quote.Number,
-            quote.Status,
-            quote.Discount,
-            quote.Notes,
-            quote.ValidUntil,
-            quote.SignedAt,
-            quote.PdfUrl,
-            quote.ClientId,
-            client.Name,
-            quote.SubTotal,
-            quote.VatTotal,
-            quote.Total,
-            quote.Lines
-                .Select(l => new QuoteLineDto(
-                    l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
-                    Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
-                .ToList(),
-            quote.CreatedAt,
-            quote.EmailSentAt
-        );
+        var dto = quote.ToDto(client.Name);
 
         return Result.Success(dto);
     }

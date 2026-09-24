@@ -9,6 +9,7 @@ import { authApi } from '@/lib/api/auth'
 import { loginSchema, type LoginFormValues } from '@/lib/validations/auth'
 import { useAuthStore } from '@/stores/authStore'
 import { getErrorMessage } from '@/lib/api/client'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -41,9 +42,9 @@ export default function LoginPage() {
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            T
+            {APP_INITIAL}
           </span>
-          <span className="text-sm font-semibold text-white/90 tracking-tight">TécnicoApp</span>
+          <span className="text-sm font-semibold text-white/90 tracking-tight">{APP_NAME}</span>
         </div>
 
         <div className="space-y-3">
@@ -56,7 +57,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs" style={{ color: 'rgba(255,255,255,0.25)' }}>
-          © 2026 TécnicoApp
+          © {new Date().getFullYear()} {APP_NAME}
         </p>
       </div>
 
@@ -70,10 +71,10 @@ export default function LoginPage() {
               className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
               style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
             >
-              T
+              {APP_INITIAL}
             </span>
             <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-ink)' }}>
-              TécnicoApp
+              {APP_NAME}
             </span>
           </div>
 

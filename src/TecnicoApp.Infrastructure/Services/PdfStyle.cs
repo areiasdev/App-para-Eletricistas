@@ -23,9 +23,11 @@ internal static class PdfStyle
     public static string ResolveBrandColor(string? issuerBrandColorHex) =>
         string.IsNullOrWhiteSpace(issuerBrandColorHex) ? AmberHex : issuerBrandColorHex;
 
+    /// <param name="issuerName">Company that issued the document — the footer is the client's
+    /// view of who produced it, so it names the company, not this software.</param>
     /// <param name="disclaimer">Extra small-print line rendered above the standard footer row
     /// (e.g. the invoice's "not AT-certified" notice). Null/empty for documents that don't need one.</param>
-    public static Action<IContainer> ComposeFooter(string? disclaimer = null) => container =>
+    public static Action<IContainer> ComposeFooter(string issuerName, string? disclaimer = null) => container =>
     {
         container.Column(col =>
         {
@@ -38,7 +40,7 @@ internal static class PdfStyle
             col.Item().BorderTop(1).BorderColor(LineHex).PaddingTop(8)
                 .Row(row =>
                 {
-                    row.RelativeItem().Text("Documento gerado por TécnicoApp").FontColor(MutedHex).FontSize(8);
+                    row.RelativeItem().Text(issuerName).FontColor(MutedHex).FontSize(8);
                     row.RelativeItem().AlignRight()
                         .Text(t =>
                         {

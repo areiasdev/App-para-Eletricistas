@@ -1,5 +1,6 @@
 'use client'
 
+import { isAxiosError } from 'axios'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
@@ -9,6 +10,15 @@ import { authApi } from '@/lib/api/auth'
 import { registerSchema, type RegisterFormValues } from '@/lib/validations/auth'
 import { useAuthStore } from '@/stores/authStore'
 import { getErrorMessage } from '@/lib/api/client'
+import { APP_INITIAL, APP_NAME } from '@/lib/config'
+
+// The API closes self-registration once the first account (the Owner) exists — everyone
+// else joins through a team invite — and answers 403 without a body.
+function registerErrorMessage(error: unknown): string {
+  if (isAxiosError(error) && error.response?.status === 403)
+    return 'O registo está fechado nesta instalação. Pede um convite ao administrador da tua empresa.'
+  return getErrorMessage(error)
+}
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -36,10 +46,10 @@ export default function RegisterPage() {
             className="flex items-center justify-center w-8 h-8 rounded-md text-base font-bold"
             style={{ backgroundColor: 'var(--color-brand-500)', color: 'var(--color-sidebar)' }}
           >
-            T
+            {APP_INITIAL}
           </span>
           <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--color-ink)' }}>
-            TécnicoApp
+            {APP_NAME}
           </span>
         </div>
 
@@ -99,7 +109,7 @@ export default function RegisterPage() {
 
             {registerMutation.isError && (
               <p className="text-sm rounded-lg px-4 py-3 border" style={{ color: 'var(--color-danger-600)', backgroundColor: 'var(--color-danger-50)', borderColor: 'var(--color-danger-200)' }}>
-                {getErrorMessage(registerMutation.error)}
+                {registerErrorMessage(registerMutation.error)}
               </p>
             )}
 

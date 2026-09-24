@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Outfit, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
+import { APP_NAME } from '@/lib/config'
 
 const outfit = Outfit({
   variable: '--font-outfit',
@@ -16,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'TécnicoApp',
+  title: APP_NAME,
   description: 'BackOffice para empresas de construção e manutenção — clientes, orçamentos, equipamentos e intervenções.',
 }
 

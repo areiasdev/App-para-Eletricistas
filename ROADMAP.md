@@ -1,136 +1,59 @@
-# TécnicoApp — Roadmap & Próximos Passos
+# TécnicoApp — Roadmap
 
-## Estado Actual (v0.1 — Setup + Auth)
+Backlog priorizado a partir da revisão completa de setembro de 2026 — ver
+[`docs/REVIEW-2026-09.md`](docs/REVIEW-2026-09.md) para o detalhe e a justificação de cada ponto.
 
-### ✅ Feito
-- Solução .NET 10 com Clean Architecture (Domain, Application, Infrastructure, API)
-- Entidades de domínio: User, Client, Quote, QuoteLine, Equipment, Intervention
-- BaseEntity com IsDeleted (soft delete), ModifiedBy, ModifiedAt
-- Auth completa: Register, Login, RefreshToken (JWT 60min + Refresh 30 dias)
-- EF Core configurações: jsonb para fotos, índices, query filters para soft delete
-- Swagger com Bearer auth
-- Serilog + ExceptionMiddleware (RFC 7807 ProblemDetails)
-- Docker Compose com PostgreSQL 16
-- Next.js 14 com App Router, Tailwind, shadcn/ui (base)
-- TanStack Query + Zustand auth store
-- Páginas /login e /register com validação Zod
-- Axios client com interceptor de refresh token automático
-- Formatters PT-PT (moeda, data, validação NIF)
+## Estado atual
 
----
+Em produção por instalação (uma empresa = uma instalação): clientes, equipamentos, intervenções,
+orçamentos (PDF, email, assinatura), faturação a partir de orçamento aceite (PDF **não certificado
+AT**), pagamento online Stripe (cartão + MB WAY), portal do cliente por magic link, equipa com
+papéis (Owner/Admin/Technician/Commercial), auditoria, lembretes por email/WhatsApp, onboarding.
 
-## Próximas Versões
+## P0 — Bloqueia uso real para faturação em Portugal
 
-### v0.2 — Clientes (próximo)
-**Backend:**
-- [ ] `GetClientsQuery` — lista paginada com pesquisa por nome/email
-- [ ] `GetClientByIdQuery` — detalhe com histórico (orçamentos, intervenções, equipamentos)
-- [ ] `CreateClientCommand` + validator
-- [ ] `UpdateClientCommand` + validator
-- [ ] `DeleteClientCommand` (soft delete)
-- [ ] `ClientsController` com `/api/v1/clients`
-- [ ] Primeira migration EF Core (`InitialCreate`)
+- [ ] Decidir e aplicar **desconto antes do IVA** (hoje o desconto é abatido depois do IVA → IVA sobreavaliado). Requer regra versionada para não alterar faturas já emitidas.
+- [ ] **Integração com software de faturação certificado** (Moloni / InvoiceXpress / Vendus / …) para emitir o documento fiscal (ATCUD, QR, SAF-T) a partir do "Faturar".
+- [ ] Quadro de **IVA por taxa** no PDF da fatura (art. 36.º CIVA).
+- [ ] **Autoliquidação** (art. 2.º n.º 1 j) CIVA) e **motivo de isenção** por linha; taxa 6% (verba 2.27) para reabilitação.
+- [ ] **Retenção na fonte** (IRS categoria B).
+- [ ] **Nota de crédito** em vez de "cancelar"; **recibos**; pagamentos parciais.
+- [ ] Morada do cliente / da obra nos documentos; alvará / registo DGEG da empresa no cabeçalho.
 
-**Frontend:**
-- [ ] `/dashboard/clientes` — listagem com pesquisa e paginação
-- [ ] `/dashboard/clientes/novo` — formulário de criação
-- [ ] `/dashboard/clientes/[id]` — página de detalhe
-- [ ] `DataTable` component reutilizável (shadcn)
-- [ ] Layout do dashboard com sidebar e navegação
-- [ ] Hook `useClients`
+## P1 — Trabalho de campo (eletricistas / manutenção)
 
-### v0.3 — Orçamentos (módulo core)
-**Backend:**
-- [ ] Numeração automática: `ORC-2025-0001` (sequência por userId + ano)
-- [ ] `CreateQuoteCommand` com linhas, IVA, desconto
-- [ ] `UpdateQuoteCommand` (só Draft)
-- [ ] `SendQuoteCommand` — muda estado para Sent, envia email
-- [ ] `UpdateQuoteStatusCommand` — transições de estado válidas
-- [ ] `GetQuotesQuery` — lista paginada com filtro por estado
-- [ ] `QuotesController`
+- [ ] Fotos pela câmara do telemóvel (upload real em vez de URL).
+- [ ] Folha de obra / relatório de intervenção em PDF com **assinatura do cliente** no fim.
+- [ ] Registo de **ensaios elétricos** (isolamento, terra, diferenciais, continuidade) + Termo de Responsabilidade / Ficha Eletrotécnica.
+- [ ] **Faturar intervenção sem orçamento** (horas + materiais usados).
+- [ ] Registo de **horas** por técnico, preço/hora, deslocação; corrigir dupla contagem de receita no relatório de rentabilidade.
+- [ ] **Catálogo** de materiais/serviços com custo, preço, unidade (un, m, m², h) e margem.
+- [ ] Agenda / despacho por técnico.
+- [ ] **Contratos de manutenção** com periodicidade (avançar `NextMaintenance` automaticamente) e faturação recorrente.
+- [ ] PWA com modo offline.
 
-**Frontend:**
-- [ ] `/dashboard/orcamentos` — listagem com badges de estado
-- [ ] `/dashboard/orcamentos/novo` — wizard: cliente → linhas → preview
-- [ ] Componente `QuoteStatusBadge`
-- [ ] Componente `QuoteLineEditor` (add/remove/edit linhas)
+## P2 — Empresas de construção (obras)
 
-### v0.4 — PDF + Email
-**Backend:**
-- [ ] Adicionar QuestPDF à Infrastructure
-- [ ] `PdfService` — gera PDF com logo, dados empresa/cliente, NIF, linhas, IVA, total
-- [ ] `EmailService` — Resend ou SendGrid via HTTP
-- [ ] `GenerateQuotePdfCommand`
-- [ ] Upload PDF para Azure Blob ou S3
+- [ ] Entidade **Obra/Projeto** (morada própria, orçamentos, intervenções, faturas, custos).
+- [ ] Orçamento por **capítulos** / mapa de quantidades, itens opcionais, **revisões**.
+- [ ] **Autos de medição** (faturação por % de execução), **retenção de garantia**, adiantamentos.
+- [ ] Trabalhos a mais / a menos ligados ao orçamento original.
+- [ ] Fornecedores, encomendas, subempreiteiros; orçamentado vs. real por obra.
 
-**Frontend:**
-- [ ] Botão "Descarregar PDF" na página do orçamento
-- [ ] Botão "Enviar por Email"
+## Técnico
 
-### v0.5 — Dashboard
-**Backend:**
-- [ ] `GetDashboardQuery` — total orçamentos mês (€ e qtd), taxa aceitação, próximas manutenções
-- [ ] `DashboardController`
+- [ ] Coluna `Position` nas linhas de orçamento/fatura (ordem estável).
+- [ ] Atualizar EF Core / JwtBearer / Serilog para 10.x e fixar versões (Central Package Management).
+- [ ] CI (build + testes + lint) em cada PR.
+- [ ] Backups automáticos do Postgres por instalação.
+- [ ] Autorização por papel/tenant centralizada (behaviour MediatR ou policies + query filter por tenant).
+- [ ] Audience/esquema JWT próprio para o portal do cliente.
+- [ ] Mover lógica do `ClientPortalController` para handlers MediatR.
+- [ ] `timestamptz` + UTC em todo o lado (remover `EnableLegacyTimestampBehavior`).
 
-**Frontend:**
-- [ ] Cards de métricas no dashboard
-- [ ] Gráfico de orçamentos por estado (recharts ou chart.js)
-- [ ] Lista de próximas manutenções
+## Notas técnicas
 
-### v0.6 — Equipamentos + Alertas
-**Backend:**
-- [ ] CRUD Equipamentos (`EquipmentController`)
-- [ ] Adicionar Hangfire à Infrastructure
-- [ ] Job: `MaintenanceAlertJob` — corre diariamente, envia email 7 dias antes
-- [ ] Toggle por cliente (enviar alerta ao cliente sim/não)
-
-### v0.7 — Intervenções / Ordens de Serviço
-**Backend:**
-- [ ] CRUD Intervenções
-- [ ] Associação a equipamentos (many-to-many)
-- [ ] PDF de relatório de intervenção (QuestPDF)
-- [ ] Upload de fotos antes/depois
-
-### v0.8 — Assinatura Digital (Pro)
-**Backend:**
-- [ ] Token único por orçamento (GUID urlsafe, expira em 72h)
-- [ ] `POST /api/v1/quotes/{id}/sign` — endpoint público, guarda imagem da assinatura
-- [ ] Reembed assinatura no PDF final
-- [ ] Guard de plano: só Pro e Team
-
-**Frontend:**
-- [ ] `/sign/[token]` — página pública, canvas de assinatura
-- [ ] Componente de assinatura touch-friendly
-
-### v0.9 — Stripe + Planos
-**Backend:**
-- [ ] Stripe webhook handler
-- [ ] `SubscriptionService` — criar/cancelar subscrição
-- [ ] Guards de plano em commands críticos (ex: limite de 5 orçamentos/mês no Free)
-- [ ] `PlansController`
-
-**Frontend:**
-- [ ] Página de planos e preços
-- [ ] Stripe Checkout redirect
-- [ ] Banner de upgrade quando limite atingido
-
----
-
-## Decisões de Arquitectura Tomadas
-
-| Decisão | Escolha | Razão |
-|---|---|---|
-| Soft delete | `IsDeleted` em BaseEntity | Query filters globais, simples |
-| Auth | JWT custom (sem ASP.NET Identity) | Mais leve, controlo total, compatível com mobile futuro |
-| ORM | EF Core 8 com Npgsql | Postgres jsonb nativo para fotos/materiais |
-| Erros | Ardalis.Result (não exceções) | Erros de negócio explícitos no tipo de retorno |
-| Passwords | BCrypt.Net-Next | Padrão da indústria, simples |
-| Solution format | `.slnx` (.NET 10) | `dotnet build TecnicoApp.slnx` |
-
-## Notas Técnicas Importantes
-
-- **Build:** `dotnet build TecnicoApp.slnx` (não `.sln`)
-- **Migrations:** sempre com `--project src/TecnicoApp.Infrastructure --startup-project src/TecnicoApp.API`
-- **AutoMapper removido** — vulnerabilidade NU1903; usar mapeamento manual com records
-- **Frontend env:** `NEXT_PUBLIC_API_URL` no `.env.local` (padrão: `http://localhost:5000`)
-- **Porta API dev:** confirmar em `launchSettings.json` do API project
+- **Build:** `dotnet build TecnicoApp.slnx`
+- **Migrations:** `dotnet ef migrations add <Nome> --project src/TecnicoApp.Infrastructure --startup-project src/TecnicoApp.API` (aplicadas automaticamente no arranque da API)
+- **Frontend env:** `NEXT_PUBLIC_API_URL` (padrão `http://localhost:5092`), `NEXT_PUBLIC_APP_NAME`
+- **Contas:** só a primeira conta se regista livremente (fica Owner); as restantes entram por convite (`App:AllowOpenRegistration`).

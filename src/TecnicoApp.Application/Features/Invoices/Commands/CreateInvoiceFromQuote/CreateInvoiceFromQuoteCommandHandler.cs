@@ -13,6 +13,7 @@ namespace TecnicoApp.Application.Features.Invoices.Commands.CreateInvoiceFromQuo
 public class CreateInvoiceFromQuoteCommandHandler(
     IAppDbContext db,
     ICurrentUserService currentUser,
+    IAppSettings appSettings,
     ILogger<CreateInvoiceFromQuoteCommandHandler> logger)
     : IRequestHandler<CreateInvoiceFromQuoteCommand, Result<InvoiceDto>>
 {
@@ -54,9 +55,7 @@ public class CreateInvoiceFromQuoteCommandHandler(
 
         // Generate invoice number: FT-YYYY-NNNN
         var year = DateTime.UtcNow.Year;
-        var count = await db.Invoices
-            .CountAsync(i => i.UserId == ownerId && i.CreatedAt.Year == year, cancellationToken);
-        var number = DocumentNumberExtensions.FormatDocumentNumber("FT", year, count);
+        var number = await db.NextInvoiceNumberAsync(ownerId, year, cancellationToken);
 
         var issuedAt = DateTime.UtcNow;
 
@@ -64,7 +63,7 @@ public class CreateInvoiceFromQuoteCommandHandler(
         {
             Number = number,
             IssuedAt = issuedAt,
-            DueDate = issuedAt.AddDays(30),
+            DueDate = issuedAt.AddDays(appSettings.InvoicePaymentTermDays),
             Notes = quote.Notes,
             Discount = quote.Discount,
             QuoteId = quote.Id,
@@ -91,36 +90,12 @@ public class CreateInvoiceFromQuoteCommandHandler(
             // Unique constraint violation on Number — concurrent request generated same number
             logger.LogWarning("Invoice number conflict for {Number}, retrying.", number);
             db.Invoices.Remove(invoice);
-            var retryCount = await db.Invoices
-                .CountAsync(i => i.UserId == ownerId && i.CreatedAt.Year == year, cancellationToken);
-            invoice.Number = DocumentNumberExtensions.FormatDocumentNumber("FT", year, retryCount);
+            invoice.Number = await db.NextInvoiceNumberAsync(ownerId, year, cancellationToken);
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync(cancellationToken);
         }
 
-        var dto = new InvoiceDto(
-            invoice.Id,
-            invoice.Number,
-            invoice.Status,
-            invoice.Discount,
-            invoice.Notes,
-            invoice.IssuedAt,
-            invoice.DueDate,
-            invoice.PaidAt,
-            invoice.ClientId,
-            quote.Client.Name,
-            invoice.QuoteId,
-            quote.Number,
-            invoice.SubTotal,
-            invoice.VatTotal,
-            invoice.Total,
-            invoice.Lines
-                .Select(l => new InvoiceLineDto(
-                    l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate,
-                    Math.Round(l.Quantity * l.UnitPrice * (1 + l.VatRate / 100), 2, MidpointRounding.AwayFromZero)))
-                .ToList(),
-            invoice.CreatedAt
-        );
+        var dto = invoice.ToDto(quote.Client.Name, quote.Number);
 
         return Result.Success(dto);
     }

@@ -108,4 +108,24 @@ public class UpdateInvoiceStatusCommandHandlerTests
         saved.Status.Should().Be(InvoiceStatus.Cancelled);
         saved.PaidAt.Should().BeNull();
     }
+
+    [Fact]
+    public async Task Handle_cancelling_releases_source_quote_so_it_can_be_invoiced_again()
+    {
+        using var db = TestDb.Create();
+        var (owner, _, client, invoice) = SeedInvoice(db);
+        var quote = new Quote
+        {
+            Number = "ORC-2026-0001", ClientId = client.Id, UserId = owner.Id, Status = QuoteStatus.Invoiced,
+        };
+        db.Quotes.Add(quote);
+        invoice.QuoteId = quote.Id;
+        await db.SaveChangesAsync(CancellationToken.None);
+
+        var handler = new UpdateInvoiceStatusCommandHandler(db, AsUser(owner));
+        var result = await handler.Handle(new UpdateInvoiceStatusCommand(invoice.Id, InvoiceStatus.Cancelled), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        db.Quotes.Single().Status.Should().Be(QuoteStatus.Accepted);
+    }
 }

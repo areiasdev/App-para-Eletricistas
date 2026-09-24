@@ -24,6 +24,7 @@ public class StripeCheckoutService : IStripeCheckoutService
         string description,
         string successUrl,
         string cancelUrl,
+        string clientReferenceId,
         CancellationToken cancellationToken = default)
     {
         var options = new SessionCreateOptions
@@ -32,6 +33,7 @@ public class StripeCheckoutService : IStripeCheckoutService
             Mode = "payment",
             SuccessUrl = successUrl,
             CancelUrl = cancelUrl,
+            ClientReferenceId = clientReferenceId,
             LineItems = new List<SessionLineItemOptions>
             {
                 new()
@@ -40,7 +42,8 @@ public class StripeCheckoutService : IStripeCheckoutService
                     PriceData = new SessionLineItemPriceDataOptions
                     {
                         Currency = "eur",
-                        UnitAmount = (long)(amountEur * 100),
+                        // Round, don't truncate — (long)(x * 100) silently drops a cent on some decimal totals.
+                        UnitAmount = (long)Math.Round(amountEur * 100, MidpointRounding.AwayFromZero),
                         ProductData = new SessionLineItemPriceDataProductDataOptions
                         {
                             Name = description

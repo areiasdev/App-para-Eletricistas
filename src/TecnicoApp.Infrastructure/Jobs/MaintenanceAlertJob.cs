@@ -1,6 +1,8 @@
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TecnicoApp.Application.Common.Email;
+using TecnicoApp.Application.Common.Formatting;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Infrastructure.Persistence;
 
@@ -9,10 +11,14 @@ namespace TecnicoApp.Infrastructure.Jobs;
 public class MaintenanceAlertJob(
     AppDbContext db,
     IEmailService emailService,
+    IAppSettings appSettings,
     ILogger<MaintenanceAlertJob> logger)
 {
+    /// <summary>How far ahead of NextMaintenance the owner is alerted.</summary>
+    public const int DaysAhead = 7;
+
     /// <summary>
-    /// Runs daily. Sends one email per equipment whose NextMaintenance is exactly 7 days away.
+    /// Runs daily. Sends one email per equipment whose NextMaintenance is exactly <see cref="DaysAhead"/> days away.
     /// Uses a window of ±12h around "today + 7 days" to handle timing drift.
     /// </summary>
     /// <remarks>
@@ -23,7 +29,7 @@ public class MaintenanceAlertJob(
     [AutomaticRetry(Attempts = 0)]
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        var targetDate = DateTime.UtcNow.Date.AddDays(7);
+        var targetDate = DateTime.UtcNow.Date.AddDays(DaysAhead);
         var windowStart = targetDate;
         var windowEnd   = targetDate.AddDays(1);
 
@@ -52,9 +58,9 @@ public class MaintenanceAlertJob(
 
             try
             {
-                var subject = $"🔧 Manutenção agendada em 7 dias — {eq.Type}";
+                var subject = EmailLayout.SubjectSafe($"🔧 Manutenção agendada em {DaysAhead} dias — {eq.Client.Name} · {eq.Type}");
                 var html = BuildEmailHtml(eq.Type, eq.Brand, eq.Model, eq.Client.Name,
-                    eq.NextMaintenance!.Value, user.FullName);
+                    eq.NextMaintenance!.Value, user.FullName, appSettings.BaseUrl, eq.Id, appSettings.ProductName);
 
                 await emailService.SendAsync(
                     new EmailMessage(user.Email, user.FullName, subject, html), cancellationToken);
@@ -79,44 +85,22 @@ public class MaintenanceAlertJob(
 
     private static string BuildEmailHtml(
         string type, string? brand, string? model,
-        string clientName, DateTime nextMaintenance, string userName)
+        string clientName, DateTime nextMaintenance, string userName,
+        string baseUrl, Guid equipmentId, string productName)
     {
         var equipmentLabel = string.Join(" ", new[] { type, brand, model }.Where(s => !string.IsNullOrWhiteSpace(s)));
-        var dateStr = nextMaintenance.ToString("dd/MM/yyyy");
+        var branding = new EmailBranding(productName);
 
-        return $"""
-            <!DOCTYPE html>
-            <html>
-            <body style="font-family:Arial,sans-serif;background:#f7f7f4;margin:0;padding:20px">
-              <div style="max-width:560px;margin:0 auto;background:white;border-radius:12px;overflow:hidden">
-                <div style="background:#f59e0b;padding:24px 32px">
-                  <h1 style="margin:0;color:white;font-size:20px">T TécnicoApp</h1>
-                </div>
-                <div style="padding:32px">
-                  <p style="color:#6b7280;margin:0 0 8px">Olá, <strong style="color:#1a1a1a">{userName}</strong></p>
-                  <h2 style="margin:0 0 24px;color:#1a1a1a;font-size:18px">
-                    Manutenção agendada para daqui a 7 dias
-                  </h2>
-                  <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:20px;margin-bottom:24px">
-                    <p style="margin:0 0 4px;font-size:14px;color:#92400e"><strong>Equipamento</strong></p>
-                    <p style="margin:0 0 12px;font-size:16px;color:#1a1a1a">{equipmentLabel}</p>
-                    <p style="margin:0 0 4px;font-size:14px;color:#92400e"><strong>Cliente</strong></p>
-                    <p style="margin:0 0 12px;font-size:16px;color:#1a1a1a">{clientName}</p>
-                    <p style="margin:0 0 4px;font-size:14px;color:#92400e"><strong>Data de manutenção</strong></p>
-                    <p style="margin:0;font-size:20px;font-weight:bold;color:#b45309">{dateStr}</p>
-                  </div>
-                  <p style="color:#6b7280;font-size:14px">
-                    Acede ao TécnicoApp para ver os detalhes do equipamento e agendar a intervenção.
-                  </p>
-                </div>
-                <div style="padding:16px 32px;background:#f7f7f4;text-align:center">
-                  <p style="margin:0;font-size:12px;color:#9ca3af">
-                    Enviado pelo TécnicoApp · Gestão de manutenções
-                  </p>
-                </div>
-              </div>
-            </body>
-            </html>
+        var body = $"""
+            <p style="margin:0 0 8px;color:#6b7280;">Olá, <strong style="color:#1a1a1a">{EmailLayout.Encode(userName)}</strong></p>
+            <h2 style="margin:0 0 24px;color:#1a1a1a;font-size:18px">Manutenção agendada para daqui a {DaysAhead} dias</h2>
+            {EmailLayout.SummaryTable(
+                ("Equipamento", equipmentLabel),
+                ("Cliente", clientName),
+                ("Data de manutenção", PtFormat.ShortDate(nextMaintenance)))}
+            {EmailLayout.Button(branding, $"{baseUrl}/dashboard/equipamentos/{equipmentId}", "Ver equipamento")}
             """;
+
+        return EmailLayout.Render(branding, body, $"{productName} · Gestão de manutenções");
     }
 }
