@@ -2,6 +2,7 @@ using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Application.Common.Security;
 using TecnicoApp.Application.Features.Users.DTOs;
 using TecnicoApp.Domain.Enums;
 
@@ -13,13 +14,6 @@ public sealed class UploadLogoCommandHandler(
     IFileStorageService fileStorage)
     : IRequestHandler<UploadLogoCommand, Result<ProfileDto>>
 {
-    private static readonly Dictionary<string, string> ExtensionsByContentType = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["image/png"] = ".png",
-        ["image/jpeg"] = ".jpg",
-        ["image/webp"] = ".webp",
-    };
-
     public async Task<Result<ProfileDto>> Handle(UploadLogoCommand command, CancellationToken cancellationToken)
     {
         var user = await db.Users
@@ -40,7 +34,7 @@ public sealed class UploadLogoCommandHandler(
         if (owner is null)
             return Result.Unauthorized();
 
-        var extension = ExtensionsByContentType[command.ContentType];
+        var extension = ImageFiles.ExtensionsByContentType[command.ContentType];
         var url = await fileStorage.SaveLogoAsync(ownerId, command.FileContent, extension, cancellationToken);
 
         owner.LogoUrl = url;
@@ -56,7 +50,8 @@ public sealed class UploadLogoCommandHandler(
             owner.LogoUrl,
             owner.BrandColor,
             owner.Iban,
-            owner.BankName
+            owner.BankName,
+            owner.DefaultHourlyRate
         ));
     }
 }

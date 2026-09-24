@@ -18,6 +18,8 @@ public class InterventionConfiguration : IEntityTypeConfiguration<Intervention>
         builder.Property(i => i.Description).HasMaxLength(5000);
         builder.Property(i => i.Status).HasConversion<string>();
         builder.Property(i => i.TechnicianNotes).HasMaxLength(5000);
+        builder.Property(i => i.LaborHours).HasColumnType("decimal(8,2)");
+        builder.Property(i => i.SignedByName).HasMaxLength(200);
 
         // List<string> requires explicit value converter + comparer for jsonb
         builder.Property(i => i.Photos)

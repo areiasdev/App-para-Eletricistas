@@ -29,7 +29,11 @@ public record DashboardStatsDto(
     int ScheduledInterventions,
     int InProgressInterventions,
     IReadOnlyList<RecentQuoteDto> RecentQuotes,
-    IReadOnlyList<UpcomingMaintenanceDto> UpcomingMaintenance
+    IReadOnlyList<UpcomingMaintenanceDto> UpcomingMaintenance,
+    decimal OutstandingAmount,   // Issued + Overdue invoices — money still to receive
+    int OverdueInvoices,
+    decimal OverdueAmount,
+    int InterventionsToday
 );
 
 public record RecentQuoteDto(
@@ -123,6 +127,25 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
                 (int)(e.NextMaintenance!.Value.Date - today).TotalDays))
             .ToListAsync(cancellationToken);
 
+        // Receivables — the number an owner checks first every morning.
+        var receivables = await db.Invoices
+            .AsNoTracking()
+            .Where(i => i.UserId == ownerId &&
+                        (i.Status == InvoiceStatus.Issued || i.Status == InvoiceStatus.Overdue))
+            .Select(i => new
+            {
+                i.Status,
+                // Same per-line rounding as DocumentMath (Postgres round() is half-away-from-zero).
+                Total = i.Lines.Sum(l => Math.Round(l.Quantity * l.UnitPrice, 2) + Math.Round(l.Quantity * l.UnitPrice * l.VatRate / 100, 2)) - (i.Discount ?? 0),
+            })
+            .ToListAsync(cancellationToken);
+
+        var tomorrow = today.AddDays(1);
+        var interventionsToday = await db.Interventions
+            .CountAsync(i => i.UserId == ownerId &&
+                             i.ScheduledAt >= today && i.ScheduledAt < tomorrow &&
+                             i.Status != InterventionStatus.Completed, cancellationToken);
+
         var stats = new DashboardStatsDto(
             clientsCount,
             quoteCounts?.Total ?? 0,
@@ -135,7 +158,11 @@ public class GetDashboardStatsQueryHandler(IAppDbContext db, ICurrentUserService
             interventionCounts?.Scheduled ?? 0,
             interventionCounts?.InProgress ?? 0,
             recentQuotes,
-            upcomingMaintenance
+            upcomingMaintenance,
+            receivables.Sum(r => r.Total),
+            receivables.Count(r => r.Status == InvoiceStatus.Overdue),
+            receivables.Where(r => r.Status == InvoiceStatus.Overdue).Sum(r => r.Total),
+            interventionsToday
         );
 
         return Result.Success(stats);

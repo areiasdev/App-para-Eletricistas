@@ -36,7 +36,8 @@ public sealed class GetProfileQueryHandler(IAppDbContext db, ICurrentUserService
             owner?.LogoUrl,
             owner?.BrandColor,
             owner?.Iban,
-            owner?.BankName
+            owner?.BankName,
+            owner?.DefaultHourlyRate
         ));
     }
 }

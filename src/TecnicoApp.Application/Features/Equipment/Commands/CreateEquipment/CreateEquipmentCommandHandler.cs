@@ -34,6 +34,7 @@ public class CreateEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
             SerialNumber = request.SerialNumber,
             InstalledAt = request.InstalledAt,
             NextMaintenance = request.NextMaintenance,
+            MaintenanceIntervalMonths = request.MaintenanceIntervalMonths,
             Notes = request.Notes,
             ClientId = request.ClientId,
             Photos = request.Photos?.ToList() ?? [],
@@ -42,19 +43,6 @@ public class CreateEquipmentCommandHandler(IAppDbContext db, ICurrentUserService
         db.Equipment.Add(equipment);
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new EquipmentDto(
-            equipment.Id,
-            equipment.Type,
-            equipment.Brand,
-            equipment.Model,
-            equipment.SerialNumber,
-            equipment.InstalledAt,
-            equipment.NextMaintenance,
-            equipment.Notes,
-            equipment.Photos,
-            equipment.ClientId,
-            client.Name,
-            equipment.CreatedAt
-        ));
+        return Result.Success(equipment.ToDto(client.Name));
     }
 }

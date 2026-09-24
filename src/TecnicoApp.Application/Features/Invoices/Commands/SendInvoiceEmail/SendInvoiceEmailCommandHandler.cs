@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Email;
 using TecnicoApp.Application.Common.Formatting;
+using TecnicoApp.Application.Common.Documents;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Invoices.DTOs;
 using TecnicoApp.Domain.Enums;
@@ -56,34 +57,9 @@ public class SendInvoiceEmailCommandHandler(
 
         if (user is null) return Result.Unauthorized();
 
-        var lineDtos = invoice.Lines.ToLineDtos();
+        var logoBytes = await fileStorage.ReadUploadBytesAsync(user.LogoUrl, cancellationToken);
 
-        var logoBytes = await fileStorage.ReadLogoBytesAsync(user.LogoUrl, cancellationToken);
-
-        var pdfData = new InvoicePdfData(
-            Number: invoice.Number,
-            IssuedAt: invoice.IssuedAt,
-            DueDate: invoice.DueDate,
-            Notes: invoice.Notes,
-            ClientName: invoice.Client.Name,
-            ClientEmail: invoice.Client.Email,
-            ClientPhone: invoice.Client.Phone,
-            ClientNif: invoice.Client.Nif,
-            IssuerName: user.FullName,
-            IssuerCompany: user.CompanyName,
-            IssuerEmail: user.Email,
-            IssuerPhone: user.Phone,
-            IssuerNif: user.Nif,
-            IssuerLogoBytes: logoBytes,
-            IssuerBrandColorHex: user.BrandColor,
-            IssuerIban: user.Iban,
-            IssuerBankName: user.BankName,
-            Lines: lineDtos,
-            SubTotal: invoice.SubTotal,
-            VatTotal: invoice.VatTotal,
-            Discount: invoice.Discount,
-            Total: invoice.Total
-        );
+        var pdfData = PdfDataFactory.ForInvoice(invoice, user, logoBytes);
 
         byte[] pdfBytes;
         try { pdfBytes = pdfService.GenerateInvoicePdf(pdfData); }

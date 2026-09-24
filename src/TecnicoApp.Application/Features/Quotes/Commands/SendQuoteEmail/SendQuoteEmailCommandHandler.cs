@@ -4,7 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Email;
 using TecnicoApp.Application.Common.Formatting;
+using TecnicoApp.Application.Common.Documents;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Domain.Enums;
 using TecnicoApp.Application.Features.Quotes.DTOs;
 using TecnicoApp.Application.Common.Extensions;
 
@@ -17,6 +19,8 @@ public class SendQuoteEmailCommandHandler(
     IEmailService emailService,
     IFileStorageService fileStorage,
     INotificationService notificationService,
+    IQuoteApprovalLinkService approvalLinks,
+    IAppSettings appSettings,
     ILogger<SendQuoteEmailCommandHandler> logger)
     : IRequestHandler<SendQuoteEmailCommand, Result>
 {
@@ -46,32 +50,9 @@ public class SendQuoteEmailCommandHandler(
         if (user is null) return Result.Unauthorized();
 
         // Generate PDF
-        var lineDtos = quote.Lines.ToLineDtos();
+        var logoBytes = await fileStorage.ReadUploadBytesAsync(user.LogoUrl, cancellationToken);
 
-        var logoBytes = await fileStorage.ReadLogoBytesAsync(user.LogoUrl, cancellationToken);
-
-        var pdfData = new QuotePdfData(
-            Number: quote.Number,
-            CreatedAt: quote.CreatedAt,
-            ValidUntil: quote.ValidUntil,
-            Notes: quote.Notes,
-            ClientName: quote.Client.Name,
-            ClientEmail: quote.Client.Email,
-            ClientPhone: quote.Client.Phone,
-            ClientNif: quote.Client.Nif,
-            IssuerName: user.FullName,
-            IssuerCompany: user.CompanyName,
-            IssuerEmail: user.Email,
-            IssuerPhone: user.Phone,
-            IssuerNif: user.Nif,
-            IssuerLogoBytes: logoBytes,
-            IssuerBrandColorHex: user.BrandColor,
-            Lines: lineDtos,
-            SubTotal: quote.SubTotal,
-            VatTotal: quote.VatTotal,
-            Discount: quote.Discount,
-            Total: quote.Total
-        );
+        var pdfData = PdfDataFactory.ForQuote(quote, user, logoBytes);
 
         byte[] pdfBytes;
         try { pdfBytes = pdfService.GenerateQuotePdf(pdfData); }
@@ -82,6 +63,12 @@ public class SendQuoteEmailCommandHandler(
         }
 
         var branding = EmailBranding.ForCompany(user);
+
+        // Link where the client reviews the quote and accepts (with signature) or rejects it
+        // online — offered while the quote is still open for a decision.
+        string? approvalUrl = null;
+        if (quote.Status is QuoteStatus.Draft or QuoteStatus.Sent)
+            approvalUrl = $"{appSettings.BaseUrl}/orcamento/{approvalLinks.GetOrCreateToken(quote)}";
         var totalFormatted = PtFormat.Currency(quote.Total);
         var body = $"""
             <p style="margin:0 0 8px;color:#6b7280;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Orçamento</p>
@@ -91,6 +78,7 @@ public class SendQuoteEmailCommandHandler(
             {EmailLayout.SummaryTable(
                 ("Total", totalFormatted),
                 ("Válido até", quote.ValidUntil.HasValue ? PtFormat.LongDate(quote.ValidUntil.Value) : "—"))}
+            {(approvalUrl is null ? "" : EmailLayout.Button(branding, approvalUrl, "Ver e aceitar orçamento →"))}
             <p style="margin:0;color:#6b7280;font-size:13px;">Para qualquer questão, contacta diretamente <strong>{EmailLayout.Encode(branding.SenderName)}</strong>.</p>
             """;
 
@@ -110,6 +98,10 @@ public class SendQuoteEmailCommandHandler(
         // Persisted so the "sent" state survives a page reload — previously this was
         // tracked only in frontend component state and reset on every remount.
         quote.EmailSentAt = DateTime.UtcNow;
+        // Emailing a draft is sending it — done here (not as a second call from the UI) so the
+        // status can't be left behind if that follow-up request fails.
+        if (quote.Status == QuoteStatus.Draft)
+            quote.Status = QuoteStatus.Sent;
         await db.SaveChangesAsync(cancellationToken);
 
         // Opt-in WhatsApp ping. The email already succeeded and is the primary channel — this
@@ -121,7 +113,8 @@ public class SendQuoteEmailCommandHandler(
             {
                 var waMessage =
                     $"Olá {quote.Client.Name}, {branding.SenderName} enviou-te um orçamento ({quote.Number}) " +
-                    $"no valor de {totalFormatted}. Consulta o teu email para o PDF.";
+                    $"no valor de {totalFormatted}. " +
+                    (approvalUrl is null ? "Consulta o teu email para o PDF." : $"Vê e aceita aqui: {approvalUrl}");
 
                 await notificationService.SendWhatsAppAsync(quote.Client.Phone, waMessage, cancellationToken);
             }

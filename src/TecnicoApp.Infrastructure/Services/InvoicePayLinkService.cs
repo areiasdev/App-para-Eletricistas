@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Application.Common.Security;
 using TecnicoApp.Domain.Entities;
 
 namespace TecnicoApp.Infrastructure.Services;
@@ -22,8 +23,7 @@ public class InvoicePayLinkService(IConfiguration configuration) : IInvoicePayLi
     // itself, and vice versa a JWT-secret leak still requires this same derivation step rather
     // than being directly reusable. The JWT secret is already validated at startup to be a
     // strong random string (see Program.cs).
-    private readonly byte[] _hmacKey = SHA256.HashData(
-        Encoding.UTF8.GetBytes($"invoice-pay-link-key:{configuration["Jwt:Secret"]}"));
+    private readonly byte[] _hmacKey = DerivedLinkToken.DeriveKey(configuration, "invoice-pay-link-key");
 
     public string GetOrCreateToken(Invoice invoice)
     {
@@ -36,22 +36,38 @@ public class InvoicePayLinkService(IConfiguration configuration) : IInvoicePayLi
             // An invoice can legitimately stay unpaid for months, and this token is
             // single-purpose (view+pay one invoice, not full account access) — a long expiry
             // is low-risk and avoids the link going stale before the invoice does.
-            invoice.PayTokenExpiresAt = DateTime.UtcNow.AddYears(1);
+            invoice.PayTokenExpiresAt = DerivedLinkToken.WholeSeconds(DateTime.UtcNow.AddYears(1));
         }
 
-        var rawToken = DeriveToken(invoice.Id, invoice.PayTokenExpiresAt!.Value);
-        invoice.PayTokenHash = Hash(rawToken);
+        var rawToken = DerivedLinkToken.Derive(_hmacKey, "invoice-pay", invoice.Id, invoice.PayTokenExpiresAt!.Value);
+        invoice.PayTokenHash = PublicTokens.Hash(rawToken);
         return rawToken;
     }
+}
 
-    private string DeriveToken(Guid invoiceId, DateTime expiresAt)
+/// <summary>
+/// Deterministic link tokens: HMAC-SHA256 over (purpose, entity id, expiry) with a key derived
+/// from the JWT secret. Recomputing with the same inputs reproduces the same token, so a link can
+/// be "re-issued" without ever storing the raw value — only its hash is persisted.
+/// </summary>
+internal static class DerivedLinkToken
+{
+    public static byte[] DeriveKey(IConfiguration configuration, string label) =>
+        SHA256.HashData(Encoding.UTF8.GetBytes($"{label}:{configuration["Jwt:Secret"]}"));
+
+    /// <summary>
+    /// The token is derived from the expiry's ticks, so the expiry must survive a database
+    /// round-trip unchanged. PostgreSQL keeps microseconds, .NET ticks are 100 ns — an untruncated
+    /// value comes back different, the re-derived token no longer matches, and every link already
+    /// emailed silently stops working the next time the document is re-sent.
+    /// </summary>
+    public static DateTime WholeSeconds(DateTime value) =>
+        new(value.Ticks - value.Ticks % TimeSpan.TicksPerSecond, value.Kind);
+
+    public static string Derive(byte[] key, string purpose, Guid entityId, DateTime expiresAt)
     {
-        using var hmac = new HMACSHA256(_hmacKey);
-        var input = Encoding.UTF8.GetBytes($"invoice-pay:{invoiceId:N}:{expiresAt.Ticks}");
-        var raw = hmac.ComputeHash(input);
+        using var hmac = new HMACSHA256(key);
+        var raw = hmac.ComputeHash(Encoding.UTF8.GetBytes($"{purpose}:{entityId:N}:{expiresAt.Ticks}"));
         return Convert.ToBase64String(raw).Replace("+", "-").Replace("/", "_").TrimEnd('=');
     }
-
-    private static string Hash(string rawToken) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
 }

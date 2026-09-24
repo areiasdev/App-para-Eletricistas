@@ -1,6 +1,7 @@
 using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using TecnicoApp.Application.Common.Documents;
 using TecnicoApp.Application.Common.Interfaces;
 using TecnicoApp.Application.Features.Invoices.DTOs;
 using TecnicoApp.Application.Common.Extensions;
@@ -33,34 +34,9 @@ public class GenerateInvoicePdfQueryHandler(
         if (invoice.UserId != ownerId)
             return Result.Forbidden();
 
-        var lines = invoice.Lines.ToLineDtos();
+        var logoBytes = await fileStorage.ReadUploadBytesAsync(invoice.User.LogoUrl, cancellationToken);
 
-        var logoBytes = await fileStorage.ReadLogoBytesAsync(invoice.User.LogoUrl, cancellationToken);
-
-        var pdfData = new InvoicePdfData(
-            Number: invoice.Number,
-            IssuedAt: invoice.IssuedAt,
-            DueDate: invoice.DueDate,
-            Notes: invoice.Notes,
-            ClientName: invoice.Client.Name,
-            ClientEmail: invoice.Client.Email,
-            ClientPhone: invoice.Client.Phone,
-            ClientNif: invoice.Client.Nif,
-            IssuerName: invoice.User.FullName,
-            IssuerCompany: invoice.User.CompanyName,
-            IssuerEmail: invoice.User.Email,
-            IssuerPhone: invoice.User.Phone,
-            IssuerNif: invoice.User.Nif,
-            IssuerLogoBytes: logoBytes,
-            IssuerBrandColorHex: invoice.User.BrandColor,
-            IssuerIban: invoice.User.Iban,
-            IssuerBankName: invoice.User.BankName,
-            Lines: lines,
-            SubTotal: invoice.SubTotal,
-            VatTotal: invoice.VatTotal,
-            Discount: invoice.Discount,
-            Total: invoice.Total
-        );
+        var pdfData = PdfDataFactory.ForInvoice(invoice, invoice.User, logoBytes);
 
         var bytes = pdfService.GenerateInvoicePdf(pdfData);
         return Result.Success(new InvoicePdfResult(bytes, invoice.Number));

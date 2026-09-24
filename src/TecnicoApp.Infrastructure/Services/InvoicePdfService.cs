@@ -3,6 +3,7 @@ using TecnicoApp.Application.Common.Formatting;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Domain.Common;
 
 namespace TecnicoApp.Infrastructure.Services;
 
@@ -123,6 +124,8 @@ public class InvoicePdfService
                     c.Item().PaddingTop(4).Text(d.ClientName).Bold().FontSize(12);
                     if (d.ClientNif is not null)
                         c.Item().Text($"NIF: {d.ClientNif}").FontColor(MutedHex);
+                    if (d.ClientAddress is not null)
+                        c.Item().Text(d.ClientAddress).FontColor(MutedHex);
                     if (d.ClientEmail is not null)
                         c.Item().Text(d.ClientEmail).FontColor(MutedHex);
                     if (d.ClientPhone is not null)
@@ -136,7 +139,7 @@ public class InvoicePdfService
                 table.ColumnsDefinition(cols =>
                 {
                     cols.RelativeColumn(5);   // Descrição
-                    cols.RelativeColumn(1);   // Qtd
+                    cols.RelativeColumn(1.4f); // Qtd + unidade
                     cols.RelativeColumn(2);   // Preço unit.
                     cols.RelativeColumn(1);   // IVA
                     cols.RelativeColumn(2);   // Total
@@ -153,7 +156,7 @@ public class InvoicePdfService
                     h.Cell().Element(c => HeaderCell(c, "QTD"));
                     h.Cell().Element(c => HeaderCell(c, "PREÇO UNIT."));
                     h.Cell().Element(c => HeaderCell(c, "IVA"));
-                    h.Cell().Element(c => HeaderCell(c, "TOTAL"));
+                    h.Cell().Element(c => HeaderCell(c, "VALOR S/ IVA"));
                 });
 
                 // Data rows
@@ -168,15 +171,15 @@ public class InvoicePdfService
                          .AlignRight().Text(text);
 
                     table.Cell().Element(c => Cell(c, line.Description));
-                    table.Cell().Element(c => CellRight(c, line.Quantity.ToString("G")));
-                    table.Cell().Element(c => CellRight(c, PtFormat.Currency(line.UnitPrice)));
-                    table.Cell().Element(c => CellRight(c, $"{line.VatRate}%"));
-                    table.Cell().Element(c => CellRight(c, PtFormat.Currency(line.LineTotal)));
+                    table.Cell().Element(c => CellRight(c, PdfStyle.FormatQuantity(line.Quantity, line.Unit)));
+                    table.Cell().Element(c => CellRight(c, PtFormat.UnitPrice(line.UnitPrice)));
+                    table.Cell().Element(c => CellRight(c, PtFormat.Percent(line.VatRate)));
+                    table.Cell().Element(c => CellRight(c, PtFormat.Currency(line.LineNet())));
                 }
             });
 
             // Totals
-            col.Item().PaddingTop(12).AlignRight().Width(200).Column(totals =>
+            col.Item().PaddingTop(12).AlignRight().Width(260).Column(totals =>
             {
                 void TotalRow(string label, string value, bool bold = false)
                 {
@@ -196,7 +199,8 @@ public class InvoicePdfService
                 }
 
                 TotalRow("Subtotal", PtFormat.Currency(d.SubTotal));
-                TotalRow("IVA", PtFormat.Currency(d.VatTotal));
+                foreach (var (rate, taxableBase, vat) in DocumentMath.VatBreakdown(d.Lines))
+                    TotalRow($"IVA {PtFormat.Percent(rate)} s/ {PtFormat.Currency(taxableBase)}", PtFormat.Currency(vat));
 
                 if (d.Discount.HasValue && d.Discount > 0)
                     TotalRow("Desconto", $"-{PtFormat.Currency(d.Discount.Value)}");

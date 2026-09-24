@@ -4,7 +4,7 @@ using TecnicoApp.Application.Features.Interventions.DTOs;
 
 namespace TecnicoApp.Application.Features.Interventions.Commands.CreateIntervention;
 
-public record InterventionMaterialRequest(string Name, decimal Quantity, decimal UnitCost);
+public record InterventionMaterialRequest(string Name, decimal Quantity, decimal UnitCost, decimal? UnitPrice = null);
 
 public record CreateInterventionCommand(
     string Title,
@@ -15,5 +15,6 @@ public record CreateInterventionCommand(
     IReadOnlyList<Guid> EquipmentIds,
     IReadOnlyList<string>? Photos,
     IReadOnlyList<InterventionMaterialRequest>? Materials,
-    Guid? AssignedToUserId
+    Guid? AssignedToUserId,
+    decimal? LaborHours = null
 ) : IRequest<Result<InterventionDto>>;

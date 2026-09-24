@@ -15,6 +15,17 @@ public class Quote : BaseEntity
     public string? PdfUrl { get; set; }
     public DateTime? EmailSentAt { get; set; }
 
+    // Online approval by the client (link in the quote email). Only the SHA256 hash of the
+    // token is stored, same scheme as invoice pay links.
+    public string? ApprovalTokenHash { get; set; }
+    public DateTime? ApprovalTokenExpiresAt { get; set; }
+    /// <summary>When the client accepted/rejected online (null if decided by the team).</summary>
+    public DateTime? ClientDecisionAt { get; set; }
+    public string? AcceptedByName { get; set; }
+    public string? RejectionReason { get; set; }
+    /// <summary>Last automatic "still waiting for an answer" reminder sent to the team.</summary>
+    public DateTime? FollowUpSentAt { get; set; }
+
     public Guid ClientId { get; set; }
     public Client Client { get; set; } = null!;
     public Guid UserId { get; set; }

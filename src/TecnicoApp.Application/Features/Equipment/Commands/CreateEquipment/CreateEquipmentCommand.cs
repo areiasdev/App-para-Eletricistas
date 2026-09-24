@@ -13,5 +13,6 @@ public record CreateEquipmentCommand(
     DateTime? InstalledAt,
     DateTime? NextMaintenance,
     string? Notes,
-    IReadOnlyList<string>? Photos
+    IReadOnlyList<string>? Photos,
+    int? MaintenanceIntervalMonths = null
 ) : IRequest<Result<EquipmentDto>>;

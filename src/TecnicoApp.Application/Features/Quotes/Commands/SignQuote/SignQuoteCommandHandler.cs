@@ -2,6 +2,7 @@ using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Application.Common.Security;
 using TecnicoApp.Domain.Enums;
 using TecnicoApp.Application.Common.Extensions;
 
@@ -35,15 +36,10 @@ public class SignQuoteCommandHandler(IAppDbContext db, ICurrentUserService curre
                 "Só é possível assinar orçamentos no estado Enviado ou Aceite."));
 
         // Only allow safe raster formats (no SVG — SVG can embed script)
-        if (string.IsNullOrWhiteSpace(request.SignatureDataUrl) ||
-            !System.Text.RegularExpressions.Regex.IsMatch(
-                request.SignatureDataUrl,
-                @"^data:image/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/]+=*$",
-                System.Text.RegularExpressions.RegexOptions.None,
-                TimeSpan.FromMilliseconds(100)))
+        if (!PublicTokens.IsValidSignature(request.SignatureDataUrl))
             return Result.Invalid(new ValidationError(
                 "SignatureDataUrl",
-                "A assinatura deve ser uma imagem PNG, JPEG ou GIF em formato data URI."));
+                "A assinatura deve ser uma imagem PNG, JPEG ou WEBP em formato data URI."));
 
         quote.SignatureUrl = request.SignatureDataUrl;
         quote.SignedAt = DateTime.UtcNow;

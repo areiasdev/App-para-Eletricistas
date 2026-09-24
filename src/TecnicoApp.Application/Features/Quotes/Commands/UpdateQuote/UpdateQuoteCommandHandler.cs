@@ -2,6 +2,7 @@ using Ardalis.Result;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Application.Features.Quotes.Commands.CreateQuote;
 using TecnicoApp.Application.Features.Quotes.DTOs;
 using TecnicoApp.Domain.Entities;
 using TecnicoApp.Domain.Enums;
@@ -63,18 +64,13 @@ public class UpdateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         // row that was never inserted and throws DbUpdateConcurrencyException at SaveChanges.
         db.QuoteLines.RemoveRange(quote.Lines);
         quote.Lines.Clear();
-        foreach (var l in request.Lines)
+        foreach (var (l, index) in request.Lines.Select((l, i) => (l, i)))
         {
             // db.QuoteLines.Add (not quote.Lines.Add) marks the row Added directly; EF's
             // relationship fixup then populates quote.Lines from the FK match automatically.
-            db.QuoteLines.Add(new QuoteLine
-            {
-                Description = l.Description,
-                Quantity = l.Quantity,
-                UnitPrice = l.UnitPrice,
-                VatRate = l.VatRate,
-                QuoteId = quote.Id,
-            });
+            var line = l.ToQuoteLine(index);
+            line.QuoteId = quote.Id;
+            db.QuoteLines.Add(line);
         }
 
         await db.SaveChangesAsync(cancellationToken);

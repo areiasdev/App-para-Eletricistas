@@ -37,41 +37,18 @@ public class CreateQuoteCommandHandler(IAppDbContext db, ICurrentUserService cur
         if (client.UserId != ownerId)
             return Result.Forbidden();
 
-        // Generate quote number: ORC-YYYY-NNNN
-        var year = DateTime.UtcNow.Year;
-        var number = await db.NextQuoteNumberAsync(ownerId, year, cancellationToken);
-
         var quote = new Quote
         {
-            Number = number,
+            Number = string.Empty, // assigned by AddQuoteWithNextNumberAsync (ORC-YYYY-NNNN)
             ClientId = request.ClientId,
             UserId = ownerId,
             Discount = request.Discount,
             Notes = request.Notes,
             ValidUntil = request.ValidUntil,
-            Lines = request.Lines.Select(l => new QuoteLine
-            {
-                Description = l.Description,
-                Quantity = l.Quantity,
-                UnitPrice = l.UnitPrice,
-                VatRate = l.VatRate,
-            }).ToList(),
+            Lines = request.Lines.Select((l, index) => l.ToQuoteLine(index)).ToList(),
         };
 
-        db.Quotes.Add(quote);
-        try
-        {
-            await db.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("IX_Quotes_Number", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            // Unique constraint violation on Number — concurrent request generated same number
-            logger.LogWarning("Quote number conflict for {Number}, retrying.", number);
-            db.Quotes.Remove(quote);
-            quote.Number = await db.NextQuoteNumberAsync(ownerId, year, cancellationToken);
-            db.Quotes.Add(quote);
-            await db.SaveChangesAsync(cancellationToken);
-        }
+        await db.AddQuoteWithNextNumberAsync(quote, ownerId, logger, cancellationToken);
 
         var dto = quote.ToDto(client.Name);
 

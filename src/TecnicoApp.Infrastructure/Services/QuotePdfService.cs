@@ -3,6 +3,7 @@ using TecnicoApp.Application.Common.Formatting;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Domain.Common;
 
 namespace TecnicoApp.Infrastructure.Services;
 
@@ -19,6 +20,8 @@ public class QuotePdfService : IPdfService
     // service that owns the invoice-specific composition. See PdfStyle's doc comment for
     // why the composition logic itself isn't merged into one method.
     public byte[] GenerateInvoicePdf(InvoicePdfData data) => new InvoicePdfService().Generate(data);
+
+    public byte[] GenerateInterventionReportPdf(InterventionReportPdfData data) => new InterventionReportPdfService().Generate(data);
 
     public byte[] GenerateQuotePdf(QuotePdfData d)
     {
@@ -122,6 +125,8 @@ public class QuotePdfService : IPdfService
                     c.Item().PaddingTop(4).Text(d.ClientName).Bold().FontSize(12);
                     if (d.ClientNif is not null)
                         c.Item().Text($"NIF: {d.ClientNif}").FontColor(MutedHex);
+                    if (d.ClientAddress is not null)
+                        c.Item().Text(d.ClientAddress).FontColor(MutedHex);
                     if (d.ClientEmail is not null)
                         c.Item().Text(d.ClientEmail).FontColor(MutedHex);
                     if (d.ClientPhone is not null)
@@ -135,7 +140,7 @@ public class QuotePdfService : IPdfService
                 table.ColumnsDefinition(cols =>
                 {
                     cols.RelativeColumn(5);   // Descrição
-                    cols.RelativeColumn(1);   // Qtd
+                    cols.RelativeColumn(1.4f); // Qtd + unidade
                     cols.RelativeColumn(2);   // Preço unit.
                     cols.RelativeColumn(1);   // IVA
                     cols.RelativeColumn(2);   // Total
@@ -152,7 +157,7 @@ public class QuotePdfService : IPdfService
                     h.Cell().Element(c => HeaderCell(c, "QTD"));
                     h.Cell().Element(c => HeaderCell(c, "PREÇO UNIT."));
                     h.Cell().Element(c => HeaderCell(c, "IVA"));
-                    h.Cell().Element(c => HeaderCell(c, "TOTAL"));
+                    h.Cell().Element(c => HeaderCell(c, "VALOR S/ IVA"));
                 });
 
                 // Data rows
@@ -167,15 +172,15 @@ public class QuotePdfService : IPdfService
                          .AlignRight().Text(text);
 
                     table.Cell().Element(c => Cell(c, line.Description));
-                    table.Cell().Element(c => CellRight(c, line.Quantity.ToString("G")));
-                    table.Cell().Element(c => CellRight(c, PtFormat.Currency(line.UnitPrice)));
-                    table.Cell().Element(c => CellRight(c, $"{line.VatRate}%"));
-                    table.Cell().Element(c => CellRight(c, PtFormat.Currency(line.LineTotal)));
+                    table.Cell().Element(c => CellRight(c, PdfStyle.FormatQuantity(line.Quantity, line.Unit)));
+                    table.Cell().Element(c => CellRight(c, PtFormat.UnitPrice(line.UnitPrice)));
+                    table.Cell().Element(c => CellRight(c, PtFormat.Percent(line.VatRate)));
+                    table.Cell().Element(c => CellRight(c, PtFormat.Currency(line.LineNet())));
                 }
             });
 
             // Totals
-            col.Item().PaddingTop(12).AlignRight().Width(200).Column(totals =>
+            col.Item().PaddingTop(12).AlignRight().Width(260).Column(totals =>
             {
                 void TotalRow(string label, string value, bool bold = false)
                 {
@@ -195,7 +200,8 @@ public class QuotePdfService : IPdfService
                 }
 
                 TotalRow("Subtotal", PtFormat.Currency(d.SubTotal));
-                TotalRow("IVA", PtFormat.Currency(d.VatTotal));
+                foreach (var (rate, taxableBase, vat) in DocumentMath.VatBreakdown(d.Lines))
+                    TotalRow($"IVA {PtFormat.Percent(rate)} s/ {PtFormat.Currency(taxableBase)}", PtFormat.Currency(vat));
 
                 if (d.Discount.HasValue && d.Discount > 0)
                     TotalRow("Desconto", $"-{PtFormat.Currency(d.Discount.Value)}");
@@ -214,6 +220,22 @@ public class QuotePdfService : IPdfService
                         .LetterSpacing(0.08f).FontColor(MutedHex);
                     n.Item().PaddingTop(4).Background(CanvasHex).Padding(12)
                         .Text(d.Notes).FontColor(InkHex);
+                });
+            }
+
+            // Client acceptance (signed on the technician's device or online via the approval link)
+            if (d.SignatureImage is { Length: > 0 })
+            {
+                col.Item().PaddingTop(24).ShowEntire().Width(240).Column(a =>
+                {
+                    a.Item().Text("ACEITE PELO CLIENTE").FontSize(8).Bold()
+                        .LetterSpacing(0.08f).FontColor(MutedHex);
+                    a.Item().PaddingTop(4).Height(60).BorderBottom(1).BorderColor(LineHex)
+                        .Image(d.SignatureImage).FitArea();
+                    var signedBy = string.Join(" — ", new[] { d.SignedByName, d.SignedAt is { } at ? PtFormat.DateTime(at) : null }
+                        .Where(x => !string.IsNullOrWhiteSpace(x)));
+                    if (signedBy.Length > 0)
+                        a.Item().PaddingTop(4).Text(signedBy).FontColor(MutedHex);
                 });
             }
         });

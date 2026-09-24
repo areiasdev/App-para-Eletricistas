@@ -2,14 +2,17 @@ using Ardalis.Result.AspNetCore;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TecnicoApp.Application.Common.DTOs;
 using TecnicoApp.Application.Features.Quotes.Commands.CreateQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.DeleteQuote;
+using TecnicoApp.Application.Features.Quotes.Commands.DuplicateQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.SendQuoteEmail;
 using TecnicoApp.Application.Features.Quotes.Commands.SignQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.UpdateQuote;
 using TecnicoApp.Application.Features.Quotes.Commands.UpdateQuoteStatus;
 using TecnicoApp.Application.Features.Quotes.DTOs;
+using TecnicoApp.Application.Features.Quotes.Public;
 using TecnicoApp.Application.Features.Quotes.Queries.GenerateQuotePdf;
 using TecnicoApp.Application.Features.Quotes.Queries.GetQuoteById;
 using TecnicoApp.Application.Features.Quotes.Queries.GetQuotes;
@@ -89,6 +92,17 @@ public class QuotesController(IMediator mediator) : ControllerBase
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
 
+    [HttpPost("{id:guid}/duplicate")]
+    [ProducesResponseType(typeof(QuoteDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<QuoteDto>> Duplicate(Guid id, CancellationToken ct)
+    {
+        var result = await mediator.Send(new DuplicateQuoteCommand(id), ct);
+        return result.IsSuccess
+            ? CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value)
+            : result.ToActionResult(this);
+    }
+
     [HttpPost("{id:guid}/sign")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -138,6 +152,67 @@ public class QuotesController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new DeleteQuoteCommand(id), ct);
         return result.IsSuccess ? NoContent() : result.ToActionResult(this);
     }
+
+    // ── Public/unauthenticated — reached only via the quote's approval magic link ──────────
+
+    [HttpGet("public/{token}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(PublicQuoteDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PublicQuoteDto>> GetPublicByToken(string token, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetPublicQuoteQuery(token), ct);
+        return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
+    }
+
+    [HttpGet("public/{token}/pdf")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DownloadPublicPdf(string token, CancellationToken ct)
+    {
+        var result = await mediator.Send(new GetPublicQuotePdfQuery(token), ct);
+        return result.IsSuccess
+            ? File(result.Value.Bytes, "application/pdf", $"orcamento-{result.Value.Number}.pdf")
+            : NotFound();
+    }
+
+    [HttpPost("public/{token}/accept")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(PublicQuoteDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PublicQuoteDto>> AcceptPublic(
+        string token, [FromBody] AcceptQuoteOnlineRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new AcceptQuoteOnlineCommand(token, request.Name, request.SignatureDataUrl), ct);
+        return result.IsSuccess ? Ok(result.Value) : PublicError(result);
+    }
+
+    [HttpPost("public/{token}/reject")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [ProducesResponseType(typeof(PublicQuoteDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<PublicQuoteDto>> RejectPublic(
+        string token, [FromBody] RejectQuoteOnlineRequest request, CancellationToken ct)
+    {
+        var result = await mediator.Send(new RejectQuoteOnlineCommand(token, request.Reason), ct);
+        return result.IsSuccess ? Ok(result.Value) : PublicError(result);
+    }
+
+    // Clients see these messages directly — plain { detail } instead of Ardalis's
+    // "Next error(s) occurred:" formatting.
+    private ActionResult PublicError(Ardalis.Result.IResult result) => result.Status switch
+    {
+        Ardalis.Result.ResultStatus.NotFound => NotFound(),
+        _ => BadRequest(new
+        {
+            detail = result.ValidationErrors.Select(e => e.ErrorMessage).FirstOrDefault()
+                ?? result.Errors.FirstOrDefault()
+                ?? "Não foi possível registar a resposta."
+        }),
+    };
 }
 
 public record UpdateQuoteRequest(
@@ -150,3 +225,6 @@ public record UpdateQuoteRequest(
 
 public record UpdateQuoteStatusRequest(QuoteStatus Status);
 public record SignQuoteRequest(string SignatureDataUrl);
+
+public record AcceptQuoteOnlineRequest(string Name, string SignatureDataUrl);
+public record RejectQuoteOnlineRequest(string? Reason);

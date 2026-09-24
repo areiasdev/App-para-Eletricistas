@@ -53,15 +53,11 @@ public class CreateInvoiceFromQuoteCommandHandler(
         if (alreadyInvoiced)
             return Result.Error("Este orçamento já foi faturado.");
 
-        // Generate invoice number: FT-YYYY-NNNN
-        var year = DateTime.UtcNow.Year;
-        var number = await db.NextInvoiceNumberAsync(ownerId, year, cancellationToken);
-
         var issuedAt = DateTime.UtcNow;
 
         var invoice = new Invoice
         {
-            Number = number,
+            Number = string.Empty, // assigned by AddInvoiceWithNextNumberAsync (FT-YYYY-NNNN)
             IssuedAt = issuedAt,
             DueDate = issuedAt.AddDays(appSettings.InvoicePaymentTermDays),
             Notes = quote.Notes,
@@ -75,25 +71,14 @@ public class CreateInvoiceFromQuoteCommandHandler(
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
                 VatRate = l.VatRate,
+                Unit = l.Unit,
+                Position = l.Position,
             }).ToList(),
         };
 
         quote.Status = QuoteStatus.Invoiced;
 
-        db.Invoices.Add(invoice);
-        try
-        {
-            await db.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("IX_Invoices_Number", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            // Unique constraint violation on Number — concurrent request generated same number
-            logger.LogWarning("Invoice number conflict for {Number}, retrying.", number);
-            db.Invoices.Remove(invoice);
-            invoice.Number = await db.NextInvoiceNumberAsync(ownerId, year, cancellationToken);
-            db.Invoices.Add(invoice);
-            await db.SaveChangesAsync(cancellationToken);
-        }
+        await db.AddInvoiceWithNextNumberAsync(invoice, ownerId, logger, cancellationToken);
 
         var dto = invoice.ToDto(quote.Client.Name, quote.Number);
 

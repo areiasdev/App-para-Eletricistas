@@ -8,7 +8,9 @@ using TecnicoApp.Application.Features.Invoices.Commands.CreateInvoiceFromQuote;
 using TecnicoApp.Application.Features.Invoices.Commands.GetOrCreateInvoicePayLink;
 using TecnicoApp.Application.Features.Invoices.Commands.SendInvoiceEmail;
 using TecnicoApp.Application.Features.Invoices.Commands.UpdateInvoiceStatus;
+using TecnicoApp.Application.Features.Invoices.Commands.CreateInvoiceFromIntervention;
 using TecnicoApp.Application.Features.Invoices.DTOs;
+using TecnicoApp.Application.Features.Invoices.Queries.ExportInvoices;
 using TecnicoApp.Application.Features.Invoices.Queries.GenerateInvoicePdf;
 using TecnicoApp.Application.Features.Invoices.Queries.GetInvoiceById;
 using TecnicoApp.Application.Features.Invoices.Queries.GetInvoices;
@@ -37,6 +39,16 @@ public class InvoicesController(IMediator mediator) : ControllerBase
         return result.IsSuccess ? Ok(result.Value) : result.ToActionResult(this);
     }
 
+    [HttpGet("export")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExportCsv([FromQuery] DateTime? from, [FromQuery] DateTime? to, CancellationToken ct)
+    {
+        var result = await mediator.Send(new ExportInvoicesCsvQuery(from, to), ct);
+        if (!result.IsSuccess) return result.ToActionResult(this).Result!;
+        var name = $"faturas-{(from ?? new DateTime(DateTime.UtcNow.Year, 1, 1)):yyyy-MM-dd}-a-{(to ?? DateTime.UtcNow):yyyy-MM-dd}.csv";
+        return File(result.Value, "text/csv; charset=utf-8", name);
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(InvoiceDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
@@ -53,6 +65,17 @@ public class InvoicesController(IMediator mediator) : ControllerBase
     public async Task<ActionResult<InvoiceDto>> CreateFromQuote(Guid quoteId, CancellationToken ct)
     {
         var result = await mediator.Send(new CreateInvoiceFromQuoteCommand(quoteId), ct);
+        return result.IsSuccess
+            ? CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value)
+            : result.ToActionResult(this);
+    }
+
+    [HttpPost("from-intervention/{interventionId:guid}")]
+    [ProducesResponseType(typeof(InvoiceDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<InvoiceDto>> CreateFromIntervention(Guid interventionId, CancellationToken ct)
+    {
+        var result = await mediator.Send(new CreateInvoiceFromInterventionCommand(interventionId), ct);
         return result.IsSuccess
             ? CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value)
             : result.ToActionResult(this);

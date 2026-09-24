@@ -11,5 +11,6 @@ public record UpdateProfileCommand(
     string? Phone,
     string? BrandColor,
     string? Iban,
-    string? BankName
+    string? BankName,
+    decimal? DefaultHourlyRate = null
 ) : IRequest<Result<ProfileDto>>;

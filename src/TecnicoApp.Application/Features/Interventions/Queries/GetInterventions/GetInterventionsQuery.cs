@@ -11,5 +11,8 @@ public record GetInterventionsQuery(
     int PageSize = 20,
     string? Search = null,
     InterventionStatus? Status = null,
-    Guid? ClientId = null
+    Guid? ClientId = null,
+    DateTime? From = null,          // ScheduledAt >= From (agenda views)
+    DateTime? To = null,            // ScheduledAt <  To
+    Guid? AssignedToUserId = null
 ) : IRequest<Result<PaginatedResult<InterventionListItemDto>>>;

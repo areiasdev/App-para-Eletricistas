@@ -50,7 +50,7 @@ public class GenerateInvoicePdfQueryHandlerTests
         pdfService.GenerateInvoicePdf(Arg.Any<InvoicePdfData>()).Returns([1, 2, 3]);
 
         var fileStorage = Substitute.For<IFileStorageService>();
-        fileStorage.ReadLogoBytesAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>()).Returns(logoBytes);
+        fileStorage.ReadUploadBytesAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>()).Returns(logoBytes);
 
         return (pdfService, fileStorage);
     }
@@ -71,7 +71,7 @@ public class GenerateInvoicePdfQueryHandlerTests
         result.Value.Number.Should().Be(invoice.Number);
         result.Value.Bytes.Should().Equal([1, 2, 3]);
 
-        await fileStorage.Received(1).ReadLogoBytesAsync(owner.LogoUrl, Arg.Any<CancellationToken>());
+        await fileStorage.Received(1).ReadUploadBytesAsync(owner.LogoUrl, Arg.Any<CancellationToken>());
 
         pdfService.Received(1).GenerateInvoicePdf(Arg.Is<InvoicePdfData>(d =>
             d.Number == invoice.Number &&
@@ -102,7 +102,7 @@ public class GenerateInvoicePdfQueryHandlerTests
 
         result.Status.Should().Be(Ardalis.Result.ResultStatus.Forbidden);
         pdfService.DidNotReceive().GenerateInvoicePdf(Arg.Any<InvoicePdfData>());
-        await fileStorage.DidNotReceive().ReadLogoBytesAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
+        await fileStorage.DidNotReceive().ReadUploadBytesAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

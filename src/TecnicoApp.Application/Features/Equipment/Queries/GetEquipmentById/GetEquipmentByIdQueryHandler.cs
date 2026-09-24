@@ -27,19 +27,6 @@ public class GetEquipmentByIdQueryHandler(IAppDbContext db, ICurrentUserService 
         if (equipment.Client.UserId != ownerId)
             return Result.Forbidden();
 
-        return Result.Success(new EquipmentDto(
-            equipment.Id,
-            equipment.Type,
-            equipment.Brand,
-            equipment.Model,
-            equipment.SerialNumber,
-            equipment.InstalledAt,
-            equipment.NextMaintenance,
-            equipment.Notes,
-            equipment.Photos,
-            equipment.ClientId,
-            equipment.Client.Name,
-            equipment.CreatedAt
-        ));
+        return Result.Success(equipment.ToDto(equipment.Client.Name));
     }
 }

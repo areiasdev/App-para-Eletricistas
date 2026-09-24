@@ -8,9 +8,10 @@ public static class InvoiceMappings
     /// <summary>Lines in the order they were entered, with VAT-inclusive totals from <see cref="DocumentMath"/>.</summary>
     public static IReadOnlyList<InvoiceLineDto> ToLineDtos(this IEnumerable<InvoiceLine> lines) =>
         lines
-            .OrderBy(l => l.CreatedAt)
+            .OrderBy(l => l.Position)
+            .ThenBy(l => l.CreatedAt)
             .Select(l => new InvoiceLineDto(
-                l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate, l.LineTotalWithVat()))
+                l.Id, l.Description, l.Quantity, l.UnitPrice, l.VatRate, l.LineTotalWithVat(), l.Unit))
             .ToList();
 
     /// <summary>Requires <see cref="Invoice.Lines"/> to be loaded; names default to the loaded navigations.</summary>

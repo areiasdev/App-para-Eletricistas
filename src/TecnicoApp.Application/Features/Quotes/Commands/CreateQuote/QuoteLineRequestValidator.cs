@@ -25,6 +25,8 @@ public class QuoteLineRequestValidator : AbstractValidator<CreateQuoteLineReques
             .PrecisionScale(12, 4, ignoreTrailingZeros: true)
             .WithMessage("O preço unitário admite no máximo 4 casas decimais.");
 
+        RuleFor(l => l.Unit).MaximumLength(10);
+
         RuleFor(l => l.VatRate)
             .InclusiveBetween(0, 100).WithMessage("A taxa de IVA deve estar entre 0 e 100.");
     }

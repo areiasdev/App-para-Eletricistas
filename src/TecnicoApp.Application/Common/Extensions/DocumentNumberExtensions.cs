@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TecnicoApp.Application.Common.Interfaces;
+using TecnicoApp.Domain.Entities;
 
 namespace TecnicoApp.Application.Common.Extensions;
 
@@ -40,4 +42,48 @@ public static class DocumentNumberExtensions
             .CountAsync(i => i.UserId == ownerId && i.CreatedAt.Year == year, cancellationToken);
         return FormatDocumentNumber(InvoicePrefix, year, count);
     }
+
+    /// <summary>
+    /// Numbers and inserts a new quote. Two concurrent creations can compute the same next number;
+    /// the unique index rejects the second, which is renumbered and saved once more.
+    /// </summary>
+    public static async Task AddQuoteWithNextNumberAsync(
+        this IAppDbContext db, Quote quote, Guid ownerId, ILogger logger, CancellationToken cancellationToken)
+    {
+        var year = DateTime.UtcNow.Year;
+        quote.Number = await db.NextQuoteNumberAsync(ownerId, year, cancellationToken);
+        db.Quotes.Add(quote);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsNumberConflict(ex, "IX_Quotes_Number"))
+        {
+            logger.LogWarning("Quote number conflict for {Number}, retrying.", quote.Number);
+            quote.Number = await db.NextQuoteNumberAsync(ownerId, year, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    /// <summary>Invoice counterpart of <see cref="AddQuoteWithNextNumberAsync"/>.</summary>
+    public static async Task AddInvoiceWithNextNumberAsync(
+        this IAppDbContext db, Invoice invoice, Guid ownerId, ILogger logger, CancellationToken cancellationToken)
+    {
+        var year = DateTime.UtcNow.Year;
+        invoice.Number = await db.NextInvoiceNumberAsync(ownerId, year, cancellationToken);
+        db.Invoices.Add(invoice);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (IsNumberConflict(ex, "IX_Invoices_Number"))
+        {
+            logger.LogWarning("Invoice number conflict for {Number}, retrying.", invoice.Number);
+            invoice.Number = await db.NextInvoiceNumberAsync(ownerId, year, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private static bool IsNumberConflict(DbUpdateException ex, string indexName) =>
+        ex.InnerException?.Message.Contains(indexName, StringComparison.OrdinalIgnoreCase) == true;
 }

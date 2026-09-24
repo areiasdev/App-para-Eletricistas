@@ -46,7 +46,7 @@ public class GenerateQuotePdfQueryHandlerTests
         pdfService.GenerateQuotePdf(Arg.Any<QuotePdfData>()).Returns([1, 2, 3, 4]);
 
         var fileStorage = Substitute.For<IFileStorageService>();
-        fileStorage.ReadLogoBytesAsync(owner.LogoUrl, Arg.Any<CancellationToken>()).Returns([9, 9]);
+        fileStorage.ReadUploadBytesAsync(owner.LogoUrl, Arg.Any<CancellationToken>()).Returns([9, 9]);
 
         var handler = new GenerateQuotePdfQueryHandler(db, AsUser(owner), pdfService, fileStorage);
         var result = await handler.Handle(new GenerateQuotePdfQuery(quote.Id), CancellationToken.None);

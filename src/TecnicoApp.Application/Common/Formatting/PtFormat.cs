@@ -13,6 +13,12 @@ public static class PtFormat
     /// <summary>1234.5 → "1234,50 €"</summary>
     public static string Currency(decimal value) => value.ToString("C", Culture);
 
+    /// <summary>Unit price with up to 4 decimals (cable per metre): 0.4575 → "0,4575 €", 35 → "35,00 €".</summary>
+    public static string UnitPrice(decimal value) => value.ToString("#,##0.00##", Culture) + " €";
+
+    /// <summary>VAT rate: 23 → "23%", 6.5 → "6,5%".</summary>
+    public static string Percent(decimal value) => value.ToString("0.##", Culture) + "%";
+
     /// <summary>"12/04/2026"</summary>
     public static string ShortDate(DateTime value) => value.ToString("dd/MM/yyyy", Culture);
 
